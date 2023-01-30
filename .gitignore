@@ -1,0 +1,12 @@
+# Binaries for programs and plugins
+*.db
+.idea
+logs
+.DS_Store
+test
+test.go
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out

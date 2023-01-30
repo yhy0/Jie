@@ -1,0 +1,73 @@
+package input
+
+import (
+	"github.com/yhy0/Jie/pkg/task"
+)
+
+/**
+  @author: yhy
+  @since: 2023/1/5
+  @desc: //TODO
+**/
+
+// Atom 用于判断是否已经运行过
+var Atom = make(map[string]bool)
+
+var ChannelInput = make(chan *task.Request)
+
+// Input 扫描数据统一输入格式
+type Input struct {
+	Plugins map[string]bool
+	Url     string
+	Ip      string
+	Method  string
+	Proxy   string
+	Headers map[string]string
+	Body    string
+	Param   []string // 参数名
+	Kv      string   // 参数名和参数值
+}
+
+//
+//func Input() {
+//	ch := make(chan bool, 30)
+//
+//	for v := range ChannelInput {
+//		ch <- true
+//		go v.Run(ch)
+//	}
+//}
+//
+//func (input *Request) Run(ch chan bool) {
+//	// poc、弱口令爆破等漏洞，只运行一次检查。 todo InputMap 每天定时清空
+//	if _, ok := Atom[input.Target]; !ok {
+//		logging.Logger.Infoln("start ", input)
+//		Atom[input.Target] = true
+//		if input.Port != 0 { // 后续考虑要不要对端口进行开放检查
+//			brute.Hydra(input.Ip, input.Port, input.Service)
+//		}
+//
+//		// todo ，二级目录要不要传进去，进行目录扫描
+//		dirScan.BBscan(input.Target, input.Ip, input.StatusCode, input.IndexLen, input.IndexBody)
+//
+//		pocs_go.PocCheck(input.Technologies, input.Target, input.Target, input.Ip)
+//	} else { // 进行一些常规检查，存在参数的进行 sql 注入、xss 等检测
+//
+//		if input.Param != "" {
+//			sqlConfig := gosqlmap.ReqConf{
+//				Url:     input.Url,
+//				Headers: input.Header,
+//				Data:    input.Param,
+//				Method:  input.Method,
+//			}
+//
+//			go sqlInjection.Scan(&sqlConfig, input.Ip)
+//
+//			// todo xss
+//			go xss.Scan()
+//
+//		}
+//	}
+//
+//	<-ch
+//}

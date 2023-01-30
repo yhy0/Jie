@@ -161,6 +161,10 @@ func Request(target string, method string, postdata string, isredirect bool, hea
 		jar, _ := cookiejar.New(nil)
 		session.Client.Jar = jar
 	}
+	//url编码
+	//if _, ok := headers["encode"]; ok {
+	//	postdata = url.QueryEscape(postdata)
+	//}
 
 	req, err := http.NewRequest(strings.ToUpper(method), target, strings.NewReader(postdata))
 	if err != nil {

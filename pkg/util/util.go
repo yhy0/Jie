@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/spaolacci/murmur3"
 	"github.com/yhy0/Jie/logging"
 	"net"
-	"net/http"
 	"net/url"
 	"reflect"
 	"sort"
@@ -232,7 +230,6 @@ func Hostname(target string) string {
 }
 
 func FormatTarget(target string) (targets []string) {
-
 	targets_tmp := strings.Split(target, "\n")
 
 	if strings.Contains(target, ",") {
@@ -298,11 +295,10 @@ func InsertInto(s string, interval int, sep rune) string {
 	return buffer.String()
 }
 
-func Header(headers http.Header) string {
-	var header string
-	for key, value := range headers {
-		header += fmt.Sprintf("%s: %s", key, strings.Join(value, "; "))
+func ToUpper(a []string) []string {
+	var b []string
+	for _, v := range a {
+		b = append(b, strings.ToUpper(v))
 	}
-
-	return header
+	return b
 }

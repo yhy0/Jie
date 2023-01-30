@@ -7,7 +7,7 @@ import (
 	"github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/protocols/http"
 	"github.com/yhy0/Jie/pkg/util"
-	"github.com/yhy0/Jie/scan"
+	"github.com/yhy0/Jie/scan/swagger"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -383,7 +383,7 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 
 						// swagger 自动化测试
 						if strings.Contains(path, "swagger") {
-							scan.SwaggerScan(u+path, ip)
+							swagger.SwaggerScan(u+path, ip)
 						}
 
 						technologies = addFingerprintsnormal(path, technologies, res) // 基于200页面文件扫描指纹添加
@@ -400,7 +400,7 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 								Request:    res.RequestDump,
 								Response:   res.Body,
 							},
-							Level: "low",
+							Level: output.Low,
 						}
 					}
 				}

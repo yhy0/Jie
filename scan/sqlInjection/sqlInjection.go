@@ -54,7 +54,7 @@ func Scan(in *input.Input) {
 				Request:    sqlInfo.Resquest,
 				Response:   sqlInfo.Response,
 			},
-			Level: "Critical",
+			Level: output.Critical,
 		}
 	}
 

@@ -3,7 +3,6 @@ package output
 import (
 	"fmt"
 	"github.com/logrusorgru/aurora"
-	"github.com/mgutz/ansi"
 	"github.com/yhy0/Jie/logging"
 )
 
@@ -14,6 +13,13 @@ import (
 **/
 
 var OutChannel = make(chan VulMessage)
+
+// 漏洞等级
+var (
+	Low      = "Low"
+	Medium   = "Medium"
+	Critical = "High"
+)
 
 type VulMessage struct {
 	DataType string  `json:"data_type"`
@@ -36,22 +42,21 @@ type VulData struct {
 func (vul *VulMessage) PrintScreen() string {
 	var screen []string
 	screen = append(screen, aurora.Red(fmt.Sprintf("[Vuln: %s]", vul.Plugin)).String())
-	screen = append(screen, ansi.Color(fmt.Sprintf("[Vuln: %s]", vul.Plugin), "red+b"))
-	screen = append(screen, ansi.Color(fmt.Sprintf("Level: %s", vul.Level), "red+b"))
-	screen = append(screen, ansi.Color(fmt.Sprintf("Target: %s", vul.VulData.Target), "red+b"))
+	screen = append(screen, aurora.Red(fmt.Sprintf("Level: %s", vul.Level)).String())
+	screen = append(screen, aurora.Red(fmt.Sprintf("Target: %s", vul.VulData.Target)).String())
 
 	if vul.VulData.Ip != "" {
-		screen = append(screen, ansi.Color(fmt.Sprintf("Ip: %s", vul.VulData.Ip), "red+b"))
+		screen = append(screen, aurora.Red(fmt.Sprintf("Ip: %s", vul.VulData.Ip)).String())
 	}
 	if vul.VulData.Method != "" {
-		screen = append(screen, ansi.Color(fmt.Sprintf("Method: %s", vul.VulData.Method), "red+b"))
+		screen = append(screen, aurora.Red(fmt.Sprintf("Method: %s", vul.VulData.Method)).String())
 	}
 	if vul.VulData.Param != "" {
-		screen = append(screen, ansi.Color(fmt.Sprintf("Param: %s", vul.VulData.Param), "red+b"))
+		screen = append(screen, aurora.Red(fmt.Sprintf("Param: %s", vul.VulData.Param)).String())
 	}
 
 	if vul.VulData.Payload != "" {
-		screen = append(screen, ansi.Color(fmt.Sprintf("Payload: %s", vul.VulData.Payload), "red+b"))
+		screen = append(screen, aurora.Red(fmt.Sprintf("Payload: %s", vul.VulData.Payload)).String())
 	}
 
 	var res = ""

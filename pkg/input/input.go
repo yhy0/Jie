@@ -1,8 +1,6 @@
 package input
 
-import (
-	"github.com/yhy0/Jie/pkg/task"
-)
+import "github.com/yhy0/Jie/pkg/reverse"
 
 /**
   @author: yhy
@@ -13,19 +11,23 @@ import (
 // Atom 用于判断是否已经运行过
 var Atom = make(map[string]bool)
 
-var ChannelInput = make(chan *task.Request)
+var ChannelInput = make(chan *Input)
 
 // Input 扫描数据统一输入格式
 type Input struct {
-	Plugins map[string]bool
-	Url     string
-	Ip      string
-	Method  string
-	Proxy   string
-	Headers map[string]string
-	Body    string
-	Param   []string // 参数名
-	Kv      string   // 参数名和参数值
+	Plugins               []string
+	Target                string // 输入的域名 eg: https://127.0.0.1/
+	Url                   string // 这里是抓取到的 url, eg: https://127.0.0.1/login?user=admin&password=admin
+	Ip                    string
+	Method                string
+	Proxy                 string
+	Headers               map[string]string
+	ContentType           string
+	Body                  string
+	Param                 []string         // 参数名  user,password
+	Kv                    string           // 参数名和参数值  user=admin&password=admin
+	IsSensorServerEnabled bool             // 是否开启传感器服务
+	Reverse               *reverse.Reverse // dnslog
 }
 
 //

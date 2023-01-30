@@ -1,4 +1,4 @@
-package scan
+package sensitive
 
 import (
 	"fmt"
@@ -90,7 +90,7 @@ func Detection(url, resStr, assets, uuid, cuuid, user string) {
 				Target:     url,
 				Payload:    fmt.Sprintf("%+v", sensitive),
 			},
-			Level: "Critical",
+			Level: output.Critical,
 		}
 	}
 }

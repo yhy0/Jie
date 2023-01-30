@@ -5,7 +5,6 @@ import (
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/protocols/http"
-	"github.com/yhy0/Jie/pkg/util"
 	"regexp"
 	"strings"
 	"time"
@@ -47,7 +46,7 @@ func Scan(in *input.Input) {
 				return
 			}
 
-			C := r.FindAllStringSubmatch(util.Header(res.Header), -1)
+			C := r.FindAllStringSubmatch(http.Header(res.Header), -1)
 			if len(C) != 0 {
 				output.OutChannel <- output.VulMessage{
 					DataType: "web_vul",
@@ -62,7 +61,7 @@ func Scan(in *input.Input) {
 						Response:   res.ResponseDump,
 						Payload:    npl,
 					},
-					Level: "Medium",
+					Level: output.Medium,
 				}
 				return
 			}
@@ -73,7 +72,7 @@ func Scan(in *input.Input) {
 				logging.Logger.Debugf("Request error: %v", err)
 				return
 			}
-			if str := r.FindString(util.Header(res.Header)); str != "" {
+			if str := r.FindString(http.Header(res.Header)); str != "" {
 				output.OutChannel <- output.VulMessage{
 					DataType: "web_vul",
 					Plugin:   "CRLF",
@@ -87,7 +86,7 @@ func Scan(in *input.Input) {
 						Response:   res.ResponseDump,
 						Payload:    in.Body + pl,
 					},
-					Level: "Medium",
+					Level: output.Medium,
 				}
 				return
 			}

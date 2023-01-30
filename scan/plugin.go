@@ -1,7 +1,5 @@
 package scan
 
-import "github.com/yhy0/Jie/pkg/task"
-
 /**
   @author: yhy
   @since: 2023/1/11
@@ -10,8 +8,4 @@ import "github.com/yhy0/Jie/pkg/task"
 
 type Plugin interface {
 	Scan()
-}
-
-type PluginInfo struct {
-	Target *task.Request
 }

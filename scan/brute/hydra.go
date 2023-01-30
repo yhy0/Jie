@@ -73,7 +73,7 @@ func Hydra(host string, port int, service string) {
 			Ip:         host,
 			Payload:    payload,
 		},
-		Level: "Critical",
+		Level: output.Critical,
 	}
 
 	return

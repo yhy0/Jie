@@ -279,7 +279,7 @@ func PocCheck(technologies []string, target string, finalURL string, ip string) 
 				Ip:         ip,
 				Payload:    payload,
 			},
-			Level: "Critical",
+			Level: output.Critical,
 		}
 	}
 }

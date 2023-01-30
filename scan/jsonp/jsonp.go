@@ -188,9 +188,8 @@ func Scan(in *input.Input) {
 				Response:   info.Response,
 				Payload:    in.Url,
 			},
-			Level: "Medium",
+			Level: output.Medium,
 		}
 	}
 	logging.Logger.Debugf("jsonp vulnerability not found")
-
 }

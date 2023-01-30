@@ -1,4 +1,4 @@
-package scan
+package swagger
 
 import (
 	"bytes"
@@ -419,12 +419,12 @@ func scanApi(method, baseUrl, path, queryParams, bodyParams string, header map[s
 					Request:    resp.RequestDump,
 					Response:   resp.Body,
 				},
-				Level: "Medium",
+				Level: output.Medium,
 			}
 		}
 
-	} else {
-		sensitiveWords := []string{"url=", "path=", "uri="}
+	} else { //ssrf、 文件读取测试
+		sensitiveWords := []string{"url=", "path=", "uri=", "api=", "target=", "host=", "domain=", "ip=", "file="}
 
 		var queryParams2 string
 		var bodyParams2 string
@@ -493,7 +493,7 @@ func scan(method, target, bodyParams string, header map[string]string, ip string
 					Request:    req.RequestDump,
 					Response:   req.Body,
 				},
-				Level: "Low",
+				Level: output.Low,
 			}
 
 			if util.Contains(req.Body, "www.baidu.com/img/sug_bd.png") {
@@ -512,7 +512,7 @@ func scan(method, target, bodyParams string, header map[string]string, ip string
 						Request:    req.RequestDump,
 						Response:   req.Body,
 					},
-					Level: "Critical",
+					Level: output.Critical,
 				}
 			}
 
@@ -532,7 +532,7 @@ func scan(method, target, bodyParams string, header map[string]string, ip string
 						Request:    req.RequestDump,
 						Response:   req.Body,
 					},
-					Level: "Critical",
+					Level: output.Critical,
 				}
 			}
 		}
@@ -571,7 +571,7 @@ func scan(method, target, bodyParams string, header map[string]string, ip string
 					Request:    req.RequestDump,
 					Response:   req.Body,
 				},
-				Level: "Low",
+				Level: output.Low,
 			}
 
 			if util.Contains(req.Body, "www.baidu.com/img/sug_bd.png") {
@@ -590,7 +590,7 @@ func scan(method, target, bodyParams string, header map[string]string, ip string
 						Request:    req.RequestDump,
 						Response:   req.Body,
 					},
-					Level: "Critical",
+					Level: output.Critical,
 				}
 			}
 
@@ -610,7 +610,7 @@ func scan(method, target, bodyParams string, header map[string]string, ip string
 						Request:    req.RequestDump,
 						Response:   req.Body,
 					},
-					Level: "Critical",
+					Level: output.Critical,
 				}
 			}
 		}

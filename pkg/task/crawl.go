@@ -38,16 +38,15 @@ var storeFields = []string{"url", "path", "fqdn", "rdn", "rurl", "qurl", "qpath"
 func (t *Task) Crawler() {
 	// 获取结果
 	outputWriter := output.NewMockOutputWriter()
-	//var crawlResults []task.CrawlResult
 	outputWriter.WriteCallback = func(result *output.Result) {
-
+		// 对爬虫结果格式化
 		var crawlResult CrawlResult
 		crawlResult.StoreFields(result)
-
 		crawlResult.Method = result.Method
 		crawlResult.Body = result.Body
 		crawlResult.Source = result.Source
-		//crawlResults = append(crawlResults, crawlResult)
+
+		t.Input.Url = crawlResult.URL
 
 		logging.Logger.Infof("URL: %s, Method: %s, Body: %s, Source: %s, Headers: %s, Path: %s, Hostname: %s, Rdn: %s, Rurl: %s, Dir: %s", crawlResult.URL, crawlResult.Method, crawlResult.Body, crawlResult.Source, crawlResult.Headers, crawlResult.Path, crawlResult.Hostname, crawlResult.Rdn, crawlResult.Rurl, crawlResult.Dir)
 
@@ -56,8 +55,8 @@ func (t *Task) Crawler() {
 	}
 
 	task := crawler.KatanaTask{
-		Target:       []string{"https://moresec.cn/"},
-		Proxy:        "",
+		Target:       []string{t.Input.Target},
+		Proxy:        t.Input.Proxy,
 		OutputWriter: outputWriter,
 	}
 

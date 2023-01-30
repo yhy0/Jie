@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/yhy0/Jie/cmd"
 	"github.com/yhy0/Jie/pkg/output"
-	"github.com/yhy0/Jie/scan"
 )
 
 /**
@@ -21,5 +20,5 @@ func main() {
 		}
 	}()
 
-	scan.SwaggerScan("https://ob.dfzq.com.cn:30338/api/swagger-resources", "")
+	//swagger.SwaggerScan("https://ob.dfzq.com.cn:30338/api/swagger-resources", "")
 }

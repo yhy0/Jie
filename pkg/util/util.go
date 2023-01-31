@@ -2,7 +2,9 @@ package util
 
 import (
 	"bytes"
+	"crypto/md5"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"github.com/google/uuid"
 	"github.com/spaolacci/murmur3"
@@ -301,4 +303,21 @@ func ToUpper(a []string) []string {
 		b = append(b, strings.ToUpper(v))
 	}
 	return b
+}
+
+// MD5 获取字符串md5
+func MD5(str string) string {
+	c := md5.New()
+	c.Write([]byte(str))
+	bytes := c.Sum(nil)
+	return hex.EncodeToString(bytes)
+}
+
+// ReverseString 反向string
+func ReverseString(s string) string {
+	runes := []rune(s)
+	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+		runes[i], runes[j] = runes[j], runes[i]
+	}
+	return string(runes)
 }

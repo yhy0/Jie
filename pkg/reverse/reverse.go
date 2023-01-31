@@ -9,12 +9,12 @@ import (
 )
 
 type Reverse struct {
+	Domain             string
+	Token              string
 	Url                string
 	Flag               string
-	Domain             string
 	Ip                 string
 	IsDomainNameServer bool
-	ApiToken           string
 }
 
 // New use ceye api
@@ -27,26 +27,25 @@ func New(domain string, flag string) *Reverse {
 	return &Reverse{
 		Flag:               flag,
 		Url:                u.String(),
-		Domain:             u.Hostname(),
 		Ip:                 "",
 		IsDomainNameServer: false,
 	}
 }
 
 func Check(reverse *Reverse, timeout int64) bool {
-	if reverse.ApiToken == "" || reverse.Domain == "" {
+	if reverse.Token == "" {
 		return false
 	}
 	// 延迟 x 秒获取结果
 	time.Sleep(time.Second * time.Duration(timeout))
 	// http://api.ceye.io/v1/records?token=0e43a818cb3cd0d1326ae6fb147b96b0&type=dns&filter=123456
 	//check dns
-	verifyUrl := fmt.Sprintf("http://api.ceye.io/v1/records?token=%s&type=dns&filter=%s", reverse.ApiToken, reverse.Flag)
+	verifyUrl := fmt.Sprintf("http://api.ceye.io/v1/records?token=%s&type=dns&filter=%s", reverse.Token, reverse.Flag)
 	if GetReverseResp(verifyUrl) {
 		return true
 	} else {
 		//	check request
-		verifyUrl = fmt.Sprintf("http://api.ceye.io/v1/records?token=%s&type=http&filter=%s", reverse.ApiToken, reverse.Flag)
+		verifyUrl = fmt.Sprintf("http://api.ceye.io/v1/records?token=%s&type=http&filter=%s", reverse.Token, reverse.Flag)
 		if GetReverseResp(verifyUrl) {
 			return true
 		}

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"github.com/yhy0/Jie/cmd"
+	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/output"
 )
 
@@ -16,9 +16,7 @@ func main() {
 	cmd.RunApp()
 	go func() {
 		for v := range output.OutChannel {
-			fmt.Println(v.PrintScreen())
+			logging.Logger.Println(v.PrintScreen())
 		}
 	}()
-
-	//swagger.SwaggerScan("https://ob.dfzq.com.cn:30338/api/swagger-resources", "")
 }

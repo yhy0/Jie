@@ -21,6 +21,7 @@ import (
 var (
 	DefaultPlugins = []string{"XSS", "SQL", "CMD-INJECT", "XXE", "SSRF", "POC", "BRUTE", "JSONP", "CRLF"}
 	Plugins        cli.StringSlice
+	Poc            cli.StringSlice
 	Proxy          string
 	Listen         string
 	Target         string
@@ -57,6 +58,12 @@ func RunApp() {
 						Name:        "plugin",
 						Usage:       "Vulnerable Plugin, (example: --plugin xss,csrf,sql, ...)",
 						Destination: &Plugins,
+					},
+					// 设置需要开启的插件
+					&cli.StringSliceFlag{
+						Name:        "poc",
+						Usage:       "specify the poc to run, separated by ','(example: test.yml,./test/*)",
+						Destination: &Poc,
 					},
 					// 设置代理
 					&cli.StringFlag{
@@ -103,6 +110,7 @@ func RunApp() {
 		Target:  Target,
 		Proxy:   Proxy,
 		Plugins: plugins,
+		Poc:     Poc.Value(),
 	}
 
 	// 初始化 session ,todo 后续优化一下，不同网站共用一个不知道会不会出问题，应该不会

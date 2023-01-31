@@ -46,12 +46,16 @@ https://github.com/kleiton0x00/ppmap
 
 
 ## poc
-
 https://github.com/projectdiscovery/nuclei
+
+https://github.com/WAY29/pocV
+
 
 ## 漏扫
 https://github.com/wrenchonline/glint
+
 https://github.com/veo/vscan
+
 
 ## 一些其他漏洞
 

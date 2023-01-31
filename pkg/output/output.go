@@ -18,7 +18,7 @@ var OutChannel = make(chan VulMessage)
 var (
 	Low      = "Low"
 	Medium   = "Medium"
-	Critical = "High"
+	Critical = "Critical"
 )
 
 type VulMessage struct {
@@ -63,7 +63,7 @@ func (vul *VulMessage) PrintScreen() string {
 	for i := 0; i < len(screen); i++ {
 		res += fmt.Sprintf("%s\n ", screen[i])
 	}
-	return res
+	return "\n" + res
 }
 
 // 漏洞级别

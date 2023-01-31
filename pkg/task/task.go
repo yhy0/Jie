@@ -8,6 +8,7 @@ import (
 	"github.com/yhy0/Jie/scan/cmdinject"
 	"github.com/yhy0/Jie/scan/crlf"
 	"github.com/yhy0/Jie/scan/jsonp"
+	"github.com/yhy0/Jie/scan/pocs_yml"
 	"github.com/yhy0/Jie/scan/sqlInjection"
 	"github.com/yhy0/Jie/scan/ssrf"
 	"github.com/yhy0/Jie/scan/xss"
@@ -60,7 +61,6 @@ func (t *Task) Distribution() {
 
 		// 有参数，进行 xss、sql 注入检测
 		if t.CrawlResult.Kv != "" {
-			
 			if funk.Contains(t.Input.Plugins, "SQL") {
 				go t.sqlInjection()
 			}
@@ -83,6 +83,7 @@ func (t *Task) Distribution() {
 
 		}
 
+		// todo 这里根据指纹进行对应的检测
 		if funk.Contains(t.Input.Plugins, "POC") {
 			// todo 针对性 POC 检测
 			suffix := path.Ext(t.CrawlResult.File)
@@ -95,6 +96,8 @@ func (t *Task) Distribution() {
 			} else if suffix == ".php" {
 
 			}
+
+			t.ymlPoc()
 		}
 
 		if funk.Contains(t.Input.Plugins, "BRUTE") {
@@ -159,5 +162,12 @@ func (t *Task) xxe() {
 func (t *Task) ssrf() {
 	t.wg.Add()
 	ssrf.Scan(t.Input)
+	t.wg.Done()
+}
+
+// 调用 xray、nuclei poc 检测
+func (t *Task) ymlPoc() {
+	t.wg.Add()
+	pocs_yml.Scan(t.Input)
 	t.wg.Done()
 }

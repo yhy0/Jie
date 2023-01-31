@@ -16,6 +16,7 @@ var ChannelInput = make(chan *Input)
 // Input 扫描数据统一输入格式
 type Input struct {
 	Plugins               []string
+	Poc                   []string
 	Target                string // 输入的域名 eg: https://127.0.0.1/
 	Url                   string // 这里是抓取到的 url, eg: https://127.0.0.1/login?user=admin&password=admin
 	Ip                    string

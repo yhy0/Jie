@@ -14,7 +14,7 @@ const (
 	RegexRule = `(?i)[\n|\r](Somecustominjectedheader\s*:\s*injected_by_wvs)`
 )
 
-// crlfCheck
+// crlf Check
 var payloadTemplate = []string{
 	`/%0ASomecustominjectedheader: injected_by_wvs`,
 	`\r\nSomeCustomInjectedHeader: injected_by_wvs`,
@@ -28,7 +28,7 @@ var payloadTemplate = []string{
 	`%c4%8d%c4%8aSomeCustomInjectedHeader:%20injected_by_wvs`,
 }
 
-func Scan(in *input.Input) {
+func Scan(in *input.CrawlResult) {
 	r, _ := regexp.Compile(RegexRule)
 	for _, pl := range payloadTemplate {
 		if strings.ToUpper(in.Method) == "GET" {

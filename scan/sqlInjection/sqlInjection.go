@@ -14,7 +14,7 @@ import (
   @desc: sql注入检测  参考 https://github1s.com/jweny/gosqlmap
 **/
 
-func Scan(in *input.Input) {
+func Scan(in *input.CrawlResult) {
 	conf := &gosqlmap.ReqConf{
 		Url:     in.Url,
 		Headers: in.Headers,
@@ -24,13 +24,13 @@ func Scan(in *input.Input) {
 	// 连接性检查，初始化result
 	isConnect, err := gosqlmap.CheckConnect(conf)
 	if isConnect == false || err != nil {
-		logging.Logger.Errorf("IsConnect: %v, SQLInjectionScan CheckConnect err: %v", isConnect, err)
+		logging.Logger.Debugf("IsConnect err: %v, SQLInjectionScan CheckConnect err: %v", conf, err)
 		return
 	}
 	// 稳定性检查，更新result
 	isStability, err := gosqlmap.CheckStability(conf)
 	if isStability == false || err != nil {
-		logging.Logger.Errorf("IsStability:%v SQLInjectionScan CheckStability err: %v", isStability, err)
+		logging.Logger.Debugf("IsStability:%v SQLInjectionScan CheckStability err: %v", isStability, err)
 		return
 	}
 	// 启发式sql注入检测
@@ -57,5 +57,4 @@ func Scan(in *input.Input) {
 			Level: output.Critical,
 		}
 	}
-
 }

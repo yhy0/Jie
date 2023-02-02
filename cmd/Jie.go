@@ -1,12 +1,13 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"github.com/logrusorgru/aurora"
 	"github.com/urfave/cli/v2"
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/logging"
-	"github.com/yhy0/Jie/pkg/input"
+	"github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/protocols/http"
 	"github.com/yhy0/Jie/pkg/util"
 	"os"
@@ -19,12 +20,12 @@ import (
 **/
 
 var (
-	DefaultPlugins = []string{"XSS", "SQL", "CMD-INJECT", "XXE", "SSRF", "POC", "BRUTE", "JSONP", "CRLF"}
-	Plugins        cli.StringSlice
-	Poc            cli.StringSlice
-	Proxy          string
-	Listen         string
-	Target         string
+	Plugins cli.StringSlice
+	Poc     cli.StringSlice
+	Proxy   string
+	Listen  string
+	target  string
+	debug   bool
 )
 
 func init() {
@@ -50,7 +51,7 @@ func RunApp() {
 						Name:        "browser-crawler",
 						Aliases:     []string{"browser"},
 						Usage:       "use a browser spider to crawl the target and scan the requests",
-						Destination: &Target,
+						Destination: &target,
 						Required:    true,
 					},
 					// 设置需要开启的插件
@@ -77,10 +78,14 @@ func RunApp() {
 						Usage:       "use proxy resource collector, value is proxy addr, (example: 127.0.0.1:1111)",
 						Destination: &Listen,
 					},
+					//
+					&cli.BoolFlag{
+						Name:        "debug",
+						Usage:       "debug",
+						Destination: &debug,
+					},
 				},
-				Action: func(cCtx *cli.Context) error {
-					return nil
-				},
+				Action: run,
 			},
 			{
 				Name:    "generate-ca-cert",
@@ -93,35 +98,47 @@ func RunApp() {
 			},
 		},
 	}
-	app.Suggest = true
 	if err := app.Run(os.Args); err != nil {
 		logging.Logger.Fatal(err)
 	}
 
+	go func() {
+		for v := range output.OutChannel {
+			logging.Logger.Infoln(v.PrintScreen())
+		}
+	}()
+}
+
+func run(c *cli.Context) error {
+	logging.New(debug)
 	var plugins []string
 	if len(Plugins.Value()) == 0 {
-		plugins = DefaultPlugins
+		plugins = conf.DefaultPlugins
 	} else {
 		plugins = util.ToUpper(Plugins.Value())
 	}
 
-	// 主动扫描
-	in := &input.Input{
-		Target:  Target,
-		Proxy:   Proxy,
-		Plugins: plugins,
-		Poc:     Poc.Value(),
-	}
+	conf.GlobalConfig = &conf.Config{}
 
-	// 初始化 session ,todo 后续优化一下，不同网站共用一个不知道会不会出问题，应该不会
-	http.NewSession()
+	conf.GlobalConfig.WebScan.Proxy = Proxy
+	conf.GlobalConfig.WebScan.Plugins = plugins
+	conf.GlobalConfig.WebScan.Poc = Poc.Value()
+	conf.GlobalConfig.Reverse.Domain = ""
+	conf.GlobalConfig.Reverse.Token = ""
 
 	if Listen != "" {
 		// 被动扫描
-		Passive(in)
+		Passive()
 	} else {
 		// 主动扫描
-		Active(in)
+		if target == "" {
+			return errors.New("target must be set")
+		}
+		// 初始化 session ,todo 后续优化一下，不同网站共用一个不知道会不会出问题，应该不会
+		http.NewSession()
+
+		Active(target)
 	}
 
+	return nil
 }

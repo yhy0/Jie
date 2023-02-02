@@ -31,6 +31,33 @@ type Input struct {
 	Reverse               *reverse.Reverse // dnslog
 }
 
+// CrawlResult 如果是被动代理模式的结果，需要考虑到重复数据的问题，防止重复发payload
+type CrawlResult struct {
+	Target                string            `json:"target"` // 目标 eg: https://github.com
+	Url                   string            `json:"url"`
+	Ip                    string            `json:"ip"`
+	Port                  int               `json:"port"`
+	Method                string            `json:"method"`
+	Body                  string            `json:"body"`
+	Source                string            `json:"source"` // 来源
+	Headers               map[string]string `json:"headers"`
+	ContentType           string            `json:"content_type"`
+	Path                  string            `json:"path"`
+	File                  string            `json:"file"`
+	Hostname              string            `json:"hostname"` // 当前域名
+	Rdn                   string            `json:"rdn"`      // 顶级域名
+	RUrl                  string            `json:"r_url"`    // https://github.com
+	Dir                   string            `json:"dir"`      // 目录
+	Kv                    string            `json:"kv"`       // 参数名和参数值  user=admin&password=admin
+	Param                 []string          `json:"param"`    // 参数名  user,password
+	StatusCode            int               `json:"status_code"`
+	IndexLen              int               `json:"index_len"`
+	IndexBody             string            `json:"index_body"`
+	Fingerprints          []string          `json:"fingerprints"`
+	IsSensorServerEnabled bool              // 是否开启传感器服务
+
+}
+
 //
 //func Input() {
 //	ch := make(chan bool, 30)

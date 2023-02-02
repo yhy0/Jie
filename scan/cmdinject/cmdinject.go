@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-func Scan(in *input.Input) {
+func Scan(in *input.CrawlResult) {
 	res, payload, isvul := startTesting(in)
 	if isvul {
 		output.OutChannel <- output.VulMessage{
@@ -41,7 +41,7 @@ func Scan(in *input.Input) {
 	logging.Logger.Debugf("cmd inject vulnerability not found")
 }
 
-func startTesting(in *input.Input) (*http.Response, string, bool) {
+func startTesting(in *input.CrawlResult) (*http.Response, string, bool) {
 	variations, err := http.ParseUri(in.Url, []byte(in.Body), in.Method, in.ContentType, in.Headers)
 	if err != nil {
 		logging.Logger.Errorln(err)
@@ -102,9 +102,7 @@ func startTesting(in *input.Input) (*http.Response, string, bool) {
 
 				logging.Logger.Debugln("payload:", originpayload)
 				res, err := http.Request(in.Url, originpayload, in.Method, false, in.Headers)
-
 				if err != nil {
-					logging.Logger.Errorln(err)
 					continue
 				}
 

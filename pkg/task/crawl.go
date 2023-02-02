@@ -2,9 +2,12 @@ package task
 
 import (
 	"fmt"
+	"github.com/remeh/sizedwaitgroup"
+	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/crawler"
 	"github.com/yhy0/Jie/crawler/katana/pkg/output"
 	"github.com/yhy0/Jie/logging"
+	"github.com/yhy0/Jie/pkg/input"
 	"golang.org/x/net/publicsuffix"
 	"net/url"
 	"path"
@@ -17,57 +20,46 @@ import (
   @desc: 对爬虫/被动代理结果的处理
 **/
 
-type CrawlResult struct {
-	URL      string
-	Method   string
-	Body     string
-	Source   string
-	Headers  map[string]string
-	Path     string
-	File     string
-	Hostname string // 当前域名
-	Rdn      string // 顶级域名
-	Rurl     string
-	Dir      string
-	Kv       string
-}
-
 var storeFields = []string{"url", "path", "fqdn", "rdn", "rurl", "qurl", "qpath", "file", "kv", "dir", "udir"}
 
 // Crawler 运行 Katana 爬虫
 func (t *Task) Crawler() {
+	t.wg = sizedwaitgroup.New(t.Parallelism)
 	// 获取结果
 	outputWriter := output.NewMockOutputWriter()
 	outputWriter.WriteCallback = func(result *output.Result) {
 		// 对爬虫结果格式化
-		var crawlResult CrawlResult
-		crawlResult.StoreFields(result)
-		crawlResult.Method = result.Method
-		crawlResult.Body = result.Body
-		crawlResult.Source = result.Source
+		var crawlResult = &input.CrawlResult{
+			Target:  t.Target,
+			Method:  result.Method,
+			Body:    result.Body,
+			Source:  result.Source,
+			Headers: result.Headers,
+		}
 
-		t.Input.Url = crawlResult.URL
+		StoreFields(crawlResult, result)
 
-		logging.Logger.Infof("URL: %s, Method: %s, Body: %s, Source: %s, Headers: %s, Path: %s, Hostname: %s, Rdn: %s, Rurl: %s, Dir: %s", crawlResult.URL, crawlResult.Method, crawlResult.Body, crawlResult.Source, crawlResult.Headers, crawlResult.Path, crawlResult.Hostname, crawlResult.Rdn, crawlResult.Rurl, crawlResult.Dir)
+		logging.Logger.Infof("[*Crawler] URL: %s, Method: %s, Body: %s, Source: %s, Headers: %s, Path: %s, Hostname: %s, Rdn: %s, Rurl: %s, Dir: %s", crawlResult.Url, crawlResult.Method, crawlResult.Body, crawlResult.Source, crawlResult.Headers, crawlResult.Path, crawlResult.Hostname, crawlResult.Rdn, crawlResult.RUrl, crawlResult.Dir)
 
-		t.CrawlResult = &crawlResult
-		t.Distribution()
+		t.Distribution(crawlResult)
 	}
 
 	task := crawler.KatanaTask{
-		Target:       []string{t.Input.Target},
-		Proxy:        t.Input.Proxy,
+		Target:       []string{t.Target},
+		Proxy:        conf.GlobalConfig.WebScan.Proxy,
 		OutputWriter: outputWriter,
 	}
 
 	task.StartCrawler()
 
 	outputWriter.Close()
+
+	t.wg.Wait()
 }
 
 // StoreFields stores fields for a result into individual files
 // based on name.
-func (c *CrawlResult) StoreFields(output *output.Result) {
+func StoreFields(c *input.CrawlResult, output *output.Result) {
 	parsed, err := url.Parse(output.URL)
 	if err != nil {
 		return
@@ -77,15 +69,15 @@ func (c *CrawlResult) StoreFields(output *output.Result) {
 	etld, _ := publicsuffix.EffectiveTLDPlusOne(hostname)
 	rootURL := fmt.Sprintf("%s://%s", parsed.Scheme, parsed.Host)
 	for _, field := range storeFields {
-		c.getValueForField(output, parsed, hostname, etld, rootURL, field)
+		getValueForField(c, output, parsed, hostname, etld, rootURL, field)
 	}
 }
 
 // getValueForField returns value for a field
-func (c *CrawlResult) getValueForField(output *output.Result, parsed *url.URL, hostname, rdn, rurl, field string) string {
+func getValueForField(c *input.CrawlResult, output *output.Result, parsed *url.URL, hostname, rdn, rurl, field string) string {
 	switch field {
 	case "url":
-		c.URL = output.URL
+		c.Url = output.URL
 		return output.URL
 	case "path":
 		c.Path = parsed.Path
@@ -97,7 +89,7 @@ func (c *CrawlResult) getValueForField(output *output.Result, parsed *url.URL, h
 		c.Rdn = rdn
 		return rdn
 	case "rurl":
-		c.Rurl = rurl
+		c.RUrl = rurl
 		return rurl
 	case "file":
 		basePath := path.Base(parsed.Path)
@@ -127,6 +119,7 @@ func (c *CrawlResult) getValueForField(output *output.Result, parsed *url.URL, h
 		for k := range parsed.Query() {
 			values = append(values, k)
 		}
+		c.Param = values
 		return strings.Join(values, "\n")
 	case "value":
 		values := make([]string, 0, len(parsed.Query()))

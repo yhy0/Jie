@@ -70,7 +70,8 @@ type Result struct {
 	// Method is the method for the result
 	Method string `json:"method,omitempty"`
 	// Body contains the body for the request
-	Body string `json:"body,omitempty"`
+	Body    string            `json:"body,omitempty"`
+	Headers map[string]string `json:"headers,omitempty"`
 	// URL is the URL of the result
 	URL string `json:"endpoint,omitempty"`
 	// Source is the source for the result
@@ -136,8 +137,6 @@ func (w *StandardWriter) Write(event *Result) error {
 	}
 	w.outputMutex.Lock()
 	defer w.outputMutex.Unlock()
-
-	//gologger.Silent().Msgf("%s", string(data))
 
 	if w.outputFile != nil {
 		if !w.json {

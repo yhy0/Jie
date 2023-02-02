@@ -3,6 +3,7 @@ package xss
 import (
 	"fmt"
 	dalfox "github.com/hahwul/dalfox/v2/lib"
+	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/output"
@@ -15,13 +16,13 @@ import (
   @desc: https://github.com/hahwul/dalfox/
 **/
 
-func Scan(in *input.Input) {
+func Scan(in *input.CrawlResult) {
 	opt := dalfox.Options{
 		Timeout:      10,
 		Delay:        2,     // 请求限速器，单位毫秒， 代表每秒 2 次请求，防止过快导致 EOF
 		Mining:       false, // 使用字典攻击查找新参数，默认为GF-Patterns=>XSS
 		FindingDOM:   false, // 在DOM中查找新参数(attribute/js值)
-		ProxyAddress: in.Proxy,
+		ProxyAddress: conf.GlobalConfig.WebScan.Proxy,
 		Concurrence:  10,
 		NoBAV:        true,
 		NoGrep:       true,

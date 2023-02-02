@@ -2,8 +2,6 @@ package output
 
 import (
 	"fmt"
-	"github.com/logrusorgru/aurora"
-	"github.com/yhy0/Jie/logging"
 )
 
 /**
@@ -17,6 +15,7 @@ var OutChannel = make(chan VulMessage)
 // 漏洞等级
 var (
 	Low      = "Low"
+	High     = "High"
 	Medium   = "Medium"
 	Critical = "Critical"
 )
@@ -29,34 +28,38 @@ type VulMessage struct {
 }
 
 type VulData struct {
-	CreateTime string `json:"create_time"`
-	Target     string `json:"target"`
-	Ip         string `json:"ip"`
-	Method     string `json:"method"`
-	Param      string `json:"param"`
-	Payload    string `json:"payload"`
-	Request    string `json:"request"`
-	Response   string `json:"response"`
+	CreateTime  string `json:"create_time"`
+	Target      string `json:"target"`
+	Ip          string `json:"ip"`
+	Method      string `json:"method"`
+	Param       string `json:"param"`
+	Payload     string `json:"payload"`
+	Description string `json:"description"`
+	Request     string `json:"request"`
+	Response    string `json:"response"`
 }
 
 func (vul *VulMessage) PrintScreen() string {
 	var screen []string
-	screen = append(screen, aurora.Red(fmt.Sprintf("[Vuln: %s]", vul.Plugin)).String())
-	screen = append(screen, aurora.Red(fmt.Sprintf("Level: %s", vul.Level)).String())
-	screen = append(screen, aurora.Red(fmt.Sprintf("Target: %s", vul.VulData.Target)).String())
+	screen = append(screen, fmt.Sprintf("[Vuln: %s]", vul.Plugin))
+	screen = append(screen, fmt.Sprintf("Level: %s", vul.Level))
+	screen = append(screen, fmt.Sprintf("Target: %s", vul.VulData.Target))
 
 	if vul.VulData.Ip != "" {
-		screen = append(screen, aurora.Red(fmt.Sprintf("Ip: %s", vul.VulData.Ip)).String())
+		screen = append(screen, fmt.Sprintf("Ip: %s", vul.VulData.Ip))
 	}
 	if vul.VulData.Method != "" {
-		screen = append(screen, aurora.Red(fmt.Sprintf("Method: %s", vul.VulData.Method)).String())
+		screen = append(screen, fmt.Sprintf("Method: %s", vul.VulData.Method))
 	}
 	if vul.VulData.Param != "" {
-		screen = append(screen, aurora.Red(fmt.Sprintf("Param: %s", vul.VulData.Param)).String())
+		screen = append(screen, fmt.Sprintf("Param: %s", vul.VulData.Param))
 	}
 
 	if vul.VulData.Payload != "" {
-		screen = append(screen, aurora.Red(fmt.Sprintf("Payload: %s", vul.VulData.Payload)).String())
+		screen = append(screen, fmt.Sprintf("Payload: %s", vul.VulData.Payload))
+	}
+	if vul.VulData.Description != "" {
+		screen = append(screen, fmt.Sprintf("Description: %s", vul.VulData.Description))
 	}
 
 	var res = ""
@@ -65,12 +68,6 @@ func (vul *VulMessage) PrintScreen() string {
 	}
 	return "\n" + res
 }
-
-// 漏洞级别
-//Critical
-//High
-//Medium
-//Low
 
 //type VulMessage struct {
 //	VulData struct {
@@ -99,7 +96,3 @@ func (vul *VulMessage) PrintScreen() string {
 //	} `json:"vul_data"`
 //	DataType string `json:"data_type"`
 //}
-
-func Tesss() {
-	logging.Logger.Infoln("================")
-}

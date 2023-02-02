@@ -3,12 +3,13 @@ package task
 import (
 	"github.com/remeh/sizedwaitgroup"
 	"github.com/thoas/go-funk"
+	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/scan/brute"
 	"github.com/yhy0/Jie/scan/cmdinject"
 	"github.com/yhy0/Jie/scan/crlf"
 	"github.com/yhy0/Jie/scan/jsonp"
-	"github.com/yhy0/Jie/scan/pocs_yml"
+	"github.com/yhy0/Jie/scan/nuclei"
 	"github.com/yhy0/Jie/scan/sqlInjection"
 	"github.com/yhy0/Jie/scan/ssrf"
 	"github.com/yhy0/Jie/scan/xss"
@@ -19,74 +20,58 @@ import (
 /**
   @author: yhy
   @since: 2023/1/5
-  @desc: //TODO
+  @desc: TODO  后期看看有没有必要设计成插件式的，自我感觉没必要，还不如这样写，逻辑简单易懂
+  		 todo 漏洞检测逻辑有待优化
 **/
 
 type Task struct {
-	TaskId string
-	Input  *input.Input
-	//Target                *Request
-	CrawlResult   *CrawlResult // 爬虫结果,主动的爬虫就不需要考虑重复问题了
-	PassiveResult string       // todo 被动代理模式，需要考虑到重复数据的问题，防止重复发payload
-	Parallelism   int          // 同时运行任务个数
+	TaskId        string
+	Target        string
+	PassiveResult string // todo 被动代理模式，需要考虑到重复数据的问题，防止重复发payload
+	Parallelism   int    // 一个网站同时扫描的最大 url 个数
+	Single        bool   // 像 poc 等任务扫描，一个网站应该只运行一次扫描任务
 	wg            sizedwaitgroup.SizedWaitGroup
 }
 
-//type Request struct {
-//	Target       string            `json:"target"` // 目标 首页地址
-//	Url          string            `json:"url"`    // 抓取到的 url
-//	Ip           string            `json:"ip"`
-//	Port         int               `json:"port"`
-//	Service      string            `json:"service"`
-//	StatusCode   int               `json:"status_code"`
-//	IndexLen     int               `json:"index_len"`
-//	IndexBody    string            `json:"index_body"`
-//	Fingerprints []string          `json:"fingerprints"`
-//	Param        string            `json:"param"`
-//	Header       map[string]string `json:"header"`
-//	Body         string            `json:"body"`
-//	Method       string            `json:"method"`
-//}
-
 // Distribution 对爬虫结果或者被动发现结果进行任务分发
-func (t *Task) Distribution() {
-	t.wg = sizedwaitgroup.New(t.Parallelism)
-	if t.CrawlResult != nil {
-		t.Input.Url = t.CrawlResult.URL
-		t.Input.Method = t.CrawlResult.Method
-		t.Input.Headers = t.CrawlResult.Headers
-		if value, ok := t.Input.Headers["Content-Type"]; ok {
-			t.Input.ContentType = value
+func (t *Task) Distribution(crawlResult *input.CrawlResult) {
+	if crawlResult != nil {
+		if crawlResult.Headers == nil {
+			crawlResult.Headers = make(map[string]string)
+		}
+		if value, ok := crawlResult.Headers["Content-Type"]; ok {
+			crawlResult.ContentType = value
 		}
 
 		// 有参数，进行 xss、sql 注入检测
-		if t.CrawlResult.Kv != "" {
-			if funk.Contains(t.Input.Plugins, "SQL") {
-				go t.sqlInjection()
+		if crawlResult.Kv != "" {
+			if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "SQL") {
+				go t.sqlInjection(crawlResult)
 			}
 
-			if funk.Contains(t.Input.Plugins, "XSS") {
-				go t.xss()
+			if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "XSS") {
+				go t.xss(crawlResult)
 			}
 
-			if funk.Contains(t.Input.Plugins, "CMD-INJECT") {
-				go t.cmdinject()
+			if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "CMD-INJECT") {
+				go t.cmdinject(crawlResult)
 			}
 
-			if funk.Contains(t.Input.Plugins, "XXE") {
-				go t.xxe()
+			if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "XXE") {
+				go t.xxe(crawlResult)
 			}
 
-			if funk.Contains(t.Input.Plugins, "SSRF") {
-				go t.ssrf()
+			if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "SSRF") {
+				go t.ssrf(crawlResult)
 			}
 
 		}
 
+		// 这里不应该放在爬虫里面，不然会执行很多次，一个目标网站应该只执行一次
 		// todo 这里根据指纹进行对应的检测
-		if funk.Contains(t.Input.Plugins, "POC") {
+		if !t.Single && funk.Contains(conf.GlobalConfig.WebScan.Plugins, "POC") {
 			// todo 针对性 POC 检测
-			suffix := path.Ext(t.CrawlResult.File)
+			suffix := path.Ext(crawlResult.File)
 			if suffix == ".asp" {
 
 			} else if suffix == ".aspx" {
@@ -97,77 +82,79 @@ func (t *Task) Distribution() {
 
 			}
 
-			t.ymlPoc()
+			// 这里根据指纹进行对应的检测
+			t.nuclei(crawlResult)
+
+			t.Single = true
 		}
 
-		if funk.Contains(t.Input.Plugins, "BRUTE") {
+		if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "BRUTE") {
 			go brute.Hydra("", 0, "")
 		}
-		if funk.Contains(t.Input.Plugins, "JSONP") {
-			go t.jsonp()
+
+		if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "JSONP") {
+			go t.jsonp(crawlResult)
 		}
-		if funk.Contains(t.Input.Plugins, "CRLF") {
-			go t.crlf()
+
+		if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "CRLF") {
+			go t.crlf(crawlResult)
 		}
 	}
-
-	t.wg.Wait()
-
 }
 
 // sql 注入检测
-func (t *Task) sqlInjection() {
+func (t *Task) sqlInjection(crawlResult *input.CrawlResult) {
 	t.wg.Add()
-	sqlInjection.Scan(t.Input)
+	sqlInjection.Scan(crawlResult)
 	t.wg.Done()
 }
 
 // xss 检测
-func (t *Task) xss() {
+func (t *Task) xss(crawlResult *input.CrawlResult) {
 	t.wg.Add()
 	// todo 后续改改，这个 dalfox 发送了太多请求
-	xss.Scan(t.Input)
+	xss.Scan(crawlResult)
 	t.wg.Done()
 }
 
 // jsonp 检测
-func (t *Task) jsonp() {
+func (t *Task) jsonp(crawlResult *input.CrawlResult) {
 	t.wg.Add()
-	jsonp.Scan(t.Input)
+	jsonp.Scan(crawlResult)
 	t.wg.Done()
 }
 
 // crlf 检测
-func (t *Task) crlf() {
+func (t *Task) crlf(crawlResult *input.CrawlResult) {
 	t.wg.Add()
-	crlf.Scan(t.Input)
+	crlf.Scan(crawlResult)
 	t.wg.Done()
 }
 
 // cmd inject 检测
-func (t *Task) cmdinject() {
+func (t *Task) cmdinject(crawlResult *input.CrawlResult) {
 	t.wg.Add()
-	cmdinject.Scan(t.Input)
+	cmdinject.Scan(crawlResult)
 	t.wg.Done()
 }
 
 // xxe 检测
-func (t *Task) xxe() {
+func (t *Task) xxe(crawlResult *input.CrawlResult) {
 	t.wg.Add()
-	xxe.Scan(t.Input)
+	xxe.Scan(crawlResult)
 	t.wg.Done()
 }
 
 // ssrf 检测
-func (t *Task) ssrf() {
+func (t *Task) ssrf(crawlResult *input.CrawlResult) {
 	t.wg.Add()
-	ssrf.Scan(t.Input)
+	ssrf.Scan(crawlResult)
 	t.wg.Done()
 }
 
 // 调用 xray、nuclei poc 检测
-func (t *Task) ymlPoc() {
+func (t *Task) nuclei(crawlResult *input.CrawlResult) {
 	t.wg.Add()
-	pocs_yml.Scan(t.Input)
+	nuclei.Scan(crawlResult)
 	t.wg.Done()
 }

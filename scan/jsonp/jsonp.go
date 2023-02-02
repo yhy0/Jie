@@ -27,7 +27,7 @@ type JsonpInfo struct {
 	Response string
 }
 
-func CheckSenseJsonp(in *input.Input) (bool, *JsonpInfo, error) {
+func CheckSenseJsonp(in *input.CrawlResult) (bool, *JsonpInfo, error) {
 	queryMap, _, err := UrlParser(in.Url)
 	if err != nil {
 		return false, nil, err
@@ -99,7 +99,7 @@ func CheckIsSensitiveKey(key string) (bool, error) {
 	return false, nil
 }
 
-func GetJsResponse(in *input.Input) (string, *JsonpInfo, error) {
+func GetJsResponse(in *input.CrawlResult) (string, *JsonpInfo, error) {
 	res, err := http.Request(in.Url, in.Method, "", false, in.Headers)
 	if err != nil {
 		return "", nil, err
@@ -163,7 +163,7 @@ func CheckJsRespAst(content string, funcName string) (bool, error) {
 	}
 }
 
-func Scan(in *input.Input) {
+func Scan(in *input.CrawlResult) {
 	if strings.ToUpper(in.Method) != "GET" {
 		return
 	}

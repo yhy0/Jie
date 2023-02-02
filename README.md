@@ -43,13 +43,31 @@ https://github.com/ac0d3r/xssfinder
 
 https://github.com/kleiton0x00/ppmap
 
+## SQL 注入  TODO
 
+提取 [sqlmap](https://github.com/sqlmapproject/sqlmap) 中关于检测的代码
 
 ## poc
+
+通过指纹识别进行对应的漏洞检测
+
+todo 不内置 nuclei 的 yml 文件，改为官方在线下载、更新
+
 https://github.com/projectdiscovery/nuclei
 
 https://github.com/WAY29/pocV
 
+xray poc  中有些写的不规范，导致解析有问题，需要修改
+比如：
+response.status == 200 && response.headers["content-type"] == "text/css" && response.body.bcontains(b"$_GET['css']")
+
+
+content-type 应为 Content-Type
+
+但又好像是解析有问题
+
+不使用 xray 的 poc，只使用 nuclei 的 yml 文件
+一起使用还要整理，防止重复扫描，nuclei-template 的 poc 已经够了
 
 ## 漏扫
 https://github.com/wrenchonline/glint

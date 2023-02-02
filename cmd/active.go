@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"github.com/yhy0/Jie/logging"
-	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/task"
 	"github.com/yhy0/Jie/pkg/util"
 )
@@ -14,11 +13,12 @@ import (
 **/
 
 // Active 调用爬虫扫描, 只会输入一个域名
-func Active(in *input.Input) {
+func Active(target string) {
 	logging.Logger.Debugln("Start active crawler scan")
 	activeTask := task.Task{
-		Input:  in,
-		TaskId: util.UUID(),
+		TaskId:      util.UUID(),
+		Target:      target,
+		Parallelism: 10,
 	}
 
 	activeTask.Crawler()

@@ -205,7 +205,6 @@ func ParseUri(uri string, body []byte, method string, contentType string, header
 		}
 		urlparams := strings.Split(uri, "?")[1]
 		strs := strings.Split(urlparams, "&")
-		//params := Param{}
 		for i, kv := range strs {
 			kvs := strings.Split(kv, "=")
 			if len(kvs) == 2 {
@@ -213,8 +212,7 @@ func ParseUri(uri string, body []byte, method string, contentType string, header
 				value := kvs[1]
 				variations.Params = append(variations.Params, Param{Name: key, Value: value, Index: i, ContentType: contentType})
 			} else {
-				err = fmt.Errorf("exec function strings.Split fail")
-				logging.Logger.Error("%s", err.Error())
+				logging.Logger.Errorln("exec function strings.Split fail, ", uri)
 				return nil, err
 			}
 		}

@@ -66,8 +66,8 @@ func NewSession() {
 	//	client.TLSConfig = &tls.Config{InsecureSkipVerify: true, Certificates: []tls.Certificate{cer}}
 
 	// Add proxy
-	if conf.Proxy != "" {
-		proxyURL, _ := url.Parse(conf.Proxy)
+	if conf.GlobalConfig.WebScan.Proxy != "" {
+		proxyURL, _ := url.Parse(conf.GlobalConfig.WebScan.Proxy)
 		if isSupportedProtocol(proxyURL.Scheme) {
 			Transport.Proxy = http.ProxyURL(proxyURL)
 			//if proxyURL.Scheme == "socks5" {

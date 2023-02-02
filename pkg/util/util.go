@@ -321,3 +321,11 @@ func ReverseString(s string) string {
 	}
 	return string(runes)
 }
+
+// FirstToUpper 字符串首字母大写
+func FirstToUpper(str string) string {
+	for _, v := range str {
+		return strings.ToUpper(string(v)) + str[1:]
+	}
+	return str
+}

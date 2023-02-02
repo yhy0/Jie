@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/logrusorgru/aurora"
 	"github.com/yhy0/Jie/cmd"
 	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/output"
@@ -13,10 +14,10 @@ import (
 **/
 
 func main() {
-	cmd.RunApp()
 	go func() {
 		for v := range output.OutChannel {
-			logging.Logger.Println(v.PrintScreen())
+			logging.Logger.Println(aurora.Red(v.PrintScreen()).String())
 		}
 	}()
+	cmd.RunApp()
 }

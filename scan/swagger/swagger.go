@@ -470,7 +470,7 @@ func scan(method, target, bodyParams string, header map[string]string, ip string
 		if req.StatusCode == 200 && !util.In(req.Body, conf.Page403Content) && !util.In(req.Body, conf.Page403Content) {
 			logging.Logger.Infof("Possibly unauthorized access: GET %s", target)
 
-			in := &input.Input{
+			in := &input.CrawlResult{
 				Url:     target,
 				Ip:      ip,
 				Headers: header,
@@ -548,7 +548,7 @@ func scan(method, target, bodyParams string, header map[string]string, ip string
 			payload := fmt.Sprintf("%s %s %s", method, target, bodyParams)
 			logging.Logger.Infof("Possibly unauthorized access: %s", payload)
 
-			in := &input.Input{
+			in := &input.CrawlResult{
 				Url:     target,
 				Ip:      ip,
 				Headers: header,

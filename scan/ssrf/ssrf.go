@@ -20,8 +20,8 @@ import (
 // 参数中包含以下关键字的，进行 ssrf 测试
 var sensitiveWords = []string{"url", "path", "uri", "api", "target", "host", "domain", "ip", "file"}
 
-func Scan(in *input.Input) {
-	params, err := http.ParseUri(in.Url, []byte(in.Body), in.Method, in.ContentType, in.Headers)
+func Scan(crawlResult *input.CrawlResult) {
+	params, err := http.ParseUri(crawlResult.Url, []byte(crawlResult.Body), crawlResult.Method, crawlResult.ContentType, crawlResult.Headers)
 	if err != nil {
 		logging.Logger.Debug(err.Error())
 		return
@@ -29,7 +29,7 @@ func Scan(in *input.Input) {
 
 	var ssrfHost string
 	var dnslog *reverse.Reverse
-	if in.IsSensorServerEnabled {
+	if crawlResult.IsSensorServerEnabled {
 		flag := util.RandLowLetterNumber(8)
 		dnslog = reverse.New("", flag)
 		ssrfHost = dnslog.Url
@@ -37,17 +37,17 @@ func Scan(in *input.Input) {
 		ssrfHost = "https://www.baidu.com/"
 	}
 
-	if ssrf(in, params.SetPayload(in.Url, ssrfHost, in.Method, sensitiveWords), dnslog) {
+	if ssrf(crawlResult, params.SetPayload(crawlResult.Url, ssrfHost, crawlResult.Method, sensitiveWords), dnslog) {
 		return
 	}
 
-	payloads := params.SetPayload(in.Url, "/etc/passwd", in.Method, sensitiveWords)
-	payloads = append(payloads, params.SetPayload(in.Url, "c:/windows/win.ini", in.Method, sensitiveWords)...)
-	readFile(in, payloads)
+	payloads := params.SetPayload(crawlResult.Url, "/etc/passwd", crawlResult.Method, sensitiveWords)
+	payloads = append(payloads, params.SetPayload(crawlResult.Url, "c:/windows/win.ini", crawlResult.Method, sensitiveWords)...)
+	readFile(crawlResult, payloads)
 }
 
 // ssrf
-func ssrf(in *input.Input, payloads []string, dnslog *reverse.Reverse) bool {
+func ssrf(in *input.CrawlResult, payloads []string, dnslog *reverse.Reverse) bool {
 	for _, payload := range payloads {
 		res, err := http.Request(in.Url, payload, in.Method, false, in.Headers)
 		if err != nil {
@@ -88,7 +88,7 @@ func ssrf(in *input.Input, payloads []string, dnslog *reverse.Reverse) bool {
 }
 
 // readFile 任意文件读取
-func readFile(in *input.Input, payloads []string) {
+func readFile(in *input.CrawlResult, payloads []string) {
 	for _, payload := range payloads {
 		res, err := http.Request(in.Url, payload, in.Method, false, in.Headers)
 		if err != nil {

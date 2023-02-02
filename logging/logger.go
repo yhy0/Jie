@@ -14,7 +14,7 @@ var fileFormatter *TextFormatter // 文件输出格式
 
 var Logger *logrus.Logger
 
-func init() {
+func New(debug bool) {
 	Logger = logrus.New()
 	Logger.SetReportCaller(true)
 	stdFormatter = &TextFormatter{
@@ -35,7 +35,11 @@ func init() {
 	}
 
 	Logger.SetFormatter(stdFormatter)
-	Logger.SetLevel(logrus.DebugLevel)
+	if debug {
+		Logger.SetLevel(logrus.DebugLevel)
+	} else {
+		Logger.SetLevel(logrus.InfoLevel)
+	}
 
 	logPath, _ := os.Getwd()
 	logName := fmt.Sprintf("%s/logs/jie_log_", logPath)

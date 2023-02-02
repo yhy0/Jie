@@ -248,7 +248,9 @@ func (c *Crawler) makeParseResponseCallback(queue *queue.VarietyQueue) func(nr n
 			Source:    nr.Source,
 			Tag:       nr.Tag,
 			Attribute: nr.Attribute,
+			Headers:   nr.Headers,
 		}
+
 		// 搞不懂，直接赋值不好吗？
 		//if nr.Method != http.MethodGet {
 		//	result.Method = nr.Method

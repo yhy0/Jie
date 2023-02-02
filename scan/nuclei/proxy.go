@@ -1,16 +1,16 @@
-package parse
+package nuclei
 
 import (
 	"bufio"
 	"errors"
 	"fmt"
+	"github.com/yhy0/Jie/logging"
 	"net"
 	"net/url"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/projectdiscovery/gologger"
 	"github.com/projectdiscovery/nuclei/v2/pkg/types"
 	fileutil "github.com/projectdiscovery/utils/file"
 )
@@ -57,8 +57,8 @@ func processProxyList(options *types.Options) error {
 		done := make(chan bool)
 		exitCounter := make(chan bool)
 		counter := 0
-		for _, url := range proxyURLList {
-			go runProxyConnectivity(url, options, done, exitCounter)
+		for _, url1 := range proxyURLList {
+			go runProxyConnectivity(url1, options, done, exitCounter)
 		}
 		for {
 			select {
@@ -85,7 +85,7 @@ func runProxyConnectivity(proxyURL url.URL, options *types.Options, done chan bo
 			done <- true
 		}
 	} else {
-		gologger.Debug().Msgf("Proxy validation failed for '%s': %s", proxyURL.String(), err)
+		logging.Logger.Debugf("Proxy validation failed for '%s': %s", proxyURL.String(), err)
 	}
 	exitCounter <- true
 }
@@ -106,17 +106,17 @@ func assignProxyURL(proxyURL url.URL, options *types.Options) {
 	if proxyURL.Scheme == types.HTTP || proxyURL.Scheme == types.HTTPS {
 		types.ProxyURL = proxyURL.String()
 		types.ProxySocksURL = ""
-		gologger.Verbose().Msgf("Using %s as proxy server", proxyURL.String())
+		logging.Logger.Infof("Using %s as proxy server", proxyURL.String())
 	} else if proxyURL.Scheme == types.SOCKS5 {
 		types.ProxyURL = ""
 		types.ProxySocksURL = proxyURL.String()
-		gologger.Verbose().Msgf("Using %s as socket proxy server", proxyURL.String())
+		logging.Logger.Infof("Using %s as socket proxy server", proxyURL.String())
 	}
 }
 
 func validateProxyURL(proxy string) (url.URL, error) {
-	if url, err := url.Parse(proxy); err == nil && isSupportedProtocol(url.Scheme) {
-		return *url, nil
+	if url1, err := url.Parse(proxy); err == nil && isSupportedProtocol(url1.Scheme) {
+		return *url1, nil
 	}
 	return url.URL{}, errors.New("invalid proxy format (It should be http[s]/socks5://[username:password@]host:port)")
 }

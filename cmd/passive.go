@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"github.com/yhy0/Jie/logging"
-	"github.com/yhy0/Jie/pkg/input"
 )
 
 /**
@@ -11,6 +10,6 @@ import (
   @desc: 被动代理数据处理
 **/
 
-func Passive(in *input.Input) {
+func Passive() {
 	logging.Logger.Debugln("Start passive traffic monitoring scan")
 }

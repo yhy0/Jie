@@ -1,7 +1,7 @@
 package dirScan
 
 import (
-	"github.com/hbakhtiyor/strsim"
+	"github.com/antlabs/strsim"
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/output"
@@ -350,7 +350,7 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 					// 规则匹配完后，再次比较与 file_not_support 页面返回值的相似度
 					similar := true
 					if len(res.Body) != 0 && url404res != nil && len(url404res.Body) != 0 {
-						similar = int(strsim.Compare(strings.ReplaceAll(url404res.Body, "/file_not_support", ""), strings.ReplaceAll(res.Body, path, ""))*100) <= 80 // 不相似才会往下执行
+						similar = strsim.Compare(strings.ReplaceAll(url404res.Body, "/file_not_support", ""), strings.ReplaceAll(res.Body, path, "")) <= 0.9 // 不相似才会往下执行
 					}
 
 					// 与之前成功的对比，相似代表有误报或者是认证拦着了，只需要记下一个就行
@@ -408,6 +408,7 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 			} else {
 				errorTimes += 1
 			}
+
 			<-time.After(time.Duration(500) * time.Millisecond)
 			<-ch
 		}(path, rule)

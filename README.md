@@ -1,6 +1,6 @@
 # 劫
 
-一款功能强大的安全评估工具
+基于浏览器爬虫开发的web漏洞主动~~(被动)~~扫描器
 
 由于扫描器只是粗暴的调用 xray、nuclei ，不优雅，而且 xray 不开源。于是产生一个想法，将漏扫类项目拆分出来，重新糅合成一个轮子。目前打算设计成两种模式，一种被动、一种主动。
 
@@ -47,6 +47,7 @@ https://github.com/kleiton0x00/ppmap
 
 提取 [sqlmap](https://github.com/sqlmapproject/sqlmap) 中关于检测的代码
 
+
 ## poc
 
 通过指纹识别进行对应的漏洞检测
@@ -54,8 +55,6 @@ https://github.com/kleiton0x00/ppmap
 todo 不内置 nuclei 的 yml 文件，改为官方在线下载、更新
 
 https://github.com/projectdiscovery/nuclei
-
-https://github.com/WAY29/pocV
 
 xray poc  中有些写的不规范，导致解析有问题，需要修改
 比如：

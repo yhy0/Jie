@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/projectdiscovery/retryablehttp-go"
+	errorutil "github.com/projectdiscovery/utils/errors"
 	"github.com/yhy0/Jie/crawler/katana/pkg/navigation"
 	"github.com/yhy0/Jie/crawler/katana/pkg/utils"
 )
@@ -23,13 +23,13 @@ func (r *robotsTxtCrawler) Visit(URL string, callback func(navigation.Request)) 
 	requestURL := fmt.Sprintf("%s/robots.txt", URL)
 	req, err := retryablehttp.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
-		return errors.Wrap(err, "could not create request")
+		return errorutil.NewWithTag("robotscrawler", "could not create request").Wrap(err)
 	}
 	req.Header.Set("User-Agent", utils.WebUserAgent())
 
 	resp, err := r.httpclient.Do(req)
 	if err != nil {
-		return errors.Wrap(err, "could not do request")
+		return errorutil.NewWithTag("robotscrawler", "could not do request").Wrap(err)
 	}
 	defer resp.Body.Close()
 

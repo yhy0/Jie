@@ -1,6 +1,9 @@
 package nuclei
 
-import "github.com/yhy0/Jie/pkg/util"
+import (
+	"github.com/thoas/go-funk"
+	"github.com/yhy0/Jie/pkg/util"
+)
 
 /**
   @author: yhy
@@ -93,7 +96,7 @@ var publiTemplates = []string{
 	"takeovers/",
 }
 
-// 根据指纹来进行选择模板
+// 根据指纹来进行选择模板  todo 还需要细化
 func generateTemplates(fingerprints []string) (templates []string, tags []string) {
 	for _, fingerprint := range fingerprints {
 		if util.Contains(fingerprint, "struts") {
@@ -288,7 +291,7 @@ func generateTemplates(fingerprints []string) (templates []string, tags []string
 	if len(tags) == 0 && len(templates) == 0 {
 		templates = defaultTemplates
 	} else {
-		templates = util.RemoveDuplicateElement(append(templates, publiTemplates...))
+		templates = funk.UniqString(append(templates, publiTemplates...))
 	}
 
 	return

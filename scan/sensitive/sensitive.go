@@ -2,8 +2,8 @@ package sensitive
 
 import (
 	"fmt"
+	"github.com/thoas/go-funk"
 	"github.com/yhy0/Jie/pkg/output"
-	"github.com/yhy0/Jie/pkg/util"
 	"time"
 
 	"regexp"
@@ -69,7 +69,7 @@ func Detection(url, resStr, assets, uuid, cuuid, user string) {
 		for _, value := range vs {
 			regex := regexp.MustCompile(value)
 
-			sensitiveStr := util.RemoveDuplicateElement(regex.FindAllString(resStr, -1))
+			sensitiveStr := funk.UniqString(regex.FindAllString(resStr, -1))
 
 			if len(sensitiveStr) > 0 {
 				if sensitive[k] != nil {

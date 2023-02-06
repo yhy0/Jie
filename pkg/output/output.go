@@ -68,31 +68,3 @@ func (vul *VulMessage) PrintScreen() string {
 	}
 	return "\n" + res
 }
-
-//type VulMessage struct {
-//	VulData struct {
-//		CreateTime time.Time `json:"create_time"`
-//		Detail     struct {
-//			Addr  string `json:"addr"`
-//			Extra struct {
-//				Links []string `json:"links"`
-//				Param struct {
-//					Key      string `json:"key"`
-//					Position string `json:"position"`
-//					Value    string `json:"value"`
-//				} `json:"param"`
-//			} `json:"extra"`
-//			Payload  string      `json:"payload"`
-//			SnapShot [][2]string `json:"snapshot"`
-//		} `json:"detail"`
-//		Plugin string `json:"plugin"`
-//		Target struct {
-//			Params []struct {
-//				Path     string `json:"path"`
-//				Position string `json:"position"`
-//			} `json:"params"`
-//			Url string `json:"url"`
-//		} `json:"target"`
-//	} `json:"vul_data"`
-//	DataType string `json:"data_type"`
-//}

@@ -3,6 +3,7 @@ package task
 import (
 	"fmt"
 	"github.com/remeh/sizedwaitgroup"
+	"github.com/thoas/go-funk"
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/crawler"
 	"github.com/yhy0/Jie/crawler/katana/pkg/output"
@@ -23,8 +24,11 @@ import (
 var storeFields = []string{"url", "path", "fqdn", "rdn", "rurl", "qurl", "qpath", "file", "kv", "dir", "udir"}
 
 // Crawler 运行 Katana 爬虫
-func (t *Task) Crawler() {
+func (t *Task) Crawler(waf []string) {
 	t.wg = sizedwaitgroup.New(t.Parallelism)
+
+	fingerprints := make([]string, 0)
+
 	// 获取结果
 	outputWriter := output.NewMockOutputWriter()
 	outputWriter.WriteCallback = func(result *output.Result) {
@@ -32,14 +36,16 @@ func (t *Task) Crawler() {
 		var crawlResult = &input.CrawlResult{
 			Target:  t.Target,
 			Method:  result.Method,
-			Body:    result.Body,
 			Source:  result.Source,
 			Headers: result.Headers,
+			Resp:    result.Resp,
+			Waf:     waf,
 		}
 
+		fingerprints = append(fingerprints, result.SourceTechnologies...)
 		StoreFields(crawlResult, result)
 
-		logging.Logger.Infof("[*Crawler] URL: %s, Method: %s, Body: %s, Source: %s, Headers: %s, Path: %s, Hostname: %s, Rdn: %s, Rurl: %s, Dir: %s", crawlResult.Url, crawlResult.Method, crawlResult.Body, crawlResult.Source, crawlResult.Headers, crawlResult.Path, crawlResult.Hostname, crawlResult.Rdn, crawlResult.RUrl, crawlResult.Dir)
+		logging.Logger.Infof("[*Crawler] URL: %s, Method: %s, Source: %s, Headers: %s, Path: %s, Hostname: %s, Rdn: %s, Rurl: %s, Dir: %s", crawlResult.Url, crawlResult.Method, crawlResult.Source, crawlResult.Headers, crawlResult.Path, crawlResult.Hostname, crawlResult.Rdn, crawlResult.RUrl, crawlResult.Dir)
 
 		t.Distribution(crawlResult)
 	}
@@ -55,6 +61,9 @@ func (t *Task) Crawler() {
 	outputWriter.Close()
 
 	t.wg.Wait()
+
+	t.Fingerprints = funk.UniqString(fingerprints)
+
 }
 
 // StoreFields stores fields for a result into individual files

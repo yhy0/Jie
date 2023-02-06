@@ -38,6 +38,7 @@ func (h *Hijack) Start(handler HijackHandler) func() error {
 	if h.enable == nil {
 		panic("hijack pattern not set")
 	}
+
 	p, cancel := h.page.WithCancel()
 	h.cancel = cancel
 
@@ -71,7 +72,6 @@ func FetchGetResponseBody(page *rod.Page, e *proto.FetchRequestPaused) ([]byte, 
 	m := proto.FetchGetResponseBody{
 		RequestID: e.RequestID,
 	}
-
 	r, err := m.Call(page)
 	if err != nil {
 		return nil, err

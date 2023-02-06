@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"github.com/logrusorgru/aurora"
 	"github.com/urfave/cli/v2"
@@ -130,10 +129,6 @@ func run(c *cli.Context) error {
 		// 被动扫描
 		Passive()
 	} else {
-		// 主动扫描
-		if target == "" {
-			return errors.New("target must be set")
-		}
 		// 初始化 session ,todo 后续优化一下，不同网站共用一个不知道会不会出问题，应该不会
 		http.NewSession()
 

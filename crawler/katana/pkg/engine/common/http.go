@@ -2,13 +2,13 @@ package common
 
 import (
 	"crypto/tls"
-	"errors"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/projectdiscovery/fastdialer/fastdialer"
 	"github.com/projectdiscovery/retryablehttp-go"
+	errorutil "github.com/projectdiscovery/utils/errors"
 	"github.com/yhy0/Jie/crawler/katana/pkg/navigation"
 	"github.com/yhy0/Jie/crawler/katana/pkg/types"
 )
@@ -49,7 +49,7 @@ func BuildClient(dialer *fastdialer.Dialer, options *types.Options, redirectCall
 		Timeout:   time.Duration(options.Timeout) * time.Second,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			if len(via) == 10 {
-				return errors.New("stopped after 10 redirects")
+				return errorutil.New("stopped after 10 redirects")
 			}
 			depth, ok := req.Context().Value(navigation.Depth{}).(int)
 			if !ok {

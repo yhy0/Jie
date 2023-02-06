@@ -9,12 +9,10 @@ import (
 	"github.com/yhy0/Jie/scan/cmdinject"
 	"github.com/yhy0/Jie/scan/crlf"
 	"github.com/yhy0/Jie/scan/jsonp"
-	"github.com/yhy0/Jie/scan/nuclei"
 	"github.com/yhy0/Jie/scan/sqlInjection"
 	"github.com/yhy0/Jie/scan/ssrf"
 	"github.com/yhy0/Jie/scan/xss"
 	"github.com/yhy0/Jie/scan/xxe"
-	"path"
 )
 
 /**
@@ -27,6 +25,7 @@ import (
 type Task struct {
 	TaskId        string
 	Target        string
+	Fingerprints  []string
 	PassiveResult string // todo 被动代理模式，需要考虑到重复数据的问题，防止重复发payload
 	Parallelism   int    // 一个网站同时扫描的最大 url 个数
 	Single        bool   // 像 poc 等任务扫描，一个网站应该只运行一次扫描任务
@@ -65,27 +64,6 @@ func (t *Task) Distribution(crawlResult *input.CrawlResult) {
 				go t.ssrf(crawlResult)
 			}
 
-		}
-
-		// 这里不应该放在爬虫里面，不然会执行很多次，一个目标网站应该只执行一次
-		// todo 这里根据指纹进行对应的检测
-		if !t.Single && funk.Contains(conf.GlobalConfig.WebScan.Plugins, "POC") {
-			// todo 针对性 POC 检测
-			suffix := path.Ext(crawlResult.File)
-			if suffix == ".asp" {
-
-			} else if suffix == ".aspx" {
-
-			} else if suffix == ".jsp" || suffix == ".do" || suffix == ".action" {
-
-			} else if suffix == ".php" {
-
-			}
-
-			// 这里根据指纹进行对应的检测
-			t.nuclei(crawlResult)
-
-			t.Single = true
 		}
 
 		if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "BRUTE") {
@@ -149,12 +127,5 @@ func (t *Task) xxe(crawlResult *input.CrawlResult) {
 func (t *Task) ssrf(crawlResult *input.CrawlResult) {
 	t.wg.Add()
 	ssrf.Scan(crawlResult)
-	t.wg.Done()
-}
-
-// 调用 xray、nuclei poc 检测
-func (t *Task) nuclei(crawlResult *input.CrawlResult) {
-	t.wg.Add()
-	nuclei.Scan(crawlResult)
 	t.wg.Done()
 }

@@ -1,9 +1,9 @@
 package crawler
 
 import (
-	runner "github.com/yhy0/Jie/crawler/katana"
 	"github.com/yhy0/Jie/crawler/katana/pkg/output"
 	"github.com/yhy0/Jie/crawler/katana/pkg/types"
+	runner "github.com/yhy0/Jie/crawler/katana/runner"
 	"github.com/yhy0/Jie/logging"
 )
 

@@ -6,6 +6,7 @@ import (
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/protocols/http"
+	"io"
 	"time"
 )
 
@@ -57,7 +58,8 @@ func Scan(in *input.CrawlResult) {
 }
 
 func startTesting(in *input.CrawlResult) (*http.Response, string, bool) {
-	variations, err := http.ParseUri(in.Url, []byte(in.Body), in.Method, in.ContentType, in.Headers)
+	body, _ := io.ReadAll(in.Resp.Body)
+	variations, err := http.ParseUri(in.Url, body, in.Method, in.ContentType, in.Headers)
 	if err != nil {
 		logging.Logger.Errorln(err)
 		return nil, "", false

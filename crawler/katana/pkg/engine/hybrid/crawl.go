@@ -13,9 +13,10 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/proto"
-	"github.com/pkg/errors"
 	"github.com/projectdiscovery/gologger"
 	"github.com/projectdiscovery/retryablehttp-go"
+	errorutil "github.com/projectdiscovery/utils/errors"
+	mapsutil "github.com/projectdiscovery/utils/maps"
 	"github.com/yhy0/Jie/crawler/katana/pkg/engine/parser"
 	"github.com/yhy0/Jie/crawler/katana/pkg/navigation"
 	"github.com/yhy0/Jie/crawler/katana/pkg/utils/queue"
@@ -35,18 +36,14 @@ func (c *Crawler) navigateRequest(ctx context.Context, httpclient *retryablehttp
 	}
 
 	page, err := browser.Page(proto.TargetCreateTarget{})
-
-	// todo 绕过无头浏览器检测 https://bot.sannysoft.com/
+	// todo yhy 绕过无头浏览器检测 https://bot.sannysoft.com/
 	page.MustEvalOnNewDocument(stealthJS)
-
-	//page.MustEvalOnNewDocument("window.alert(\"Hello world!\");")
 	if err != nil {
-		return nil, errors.Wrap(err, "could not create target")
+		return nil, errorutil.NewWithTag("hybrid", "could not create target").Wrap(err)
 	}
 	defer page.Close()
 
 	pageRouter := NewHijack(page)
-
 	pageRouter.SetPattern(&proto.FetchRequestPattern{
 		URLPattern:   "*",
 		RequestStage: proto.FetchRequestStageResponse,
@@ -78,6 +75,7 @@ func (c *Crawler) navigateRequest(ctx context.Context, httpclient *retryablehttp
 		}
 
 		bodyReader, _ := goquery.NewDocumentFromReader(bytes.NewReader(body))
+		technologies := c.options.Wappalyzer.Fingerprint(headers, body)
 		resp := navigation.Response{
 			Resp:         httpresp,
 			Body:         []byte(body),
@@ -85,8 +83,8 @@ func (c *Crawler) navigateRequest(ctx context.Context, httpclient *retryablehttp
 			Options:      c.options,
 			Depth:        depth,
 			RootHostname: rootHostname,
+			Technologies: mapsutil.GetKeys(technologies),
 		}
-		_ = resp
 
 		// process the raw response
 		parser.ParseResponse(resp, parseResponseCallback)
@@ -102,10 +100,10 @@ func (c *Crawler) navigateRequest(ctx context.Context, httpclient *retryablehttp
 	page = page.Timeout(timeout)
 
 	// wait the page to be fully loaded and becoming idle
-	waitNavigation := page.WaitNavigation(proto.PageLifecycleEventNameDOMContentLoaded)
+	waitNavigation := page.WaitNavigation(proto.PageLifecycleEventNameFirstMeaningfulPaint)
 
 	if err := page.Navigate(request.URL); err != nil {
-		return nil, errors.Wrap(err, "could not navigate target")
+		return nil, errorutil.NewWithTag("hybrid", "could not navigate target").Wrap(err)
 	}
 	waitNavigation()
 
@@ -119,20 +117,18 @@ func (c *Crawler) navigateRequest(ctx context.Context, httpclient *retryablehttp
 		gologger.Warning().Msgf("\"%s\" on wait idle: %s\n", request.URL, err)
 	}
 
-	//todo 截图
-	//page.MustScreenshotFullPage("./logs/" + string(page.TargetID) + ".png")
 	var getDocumentDepth = int(-1)
 	getDocument := &proto.DOMGetDocument{Depth: &getDocumentDepth, Pierce: true}
 	result, err := getDocument.Call(page)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not get dom")
+		return nil, errorutil.NewWithTag("hybrid", "could not get dom").Wrap(err)
 	}
 	var builder strings.Builder
 	traverseDOMNode(result.Root, &builder)
 
 	body, err := page.HTML()
 	if err != nil {
-		return nil, errors.Wrap(err, "could not get html")
+		return nil, errorutil.NewWithTag("hybrid", "could not get html").Wrap(err)
 	}
 
 	parsed, _ := url.Parse(request.URL)
@@ -156,7 +152,7 @@ func (c *Crawler) navigateRequest(ctx context.Context, httpclient *retryablehttp
 	}
 	response.Reader, err = goquery.NewDocumentFromReader(bytes.NewReader(response.Body))
 	if err != nil {
-		return nil, errors.Wrap(err, "could not parse html")
+		return nil, errorutil.NewWithTag("hybrid", "could not parse html").Wrap(err)
 	}
 	return response, nil
 }

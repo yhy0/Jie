@@ -8,6 +8,7 @@ import (
 	"github.com/yhy0/Jie/pkg/protocols/http"
 	"github.com/yhy0/Jie/pkg/reverse"
 	"github.com/yhy0/Jie/pkg/util"
+	"io"
 	"time"
 )
 
@@ -21,7 +22,8 @@ import (
 var sensitiveWords = []string{"url", "path", "uri", "api", "target", "host", "domain", "ip", "file"}
 
 func Scan(crawlResult *input.CrawlResult) {
-	params, err := http.ParseUri(crawlResult.Url, []byte(crawlResult.Body), crawlResult.Method, crawlResult.ContentType, crawlResult.Headers)
+	body, _ := io.ReadAll(crawlResult.Resp.Body)
+	params, err := http.ParseUri(crawlResult.Url, body, crawlResult.Method, crawlResult.ContentType, crawlResult.Headers)
 	if err != nil {
 		logging.Logger.Debug(err.Error())
 		return

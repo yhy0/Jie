@@ -8,6 +8,7 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"github.com/spaolacci/murmur3"
+	"github.com/thoas/go-funk"
 	"github.com/yhy0/Jie/logging"
 	"net"
 	"net/url"
@@ -25,19 +26,6 @@ func UUID() (UUID string) {
 func Contains(stringA, stringB string) bool {
 	// stringA 原始串，stringB 要查找的字串
 	return strings.Contains(strings.ToLower(stringA), strings.ToLower(stringB))
-}
-
-// RemoveDuplicateElement  数组去重
-func RemoveDuplicateElement(strs []string) []string {
-	var result []string
-	for _, item := range strs {
-		item = strings.TrimSpace(item)
-		if item != "" && !In(item, result) {
-			item = strings.TrimSpace(item)
-			result = append(result, item)
-		}
-	}
-	return result
 }
 
 func Difference(slice1, slice2 []string) []string {
@@ -183,7 +171,7 @@ func StructureIps(ipsTmp []string, num int) (ips []string) {
 
 	ips = append(ips, ipsTmp...)
 
-	return RemoveDuplicateElement(ips)
+	return funk.UniqString(ips)
 }
 
 func ToStringSlice(actual interface{}) ([]string, error) {
@@ -243,7 +231,7 @@ func FormatTarget(target string) (targets []string) {
 		targets = targets_tmp
 	}
 
-	return RemoveDuplicateElement(targets)
+	return funk.UniqString(targets)
 }
 
 // IsIPv6 returns true when the provided net.IP address is an IPv6 address.

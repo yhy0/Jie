@@ -8,8 +8,9 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/pkg/errors"
 	"github.com/projectdiscovery/retryablehttp-go"
+	errorutil "github.com/projectdiscovery/utils/errors"
+	mapsutil "github.com/projectdiscovery/utils/maps"
 	"github.com/yhy0/Jie/crawler/katana/pkg/navigation"
 	"github.com/yhy0/Jie/crawler/katana/pkg/utils"
 )
@@ -67,11 +68,17 @@ func (c *Crawler) makeRequest(ctx context.Context, request navigation.Request, r
 		return navigation.Response{}, nil
 	}
 
+	technologies := c.options.Wappalyzer.Fingerprint(resp.Header, data)
+	response.Technologies = mapsutil.GetKeys(technologies)
+
+	resp.Body = io.NopCloser(strings.NewReader(string(data)))
+	_ = c.options.OutputWriter.Write(nil, resp)
+
 	response.Body = data
 	response.Resp = resp
 	response.Reader, err = goquery.NewDocumentFromReader(bytes.NewReader(data))
 	if err != nil {
-		return response, errors.Wrap(err, "could not make document from reader")
+		return response, errorutil.NewWithTag("standard", "could not make document from reader").Wrap(err)
 	}
 	return response, nil
 }

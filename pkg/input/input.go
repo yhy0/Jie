@@ -1,6 +1,9 @@
 package input
 
-import "github.com/yhy0/Jie/pkg/reverse"
+import (
+	"github.com/yhy0/Jie/pkg/reverse"
+	"net/http"
+)
 
 /**
   @author: yhy
@@ -38,10 +41,9 @@ type CrawlResult struct {
 	Ip                    string            `json:"ip"`
 	Port                  int               `json:"port"`
 	Method                string            `json:"method"`
-	Body                  string            `json:"body"`
-	Source                string            `json:"source"` // 来源
 	Headers               map[string]string `json:"headers"`
 	ContentType           string            `json:"content_type"`
+	Source                string            `json:"source"` // 来源
 	Path                  string            `json:"path"`
 	File                  string            `json:"file"`
 	Hostname              string            `json:"hostname"` // 当前域名
@@ -53,9 +55,9 @@ type CrawlResult struct {
 	StatusCode            int               `json:"status_code"`
 	IndexLen              int               `json:"index_len"`
 	IndexBody             string            `json:"index_body"`
-	Fingerprints          []string          `json:"fingerprints"`
 	IsSensorServerEnabled bool              // 是否开启传感器服务
-
+	Waf                   []string          `json:"waf"` // 是否存在 waf
+	Resp                  *http.Response    `json:"resp"`
 }
 
 //

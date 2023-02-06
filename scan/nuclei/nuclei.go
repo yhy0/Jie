@@ -30,7 +30,6 @@ import (
 	"github.com/projectdiscovery/ratelimit"
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/logging"
-	"github.com/yhy0/Jie/pkg/input"
 	JieOutput "github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/util"
 	"os"
@@ -41,9 +40,9 @@ import (
 
 var updateLock sync.Mutex
 
-func Scan(c *input.CrawlResult) {
+func Scan(target string, fingerprints []string) {
 	// todo payload 可以考虑和基础的信息扫描、 fuzz分开，防止被 waf 检测到发大量 payload 被封
-	templates, tags := generateTemplates(c.Fingerprints)
+	templates, tags := generateTemplates(fingerprints)
 
 	// 扫描结果获取
 	outputWriter := testutils.NewMockOutputWriter()
@@ -53,7 +52,7 @@ func Scan(c *input.CrawlResult) {
 			Plugin:   "POC",
 			VulData: JieOutput.VulData{
 				CreateTime:  time.Now().Format("2006-01-02 15:04:05"),
-				Target:      c.Target,
+				Target:      target,
 				Ip:          event.IP,
 				Param:       event.TemplateURL,
 				Request:     event.Request,
@@ -66,11 +65,11 @@ func Scan(c *input.CrawlResult) {
 
 	}
 
-	nuclei(c, templates, tags, outputWriter)
+	nuclei(target, templates, tags, outputWriter)
 
 }
 
-func nuclei(c *input.CrawlResult, templates []string, tags []string, outputWriter *testutils.MockOutputWriter) {
+func nuclei(target string, templates []string, tags []string, outputWriter *testutils.MockOutputWriter) {
 	cache := hosterrorscache.New(30, hosterrorscache.DefaultMaxHostsCount)
 	defer cache.Close()
 
@@ -79,7 +78,7 @@ func nuclei(c *input.CrawlResult, templates []string, tags []string, outputWrite
 	defer reportingClient.Close()
 	home, _ := os.UserHomeDir()
 	defaultOpts := &types.Options{
-		Targets:       []string{c.Target},
+		Targets:       []string{target},
 		Proxy:         []string{conf.GlobalConfig.WebScan.Proxy},
 		AutomaticScan: false, // 根据识别到的指纹自动映射标签扫描
 		Templates:     templates,
@@ -138,7 +137,6 @@ func nuclei(c *input.CrawlResult, templates []string, tags []string, outputWrite
 	if err := loadProxyServers(defaultOpts); err != nil {
 		fmt.Println(err)
 	}
-	defaultOpts.Targets = []string{c.Target}
 
 	defaultOpts.ExcludeTags = config.ReadIgnoreFile().Tags
 
@@ -185,7 +183,7 @@ func nuclei(c *input.CrawlResult, templates []string, tags []string, outputWrite
 	}
 	store.Load()
 
-	inputArgs := []*contextargs.MetaInput{{Input: c.Target}}
+	inputArgs := []*contextargs.MetaInput{{Input: target}}
 
 	_ = engine.Execute(store.Templates(), &inputs.SimpleInputProvider{Inputs: inputArgs})
 	engine.WorkPool().Wait() // Wait for the scan to finish

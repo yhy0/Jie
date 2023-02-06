@@ -10,8 +10,9 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/pkg/errors"
 	"github.com/projectdiscovery/gologger"
+	errorutil "github.com/projectdiscovery/utils/errors"
+	mapsutil "github.com/projectdiscovery/utils/maps"
 	"github.com/remeh/sizedwaitgroup"
 	"github.com/yhy0/Jie/crawler/katana/pkg/engine/common"
 	"github.com/yhy0/Jie/crawler/katana/pkg/engine/parser"
@@ -39,7 +40,7 @@ func New(options *types.CrawlerOptions) (*Crawler, error) {
 	if options.Options.KnownFiles != "" {
 		httpclient, _, err := common.BuildClient(options.Dialer, options.Options, nil)
 		if err != nil {
-			return nil, errors.Wrap(err, "could not create http client")
+			return nil, errorutil.NewWithTag("standard", "could not create http client").Wrap(err)
 		}
 		crawler.knownFiles = files.New(httpclient, options.Options.KnownFiles)
 	}
@@ -55,7 +56,7 @@ func (c *Crawler) Close() error {
 func (c *Crawler) Crawl(rootURL string) error {
 	parsed, err := url.Parse(rootURL)
 	if err != nil {
-		return errors.Wrap(err, "could not parse root URL")
+		return errorutil.NewWithTag("standard", "could not parse root URL").Wrap(err)
 	}
 	hostname := parsed.Hostname()
 
@@ -79,10 +80,20 @@ func (c *Crawler) Crawl(rootURL string) error {
 	httpclient, _, err := common.BuildClient(c.options.Dialer, c.options.Options, func(resp *http.Response, depth int) {
 		body, _ := io.ReadAll(resp.Body)
 		reader, _ := goquery.NewDocumentFromReader(bytes.NewReader(body))
-		parser.ParseResponse(navigation.Response{Depth: depth + 1, Options: c.options, RootHostname: hostname, Resp: resp, Body: body, Reader: reader}, parseResponseCallback)
+		technologies := c.options.Wappalyzer.Fingerprint(resp.Header, body)
+		navigationResponse := navigation.Response{
+			Depth:        depth + 1,
+			Options:      c.options,
+			RootHostname: hostname,
+			Resp:         resp,
+			Body:         body,
+			Reader:       reader,
+			Technologies: mapsutil.GetKeys(technologies),
+		}
+		parser.ParseResponse(navigationResponse, parseResponseCallback)
 	})
 	if err != nil {
-		return errors.Wrap(err, "could not create http client")
+		return errorutil.NewWithTag("standard", "could not create http client").Wrap(err)
 	}
 
 	wg := sizedwaitgroup.New(c.options.Options.Concurrency)
@@ -118,7 +129,14 @@ func (c *Crawler) Crawl(rootURL string) error {
 			}
 			resp, err := c.makeRequest(ctx, req, hostname, req.Depth, httpclient)
 			if err != nil {
-				gologger.Warning().Msgf("Could not request seed URL: %s\n", err)
+				gologger.Warning().Msgf("Could not request seed URL %s: %s\n", req.URL, err)
+				outputError := &output.Error{
+					Timestamp: time.Now(),
+					Endpoint:  req.RequestURL(),
+					Source:    req.Source,
+					Error:     err.Error(),
+				}
+				_ = c.options.OutputWriter.WriteErr(outputError)
 				return
 			}
 			if resp.Resp == nil || resp.Reader == nil {
@@ -143,34 +161,38 @@ func (c *Crawler) makeParseResponseCallback(queue *queue.VarietyQueue) func(nr n
 			return
 		}
 		// Ignore blank URL items and only work on unique items
-		if !c.options.UniqueFilter.UniqueURL(nr.RequestURL()) {
+		if !c.options.UniqueFilter.UniqueURL(nr.RequestURL()) && len(nr.CustomFields) == 0 {
+			return
+		}
+		// - URLs stuck in a loop
+		if c.options.UniqueFilter.IsCycle(nr.RequestURL()) {
 			return
 		}
 
 		// Write the found result to output
 		result := &output.Result{
-			Timestamp: time.Now(),
-			Method:    nr.Method,
-			Body:      nr.Body,
-			URL:       nr.URL,
-			Source:    nr.Source,
-			Tag:       nr.Tag,
-			Attribute: nr.Attribute,
+			Timestamp:          time.Now(),
+			Body:               nr.Body,
+			URL:                nr.URL,
+			Source:             nr.Source,
+			Tag:                nr.Tag,
+			Attribute:          nr.Attribute,
+			CustomFields:       nr.CustomFields,
+			SourceTechnologies: nr.SourceTechnologies,
 		}
-		// 搞不懂，直接赋值不好吗？
-		//if nr.Method != http.MethodGet {
-		//	result.Method = nr.Method
-		//}
+		if nr.Method != http.MethodGet {
+			result.Method = nr.Method
+		}
 		scopeValidated, err := c.options.ScopeManager.Validate(parsed, nr.RootHostname)
 		if err != nil {
 			return
 		}
 		if scopeValidated || c.options.Options.DisplayOutScope {
-			// todo yhy 获取结果
-			c.options.Options.WriteCallback.Write(result)
-			_ = c.options.OutputWriter.Write(result)
+			_ = c.options.OutputWriter.Write(result, nil)
 		}
-
+		if c.options.Options.OnResult != nil {
+			c.options.Options.OnResult(*result)
+		}
 		// Do not add to crawl queue if max items are reached
 		if nr.Depth >= c.options.Options.MaxDepth || !scopeValidated {
 			return

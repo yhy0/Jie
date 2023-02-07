@@ -29,8 +29,8 @@ var (
 
 func init() {
 	fmt.Println("\t" + aurora.Green(conf.Banner).String())
-	fmt.Println("\t\t\t" + aurora.Red("v"+conf.Version).String())
-	fmt.Println("\t\t" + aurora.Blue(conf.Website).String() + "\n\n")
+	fmt.Println("\t\t" + aurora.Red("v"+conf.Version).String())
+	fmt.Println("\t" + aurora.Blue(conf.Website).String() + "\n\n")
 
 	fmt.Println(aurora.Red("Use with caution. You are responsible for your actions.").String())
 	fmt.Println(aurora.Red("Developers assume no liability and are not responsible for any misuse or damage.").String() + "\n")

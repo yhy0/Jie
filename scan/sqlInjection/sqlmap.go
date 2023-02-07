@@ -1,20 +1,29 @@
 package sqlInjection
 
+import (
+	"github.com/yhy0/Jie/logging"
+	"github.com/yhy0/Jie/pkg/input"
+)
+
+// import (
 //
-//import (
 //	"github.com/yhy0/Jie/logging"
 //	"github.com/yhy0/Jie/pkg/input"
 //	"math"
 //	"time"
-//)
 //
-///**
-//  @author: yhy
-//  @since: 2023/2/6
-//  @desc: //TODO
-//**/
+// )
 //
-//var (
+// /**
+//
+//	@author: yhy
+//	@since: 2023/2/6
+//	@desc: //TODO
+//
+// **/
+//
+// var (
+//
 //	WAFCheck          = true
 //	SimilarityRatio   = 0.999
 //	LowerRatioBound = 0.02
@@ -40,29 +49,26 @@ package sqlInjection
 //		"SQLite": {`SQLite/JDBCDriver`, `SQLite.Exception`, `System.Data.SQLite.SQLiteException`, `Warning.*sqlite_.*`, `Warning.*SQLite3::`, `\[SQLITE_ERROR\]`},
 //		"Sybase": {`(?i)Warning.*sybase.*`, `Sybase message`, `Sybase.*Server message.*`}
 //	}
-//)
 //
-//
-//
-//func sqlmap(c *input.CrawlResult) {
-//	//做一些前置检查 避免无意义的后续检测
-//	if c.StatusCode == 404 {
-//		logging.Logger.Warnln(c.Target, " 原始请求资源不存在, ", c.StatusCode)
-//		return
-//	}
-//
-//	if len(c.Param) == 0 {
-//		logging.Logger.Warnln(c.Target, " 无可供注入参数")
-//		return
-//	}
-//
-//	//waf 只判断作为提示信息 不做进一步操作 如果检出存在注入 则可以考虑附加信息
-//
-//	//开始启发式sql注入检测
-//
-//	 // TEMPLATE_PAGE_RSP后续计算pageratio做对比的正常请求页面
-//
-//	heuristicCheckIfInjectable(c.Url, req, c.IndexBody)
-//
-//
-//}
+// )
+func sqlmap(c *input.CrawlResult) {
+	//做一些前置检查 避免无意义的后续检测
+	if c.Resp.StatusCode == 404 {
+		logging.Logger.Warnln(c.Target, " 原始请求资源不存在(404) ")
+		return
+	}
+
+	if len(c.Param) == 0 {
+		logging.Logger.Warnln(c.Target, " 无可供注入参数")
+		return
+	}
+
+	//waf 只判断作为提示信息 不做进一步操作 如果检出存在注入 则可以考虑附加信息
+
+	//开始启发式sql注入检测
+
+	// TEMPLATE_PAGE_RSP后续计算pageratio做对比的正常请求页面
+
+	//heuristicCheckIfInjectable(c.Url, req, c.IndexBody)
+
+}

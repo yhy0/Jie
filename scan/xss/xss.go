@@ -51,6 +51,5 @@ func Scan(in *input.CrawlResult) {
 				Level: v.Severity,
 			}
 		}
-		logging.Logger.Printf("Logs: %+v, PoCs: %+v, Params: %+v", result.Logs, result.PoCs, result.Params)
 	}
 }

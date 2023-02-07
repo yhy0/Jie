@@ -5,7 +5,6 @@ import (
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/protocols/http"
-	"io"
 	"regexp"
 	"strings"
 	"time"
@@ -68,8 +67,7 @@ func Scan(in *input.CrawlResult) {
 			}
 
 		} else {
-			body, _ := io.ReadAll(in.Resp.Body)
-			res, err := http.Request(in.Url, in.Method, string(body)+pl, false, in.Headers)
+			res, err := http.Request(in.Url, in.Method, in.Resp.Body+pl, false, in.Headers)
 			if err != nil {
 				logging.Logger.Debugf("Request error: %v", err)
 				return
@@ -86,7 +84,7 @@ func Scan(in *input.CrawlResult) {
 						Param:      "",
 						Request:    res.RequestDump,
 						Response:   res.ResponseDump,
-						Payload:    string(body) + pl,
+						Payload:    in.Resp.Body + pl,
 					},
 					Level: output.Medium,
 				}

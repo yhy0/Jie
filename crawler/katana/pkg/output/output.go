@@ -49,7 +49,9 @@ func (m *MockOutputWriter) Close() {}
 // Write writes the event to file and/or screen.
 func (m *MockOutputWriter) Write(result *Result) error {
 	if m.WriteCallback != nil {
+
 		m.WriteCallback(result)
+
 	}
 	return nil
 }

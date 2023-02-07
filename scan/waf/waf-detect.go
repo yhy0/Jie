@@ -21,13 +21,16 @@ import (
 //go:embed waf-detect.yaml
 var wafRules embed.FS
 
-var template = templates.Template{}
+var template = &templates.Template{}
 
 var payload = ` AND 1=1 UNION ALL SELECT 1,NULL,'<script>alert(\"XSS\")</script>',table_name FROM information_schema.tables WHERE 2>1--/**/; EXEC xp_cmdshell('cat ../../../etc/passwd')#`
 
 func init() {
 	rules, _ := wafRules.ReadFile("waf-detect.yaml")
-	yaml.Unmarshal(rules, template)
+	err := yaml.Unmarshal(rules, template)
+	if err != nil {
+		logging.Logger.Errorln(err)
+	}
 }
 
 func Scan(target, body string) (wafs []string) {

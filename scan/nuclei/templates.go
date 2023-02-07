@@ -82,7 +82,6 @@ var publiTemplates = []string{
 	"miscellaneous/dir-listing.yaml",
 	"miscellaneous/htaccess-config.yaml",
 	"miscellaneous/ntlm-directories.yaml",
-	"miscellaneous/unpatched-coldfusion.yaml",
 	"miscellaneous/xml-schema-detect.yaml",
 
 	"network/clickhouse-unauth.yaml",

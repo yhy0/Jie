@@ -2,8 +2,9 @@
 *.db
 .idea
 logs
-.DS_Store
 test
+data
+.DS_Store
 test.go
 # Test binary, built with `go test -c`
 *.test

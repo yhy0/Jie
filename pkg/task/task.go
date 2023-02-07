@@ -19,7 +19,7 @@ import (
   @author: yhy
   @since: 2023/1/5
   @desc: TODO  后期看看有没有必要设计成插件式的，自我感觉没必要，还不如这样写，逻辑简单易懂
-  		 todo 漏洞检测逻辑有待优化
+  		 todo 漏洞检测逻辑有待优化, 每个插件扫描到漏洞后，需要及时退出，不再进行后续扫描, 插件内部应该设置一个通知，扫描到漏洞即停止
 **/
 
 type Task struct {
@@ -28,7 +28,6 @@ type Task struct {
 	Fingerprints  []string
 	PassiveResult string // todo 被动代理模式，需要考虑到重复数据的问题，防止重复发payload
 	Parallelism   int    // 一个网站同时扫描的最大 url 个数
-	Single        bool   // 像 poc 等任务扫描，一个网站应该只运行一次扫描任务
 	wg            sizedwaitgroup.SizedWaitGroup
 }
 

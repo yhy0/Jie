@@ -1,7 +1,6 @@
 package output
 
 import (
-	"net/http"
 	"time"
 )
 
@@ -23,10 +22,7 @@ type Result struct {
 	Attribute string `json:"attribute,omitempty"`
 	// customField matched output
 	CustomFields map[string][]string `json:"-"`
-	// Technologies of the response
-	SourceTechnologies []string `json:"source-technologies,omitempty"`
 
-	// todo yhy 将返回内容加入
-	Headers map[string]string `json:"headers, omitempty"`
-	Resp    *http.Response    `json:"resp"`
+	//todo Technologies of the response
+	SourceTechnologies []string `json:"source-technologies,omitempty"`
 }

@@ -1,8 +1,8 @@
 package input
 
 import (
+	"github.com/yhy0/Jie/pkg/protocols/http"
 	"github.com/yhy0/Jie/pkg/reverse"
-	"net/http"
 )
 
 /**
@@ -42,6 +42,7 @@ type CrawlResult struct {
 	Port                  int               `json:"port"`
 	Method                string            `json:"method"`
 	Headers               map[string]string `json:"headers"`
+	RequestBody           string            `json:"request_body"`
 	ContentType           string            `json:"content_type"`
 	Source                string            `json:"source"` // 来源
 	Path                  string            `json:"path"`
@@ -52,9 +53,6 @@ type CrawlResult struct {
 	Dir                   string            `json:"dir"`      // 目录
 	Kv                    string            `json:"kv"`       // 参数名和参数值  user=admin&password=admin
 	Param                 []string          `json:"param"`    // 参数名  user,password
-	StatusCode            int               `json:"status_code"`
-	IndexLen              int               `json:"index_len"`
-	IndexBody             string            `json:"index_body"`
 	IsSensorServerEnabled bool              // 是否开启传感器服务
 	Waf                   []string          `json:"waf"` // 是否存在 waf
 	Resp                  *http.Response    `json:"resp"`

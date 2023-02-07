@@ -34,6 +34,7 @@ type VulData struct {
 	Method      string `json:"method"`
 	Param       string `json:"param"`
 	Payload     string `json:"payload"`
+	CURLCommand string `json:"curl_command"`
 	Description string `json:"description"`
 	Request     string `json:"request"`
 	Response    string `json:"response"`
@@ -57,6 +58,9 @@ func (vul *VulMessage) PrintScreen() string {
 
 	if vul.VulData.Payload != "" {
 		screen = append(screen, fmt.Sprintf("Payload: %s", vul.VulData.Payload))
+	}
+	if vul.VulData.CURLCommand != "" {
+		screen = append(screen, fmt.Sprintf("CURLCommand: %s", vul.VulData.CURLCommand))
 	}
 	if vul.VulData.Description != "" {
 		screen = append(screen, fmt.Sprintf("Description: %s", vul.VulData.Description))

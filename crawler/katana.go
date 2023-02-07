@@ -33,20 +33,20 @@ var extensionFilter = []string{
 func (t *KatanaTask) StartCrawler() {
 	options := &types.Options{
 		URLs:                      t.Target,
-		MaxDepth:                  2,
+		MaxDepth:                  10,              // 最大页面深度限制
 		ScrapeJSResponses:         true,            // 启用 JavaScript 文件解析 + 抓取在 JavaScript 文件中发现的端点的选项
 		CrawlDuration:             0,               // 爬取目标的最长持续时间
 		KnownFiles:                "all",           // 启用对已知文件的爬取(all、robots.txt、sitemap.xml)
 		BodyReadSize:              2 * 1024 * 1024, // 读取响应的最大大小
 		Timeout:                   10,              // 请求超时时间
 		AutomaticFormFill:         true,            // 启用自动表单填充(实验性)
-		Retries:                   1,               // 重试次数
+		Retries:                   0,               // 重试次数
 		Proxy:                     t.Proxy,         // http/socks5 代理
 		CustomHeaders:             nil,             // 自定义请求头
 		FormConfig:                "",              // 表单配置文件
 		Headless:                  true,            // 是否使用无头浏览器
 		UseInstalledChrome:        false,           // 是否使用已安装的 Chrome, 否则会自动下载 Chrome
-		ShowBrowser:               false,           // 以无头模式显示浏览器
+		ShowBrowser:               true,            // 以无头模式显示浏览器
 		HeadlessOptionalArguments: nil,             // 无头浏览器可选参数
 		HeadlessNoSandbox:         true,            // 是否以 --no-sandbox 模式启动 Chrome
 		Scope:                     nil,             // 爬取的域名范围的url正则表达式
@@ -77,7 +77,7 @@ func (t *KatanaTask) StartCrawler() {
 	runner, err := runner.New(options)
 
 	if err != nil || runner == nil {
-		logging.Logger.Errorf("could not create runner: %s\n", err)
+		logging.Logger.Errorf("could not create runner: %s", err)
 		return
 	}
 

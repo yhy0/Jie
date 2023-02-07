@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	_ "embed"
+	"github.com/yhy0/Jie/logging"
 	"io"
 	"net/http"
 	"net/url"
@@ -13,7 +14,6 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/proto"
-	"github.com/projectdiscovery/gologger"
 	"github.com/projectdiscovery/retryablehttp-go"
 	errorutil "github.com/projectdiscovery/utils/errors"
 	mapsutil "github.com/projectdiscovery/utils/maps"
@@ -48,51 +48,56 @@ func (c *Crawler) navigateRequest(ctx context.Context, httpclient *retryablehttp
 		URLPattern:   "*",
 		RequestStage: proto.FetchRequestStageResponse,
 	})
-	go pageRouter.Start(func(e *proto.FetchRequestPaused) error {
-		URL, _ := url.Parse(e.Request.URL)
-		body, _ := FetchGetResponseBody(page, e)
-		headers := make(map[string][]string)
-		for _, h := range e.ResponseHeaders {
-			headers[h.Name] = []string{h.Value}
-		}
-		var statuscode int
-		if e.ResponseStatusCode != nil {
-			statuscode = *e.ResponseStatusCode
-		}
-		httpresp := &http.Response{
-			StatusCode: statuscode,
-			Status:     e.ResponseStatusText,
-			Header:     headers,
-			Body:       io.NopCloser(bytes.NewReader(body)),
-			Request: &http.Request{
-				Method: e.Request.Method,
-				URL:    URL,
-				Body:   io.NopCloser(strings.NewReader(e.Request.PostData)),
-			},
-		}
-		if !c.options.UniqueFilter.UniqueContent(body) {
+
+	go func() {
+		err := pageRouter.Start(func(e *proto.FetchRequestPaused) error {
+			URL, _ := url.Parse(e.Request.URL)
+			body, _ := FetchGetResponseBody(page, e)
+			headers := make(map[string][]string)
+			for _, h := range e.ResponseHeaders {
+				headers[h.Name] = []string{h.Value}
+			}
+			var statuscode int
+			if e.ResponseStatusCode != nil {
+				statuscode = *e.ResponseStatusCode
+			}
+			httpresp := &http.Response{
+				StatusCode: statuscode,
+				Status:     e.ResponseStatusText,
+				Header:     headers,
+				Body:       io.NopCloser(bytes.NewReader(body)),
+				Request: &http.Request{
+					Method: e.Request.Method,
+					URL:    URL,
+					Body:   io.NopCloser(strings.NewReader(e.Request.PostData)),
+				},
+			}
+			if !c.options.UniqueFilter.UniqueContent(body) {
+				return FetchContinueRequest(page, e)
+			}
+
+			bodyReader, _ := goquery.NewDocumentFromReader(bytes.NewReader(body))
+			technologies := c.options.Wappalyzer.Fingerprint(headers, body)
+			resp := navigation.Response{
+				Resp:         httpresp,
+				Body:         body,
+				Reader:       bodyReader,
+				Options:      c.options,
+				Depth:        depth,
+				RootHostname: rootHostname,
+				Technologies: mapsutil.GetKeys(technologies),
+			}
+			// process the raw response
+			parser.ParseResponse(resp, parseResponseCallback)
 			return FetchContinueRequest(page, e)
+		})()
+		if err != nil {
+			logging.Logger.Debugln(err)
 		}
-
-		bodyReader, _ := goquery.NewDocumentFromReader(bytes.NewReader(body))
-		technologies := c.options.Wappalyzer.Fingerprint(headers, body)
-		resp := navigation.Response{
-			Resp:         httpresp,
-			Body:         []byte(body),
-			Reader:       bodyReader,
-			Options:      c.options,
-			Depth:        depth,
-			RootHostname: rootHostname,
-			Technologies: mapsutil.GetKeys(technologies),
-		}
-
-		// process the raw response
-		parser.ParseResponse(resp, parseResponseCallback)
-		return FetchContinueRequest(page, e)
-	})() //nolint
+	}() //nolint
 	defer func() {
 		if err := pageRouter.Stop(); err != nil {
-			gologger.Warning().Msgf("%s\n", err)
+			logging.Logger.Debugf("%s", err)
 		}
 	}()
 
@@ -109,12 +114,12 @@ func (c *Crawler) navigateRequest(ctx context.Context, httpclient *retryablehttp
 
 	// Wait for the window.onload event
 	if err := page.WaitLoad(); err != nil {
-		gologger.Warning().Msgf("\"%s\" on wait load: %s\n", request.URL, err)
+		logging.Logger.Debugf("\"%s\" on wait load: %s", request.URL, err)
 	}
 
 	// wait for idle the network requests
 	if err := page.WaitIdle(timeout); err != nil {
-		gologger.Warning().Msgf("\"%s\" on wait idle: %s\n", request.URL, err)
+		logging.Logger.Debugf("\"%s\" on wait idle: %s", request.URL, err)
 	}
 
 	var getDocumentDepth = int(-1)
@@ -132,7 +137,11 @@ func (c *Crawler) navigateRequest(ctx context.Context, httpclient *retryablehttp
 	}
 
 	parsed, _ := url.Parse(request.URL)
-	response.Resp = &http.Response{Header: make(http.Header), Request: &http.Request{URL: parsed}}
+
+	response.Resp = &http.Response{
+		Header:  make(http.Header),
+		Request: &http.Request{URL: parsed},
+	}
 
 	// Create a copy of intrapolated shadow DOM elements and parse them separately
 	responseCopy := *response
@@ -154,6 +163,7 @@ func (c *Crawler) navigateRequest(ctx context.Context, httpclient *retryablehttp
 	if err != nil {
 		return nil, errorutil.NewWithTag("hybrid", "could not parse html").Wrap(err)
 	}
+
 	return response, nil
 }
 

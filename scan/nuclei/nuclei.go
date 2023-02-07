@@ -57,7 +57,8 @@ func Scan(target string, fingerprints []string) {
 				Param:       event.TemplateURL,
 				Request:     event.Request,
 				Response:    event.Response,
-				Payload:     fmt.Sprintf("[TemplateID]: %s  [CURLCommand]: %s", event.TemplateID, event.CURLCommand),
+				Payload:     event.TemplateID,
+				CURLCommand: event.CURLCommand,
 				Description: event.Info.Description,
 			},
 			Level: util.FirstToUpper(event.Info.SeverityHolder.Severity.String()),
@@ -143,7 +144,7 @@ func nuclei(target string, templates []string, tags []string, outputWriter *test
 	interactOpts := interactsh.NewDefaultOptions(outputWriter, reportingClient, mockProgress)
 	interactClient, err := interactsh.New(interactOpts)
 	if err != nil {
-		logging.Logger.Errorf("Could not create interact client: %s\n", err)
+		logging.Logger.Errorf("Could not create interact client: %s", err)
 		return
 	}
 	defer interactClient.Close()
@@ -166,19 +167,19 @@ func nuclei(target string, templates []string, tags []string, outputWriter *test
 
 	workflowLoader, err := parsers.NewLoader(&executerOpts)
 	if err != nil {
-		logging.Logger.Errorf("Could not create workflow loader: %s\n", err)
+		logging.Logger.Errorf("Could not create workflow loader: %s", err)
 		return
 	}
 	executerOpts.WorkflowLoader = workflowLoader
 
 	configObject, err := config.ReadConfiguration()
 	if err != nil {
-		logging.Logger.Errorf("Could not read config: %s\n", err)
+		logging.Logger.Errorf("Could not read config: %s", err)
 		return
 	}
 	store, err := loader.New(loader.NewConfig(defaultOpts, configObject, catalog, executerOpts))
 	if err != nil {
-		logging.Logger.Errorf("Could not create loader client: %s\n", err)
+		logging.Logger.Errorf("Could not create loader client: %s", err)
 		return
 	}
 	store.Load()

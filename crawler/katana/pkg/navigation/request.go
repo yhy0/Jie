@@ -1,7 +1,6 @@
 package navigation
 
 import (
-	"net/http"
 	"strings"
 )
 
@@ -22,9 +21,6 @@ type Request struct {
 	SourceTechnologies []string // technologies of the source that originated the current request
 
 	CustomFields map[string][]string // customField matched output
-
-	// todo yhy 将返回内容加入request
-	Resp *http.Response
 }
 
 // RequestURL returns the request URL for the navigation
@@ -43,10 +39,8 @@ func (n *Request) RequestURL() string {
 	return ""
 }
 
-// todo yhy 将返回内容加入request
-
 // NewNavigationRequestURLFromResponse generates a navigation request from a relative URL
 func NewNavigationRequestURLFromResponse(path, source, tag, attribute string, resp Response) Request {
 	requestURL := resp.AbsoluteURL(path)
-	return Request{Method: "GET", URL: requestURL, RootHostname: resp.RootHostname, Depth: resp.Depth, Source: source, Attribute: attribute, Tag: tag, SourceTechnologies: resp.Technologies, Resp: resp.Resp}
+	return Request{Method: "GET", URL: requestURL, RootHostname: resp.RootHostname, Depth: resp.Depth, Source: source, Attribute: attribute, Tag: tag, SourceTechnologies: resp.Technologies}
 }

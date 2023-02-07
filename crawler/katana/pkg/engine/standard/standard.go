@@ -3,6 +3,7 @@ package standard
 import (
 	"bytes"
 	"context"
+	"github.com/yhy0/Jie/logging"
 	"io"
 	"net/http"
 	"net/url"
@@ -10,7 +11,6 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/projectdiscovery/gologger"
 	errorutil "github.com/projectdiscovery/utils/errors"
 	mapsutil "github.com/projectdiscovery/utils/maps"
 	"github.com/remeh/sizedwaitgroup"
@@ -74,7 +74,7 @@ func (c *Crawler) Crawl(rootURL string) error {
 		if err := c.knownFiles.Request(rootURL, func(nr navigation.Request) {
 			parseResponseCallback(nr)
 		}); err != nil {
-			gologger.Warning().Msgf("Could not parse known files for %s: %s\n", rootURL, err)
+			logging.Logger.Debugf("Could not parse known files for %s: %s", rootURL, err)
 		}
 	}
 	httpclient, _, err := common.BuildClient(c.options.Dialer, c.options.Options, func(resp *http.Response, depth int) {
@@ -129,7 +129,7 @@ func (c *Crawler) Crawl(rootURL string) error {
 			}
 			resp, err := c.makeRequest(ctx, req, hostname, req.Depth, httpclient)
 			if err != nil {
-				gologger.Warning().Msgf("Could not request seed URL %s: %s\n", req.URL, err)
+				logging.Logger.Debugf("Could not request seed URL %s: %s", req.URL, err)
 				outputError := &output.Error{
 					Timestamp: time.Now(),
 					Endpoint:  req.RequestURL(),

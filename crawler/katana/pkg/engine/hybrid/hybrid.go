@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/yhy0/Jie/logging"
 	"io"
 	"net/http"
 	"net/url"
@@ -15,7 +16,6 @@ import (
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
 	"github.com/go-rod/rod/lib/launcher/flags"
-	"github.com/projectdiscovery/gologger"
 	errorutil "github.com/projectdiscovery/utils/errors"
 	mapsutil "github.com/projectdiscovery/utils/maps"
 	stringsutil "github.com/projectdiscovery/utils/strings"
@@ -176,7 +176,7 @@ func (c *Crawler) Crawl(rootURL string) error {
 		if err := c.knownFiles.Request(rootURL, func(nr navigation.Request) {
 			parseResponseCallback(nr)
 		}); err != nil {
-			gologger.Warning().Msgf("Could not parse known files for %s: %s\n", rootURL, err)
+			logging.Logger.Debugf("Could not parse known files for %s: %s", rootURL, err)
 		}
 	}
 
@@ -247,7 +247,7 @@ func (c *Crawler) Crawl(rootURL string) error {
 			}
 			resp, err := c.navigateRequest(ctx, httpclient, queue, parseResponseCallback, newBrowser, req, hostname)
 			if err != nil {
-				gologger.Warning().Msgf("Could not request seed URL %s: %s\n", req.URL, err)
+				logging.Logger.Debugf("Could not request seed URL %s: %s", req.URL, err)
 
 				outputError := &output.Error{
 					Timestamp: time.Now(),
@@ -295,8 +295,6 @@ func (c *Crawler) makeParseResponseCallback(queue *queue.VarietyQueue) func(nr n
 			Timestamp:          time.Now(),
 			Body:               nr.Body,
 			URL:                nr.URL,
-			Headers:            nr.Headers,
-			Resp:               nr.Resp,
 			Source:             nr.Source,
 			Tag:                nr.Tag,
 			Attribute:          nr.Attribute,

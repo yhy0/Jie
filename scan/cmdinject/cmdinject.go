@@ -13,7 +13,6 @@ import (
 	"github.com/yhy0/Jie/pkg/protocols/http"
 	"github.com/yhy0/Jie/pkg/reverse"
 	"github.com/yhy0/Jie/pkg/util"
-	"io"
 	"regexp"
 	"strings"
 	"time"
@@ -43,8 +42,7 @@ func Scan(in *input.CrawlResult) {
 }
 
 func startTesting(in *input.CrawlResult) (*http.Response, string, bool) {
-	body, _ := io.ReadAll(in.Resp.Body)
-	variations, err := http.ParseUri(in.Url, body, in.Method, in.ContentType, in.Headers)
+	variations, err := http.ParseUri(in.Url, []byte(in.Resp.Body), in.Method, in.ContentType, in.Headers)
 	if err != nil {
 		logging.Logger.Errorln(err)
 		return nil, "", false

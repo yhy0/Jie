@@ -5,7 +5,7 @@ import (
 	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/output"
-	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"time"
 )
 
@@ -56,9 +56,9 @@ func Scan(in *input.CrawlResult) {
 
 }
 
-func startTesting(in *input.CrawlResult) (*http.Response, string, bool) {
+func startTesting(in *input.CrawlResult) (*httpx.Response, string, bool) {
 
-	variations, err := http.ParseUri(in.Url, []byte(in.Resp.Body), in.Method, in.ContentType, in.Headers)
+	variations, err := httpx.ParseUri(in.Url, []byte(in.Resp.Body), in.Method, in.ContentType, in.Headers)
 	if err != nil {
 		logging.Logger.Errorln(err)
 		return nil, "", false
@@ -70,7 +70,7 @@ func startTesting(in *input.CrawlResult) (*http.Response, string, bool) {
 				in.Headers["encode"] = "encode"
 				originpayload := variations.SetPayloadByindex(p.Index, in.Url, payload, in.Method)
 				logging.Logger.Debugln("payload:", originpayload)
-				res, err := http.Request(in.Url, originpayload, in.Method, false, in.Headers)
+				res, err := httpx.Request(in.Url, in.Method, originpayload, false, in.Headers)
 				if err != nil {
 					continue
 				}

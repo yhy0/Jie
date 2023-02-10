@@ -8,7 +8,7 @@ import (
 	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/output"
-	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/util"
 	"github.com/yhy0/Jie/scan/sqlInjection"
 	"mime/multipart"
@@ -34,10 +34,10 @@ type Parameter struct {
 	Value string
 }
 
-func SwaggerScan(target, ip string) {
+func Scan(target, ip string) {
 	u, err := url.Parse(target)
 	if err != nil {
-		logging.Logger.Errorf("SwaggerScan url.Parse(%s) err: %v", target, err)
+		logging.Logger.Errorf("Scan url.Parse(%s) err: %v", target, err)
 	}
 
 	host := u.Scheme + "://" + u.Host
@@ -51,9 +51,9 @@ func SwaggerScan(target, ip string) {
 	if index != 0 {
 		basePath = path[:index]
 	}
-	req, err := http.Request(target, "GET", "", false, nil)
+	req, err := httpx.Request(target, "GET", "", false, nil)
 	if err != nil {
-		logging.Logger.Errorln("SwaggerScan err: ", err)
+		logging.Logger.Errorln("Scan err: ", err)
 		return
 	}
 
@@ -99,9 +99,9 @@ func SwaggerScan(target, ip string) {
 		}
 
 		for _, api := range apis { // 获取全部 api 文档路径
-			req, err = http.Request(host+basePath+api, "GET", "", false, nil)
+			req, err = httpx.Request(host+basePath+api, "GET", "", false, nil)
 			if err != nil {
-				logging.Logger.Errorf("SwaggerScan(%s) err: %v", api, err)
+				logging.Logger.Errorf("Scan(%s) err: %v", api, err)
 				continue
 			}
 			if util.Contains(req.Body, "\"swagger\":") { // 解析每个文档
@@ -112,9 +112,9 @@ func SwaggerScan(target, ip string) {
 	}
 
 	if swaggerJson { // 表示传入的就是swagger api路径，直接解析 eg: /v2/api-docs
-		req, err = http.Request(target, "GET", "", false, nil)
+		req, err = httpx.Request(target, "GET", "", false, nil)
 		if err != nil {
-			logging.Logger.Errorf("SwaggerScan(%s) err: %v", target, err)
+			logging.Logger.Errorf("Scan(%s) err: %v", target, err)
 			return
 		}
 		if util.Contains(req.Body, "\"swagger\":") { // 解析每个文档
@@ -398,7 +398,7 @@ func scanApi(method, baseUrl, path, queryParams, bodyParams string, header map[s
 			return
 		}
 
-		resp, err := http.UploadRequest(target, args, name, fileName)
+		resp, err := httpx.UploadRequest(target, args, name, fileName)
 		if err != nil {
 			logging.Logger.Errorln("UploadRequest err", err)
 			return
@@ -460,7 +460,7 @@ func scanApi(method, baseUrl, path, queryParams, bodyParams string, header map[s
 func scan(method, target, bodyParams string, header map[string]string, ip string) {
 	//util.HttpProxy = "http://127.0.0.1:8080"
 	if strings.EqualFold(method, "get") {
-		req, err := http.Request(target, "GET", "", false, header)
+		req, err := httpx.Request(target, "GET", "", false, header)
 		if err != nil {
 			logging.Logger.Errorf("scanApi(GET %s) err %v", target, err)
 			return
@@ -538,7 +538,7 @@ func scan(method, target, bodyParams string, header map[string]string, ip string
 		}
 
 	} else {
-		req, err := http.Request(target, method, bodyParams, false, header)
+		req, err := httpx.Request(target, method, bodyParams, false, header)
 		if err != nil {
 			logging.Logger.Errorf("scanApi(%s %s) err %v", method, target, err)
 			return

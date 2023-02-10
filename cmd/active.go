@@ -5,7 +5,7 @@ import (
 	"github.com/thoas/go-funk"
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/logging"
-	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/task"
 	"github.com/yhy0/Jie/pkg/util"
 	"github.com/yhy0/Jie/scan/nuclei"
@@ -38,7 +38,7 @@ func Active(target string) {
 	}
 
 	// 爬虫前，进行连接性、指纹识别、 waf 探测
-	resp, err := http.Request(target, "GET", "", false, nil)
+	resp, err := httpx.Request(target, "GET", "", false, nil)
 	if err != nil {
 		logging.Logger.Errorln(err)
 		return

@@ -1,4 +1,4 @@
-package http
+package httpx
 
 import (
 	"bytes"
@@ -11,6 +11,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/cookiejar"
+	"net/http/httptrace"
 	"net/http/httputil"
 	"net/url"
 	"path/filepath"
@@ -25,15 +26,16 @@ import (
 **/
 
 type Response struct {
-	Status        string
-	StatusCode    int
-	Body          string
-	RequestDump   string
-	ResponseDump  string
-	Header        http.Header
-	ContentLength int
-	RequestUrl    string
-	Location      string
+	Status           string
+	StatusCode       int
+	Body             string
+	RequestDump      string
+	ResponseDump     string
+	Header           http.Header
+	ContentLength    int
+	RequestUrl       string
+	Location         string
+	ServerDurationMs float64 // 服务器响应时间
 }
 
 type Session struct {
@@ -140,7 +142,7 @@ func RequestBasic(username string, password string, target string, method string
 	resp, err := session.Client.Do(req)
 	if err != nil {
 		//防止空指针
-		return &Response{"999", 999, "", "", "", nil, 0, "", ""}, err
+		return &Response{"999", 999, "", "", "", nil, 0, "", "", 0}, err
 	}
 
 	responseDump, _ := httputil.DumpResponse(resp, true)
@@ -153,7 +155,7 @@ func RequestBasic(username string, password string, target string, method string
 	if resplocation, err := resp.Location(); err == nil {
 		location = resplocation.String()
 	}
-	return &Response{resp.Status, resp.StatusCode, reqbody, string(requestDump), string(responseDump), resp.Header, len(reqbody), resp.Request.URL.String(), location}, nil
+	return &Response{resp.Status, resp.StatusCode, reqbody, string(requestDump), string(responseDump), resp.Header, len(reqbody), resp.Request.URL.String(), location, 0}, nil
 }
 
 func Request(target string, method string, postdata string, isredirect bool, headers map[string]string) (*Response, error) {
@@ -182,12 +184,19 @@ func Request(target string, method string, postdata string, isredirect bool, hea
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
 	}
 
+	var start = time.Now()
+	trace := &httptrace.ClientTrace{
+		GotFirstResponseByte: func() {},
+	}
+
+	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
+
 	requestDump, _ := httputil.DumpRequestOut(req, true)
 	session.RateLimiter.Take()
 	resp, err := session.Client.Do(req)
 	if err != nil {
 		//防止空指针
-		return &Response{"999", 999, "", "", "", nil, 0, "", ""}, err
+		return &Response{"999", 999, "", "", "", nil, 0, "", "", 0}, err
 	}
 
 	responseDump, _ := httputil.DumpResponse(resp, true)
@@ -200,7 +209,8 @@ func Request(target string, method string, postdata string, isredirect bool, hea
 	if resplocation, err := resp.Location(); err == nil {
 		location = resplocation.String()
 	}
-	return &Response{resp.Status, resp.StatusCode, respbody, string(requestDump), string(responseDump), resp.Header, len(respbody), resp.Request.URL.String(), location}, nil
+
+	return &Response{resp.Status, resp.StatusCode, respbody, string(requestDump), string(responseDump), resp.Header, len(respbody), resp.Request.URL.String(), location, float64(time.Since(start).Milliseconds())}, nil
 }
 
 // UploadRequest 新建上传请求
@@ -241,7 +251,7 @@ func UploadRequest(target string, params map[string]string, name, path string) (
 	resp, err := session.Client.Do(req)
 	if err != nil {
 		//防止空指针
-		return &Response{"999", 999, "", "", "", nil, 0, "", ""}, err
+		return &Response{"999", 999, "", "", "", nil, 0, "", "", 0}, err
 	}
 
 	responseDump, _ := httputil.DumpResponse(resp, true)
@@ -255,5 +265,5 @@ func UploadRequest(target string, params map[string]string, name, path string) (
 		location = resplocation.String()
 	}
 
-	return &Response{resp.Status, resp.StatusCode, respbody, string(requestDump), string(responseDump), resp.Header, len(respbody), resp.Request.URL.String(), location}, nil
+	return &Response{resp.Status, resp.StatusCode, respbody, string(requestDump), string(responseDump), resp.Header, len(respbody), resp.Request.URL.String(), location, 0}, nil
 }

@@ -18,7 +18,7 @@ func SimilarStr(str1 []rune, str2 []rune) (int, int, int) {
 	return sameLen, pos1, pos2
 }
 
-//SimilarChar  return the total length of longest string both in str1 and str2
+// SimilarChar  return the total length of longest string both in str1 and str2
 func SimilarChar(str1 []rune, str2 []rune) int {
 	maxLen, pos1, pos2 := SimilarStr(str1, str2)
 	total := maxLen
@@ -47,7 +47,7 @@ func checkIsSamePage(currentBody, baseBody []byte) bool {
 	currentHTML := string(currentBody)
 	baseHTML := string(baseBody)
 	isSamePage := false
-	// 先计算PageRatio
+	// 先计算 PageRatio
 	ratio := SimilarText(currentHTML, baseHTML)
 	if ratio > UPPER_RATIO_BOUND {
 		isSamePage = true

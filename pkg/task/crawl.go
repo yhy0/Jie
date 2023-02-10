@@ -9,7 +9,7 @@ import (
 	"github.com/yhy0/Jie/crawler/katana/pkg/output"
 	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/input"
-	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"golang.org/x/net/publicsuffix"
 	"net/url"
 	"path"
@@ -93,18 +93,18 @@ func (t *Task) Crawler(waf []string) {
 		}
 
 		if flag {
-			resp, err := http.Request(result.URL, result.Method, result.Body, false, crawlResult.Headers)
+			resp, err := httpx.Request(result.URL, result.Method, result.Body, false, crawlResult.Headers)
 			if err != nil {
-				logging.Logger.Errorf("[*Crawler] %s", err)
+				logging.Logger.Errorf("[Crawler] %s", err)
 			} else {
 				// 响应为 200 的才会进行扫描
 				if resp.StatusCode == 200 {
 					crawlResult.Resp = resp
 					//logging.Logger.Infof("[*Crawler] URL: %s, Method: %s, Body: %s, Source: %s, Headers: %s, Path: %s, Hostname: %s, Rdn: %s, Rurl: %s, Dir: %s", crawlResult.Url, crawlResult.Method, crawlResult.RequestBody, crawlResult.Source, crawlResult.Headers, crawlResult.Path, crawlResult.Hostname, crawlResult.Rdn, crawlResult.RUrl, crawlResult.Dir)
-					logging.Logger.Infof("[*Crawler] URL: %s, Method: %s", crawlResult.Url, crawlResult.Method)
+					logging.Logger.Infof("[Processing] %s %s ", crawlResult.Method, crawlResult.Url)
 					t.Distribution(crawlResult)
 				} else {
-					logging.Logger.Debugf("[*Crawler] URL: %s Status: %d", crawlResult.Url, resp.StatusCode)
+					logging.Logger.Debugf("[Crawler] URL: %s Status: %d", crawlResult.Url, resp.StatusCode)
 				}
 
 			}

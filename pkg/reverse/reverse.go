@@ -3,7 +3,7 @@ package reverse
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"net/url"
 	"time"
 )
@@ -64,7 +64,7 @@ type ReverseBody struct {
 }
 
 func GetReverseResp(verifyUrl string) bool {
-	res, err := http.Request(verifyUrl, "GET", "", false, nil)
+	res, err := httpx.Request(verifyUrl, "GET", "", false, nil)
 	if err != nil {
 		return false
 	}

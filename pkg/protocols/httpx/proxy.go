@@ -1,15 +1,9 @@
-package http
+package httpx
 
 import (
 	"errors"
 	"net/url"
 )
-
-/**
-  @author: yhy
-  @since: 2023/1/5
-  @desc: //TODO
-**/
 
 func validateProxyURL(proxy string) (string, error) {
 	if url, err := url.Parse(proxy); err == nil && isSupportedProtocol(url.Scheme) {

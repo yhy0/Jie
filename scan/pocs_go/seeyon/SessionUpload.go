@@ -2,7 +2,7 @@ package seeyon
 
 import (
 	"bytes"
-	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"mime/multipart"
 	"net/textproto"
 	"regexp"
@@ -28,7 +28,7 @@ func getsession(u string) string {
 
 	header := make(map[string]string)
 	header["Content-Type"] = "application/x-www-form-urlencoded"
-	if req, err := http.Request(u+"/seeyon/thirdpartyController.do", "POST", data, false, header); err == nil {
+	if req, err := httpx.Request(u+"/seeyon/thirdpartyController.do", "POST", data, false, header); err == nil {
 		if req.StatusCode == 200 && strings.Contains(req.Body, "a8genius.do") && req.Header.Get("Set-Cookie") != "" {
 			return req.Header.Get("Set-Cookie")
 		}
@@ -57,7 +57,7 @@ func upload(u string, cookie string) string {
 	header := make(map[string]string)
 	header["Content-Type"] = "multipart/form-data; boundary=" + boundary
 	header["Cookie"] = cookie
-	if req, err := http.Request(u+"/seeyon/fileUpload.do?method=processUpload", "POST", buf.String(), false, header); err == nil {
+	if req, err := httpx.Request(u+"/seeyon/fileUpload.do?method=processUpload", "POST", buf.String(), false, header); err == nil {
 		if req.StatusCode == 200 && strings.Contains(req.Body, "fileurls=fileurls") {
 			filenamelist := regexp.MustCompile(`fileurls=fileurls\+["'],["']\+["'](.+)["']`).FindStringSubmatch(req.Body)
 			if filenamelist != nil {
@@ -74,7 +74,7 @@ func unzip(u string, filename string, cookie string) bool {
 	header := make(map[string]string)
 	header["Content-Type"] = "application/x-www-form-urlencoded"
 	header["Cookie"] = cookie
-	if req, err := http.Request(u+"/seeyon/ajax.do", "POST", data, false, header); err == nil {
+	if req, err := httpx.Request(u+"/seeyon/ajax.do", "POST", data, false, header); err == nil {
 		if req.StatusCode == 500 {
 			return true
 		}

@@ -46,7 +46,7 @@ func (t *KatanaTask) StartCrawler() {
 		FormConfig:                "",              // 表单配置文件
 		Headless:                  true,            // 是否使用无头浏览器
 		UseInstalledChrome:        false,           // 是否使用已安装的 Chrome, 否则会自动下载 Chrome
-		ShowBrowser:               true,            // 以无头模式显示浏览器
+		ShowBrowser:               false,           // 以无头模式显示浏览器
 		HeadlessOptionalArguments: nil,             // 无头浏览器可选参数
 		HeadlessNoSandbox:         true,            // 是否以 --no-sandbox 模式启动 Chrome
 		Scope:                     nil,             // 爬取的域名范围的url正则表达式

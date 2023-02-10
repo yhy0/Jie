@@ -1,4 +1,4 @@
-package dirScan
+package bbscan
 
 import (
 	"embed"

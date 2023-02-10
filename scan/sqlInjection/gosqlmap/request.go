@@ -1,8 +1,6 @@
 package gosqlmap
 
-import (
-	"github.com/yhy0/Jie/pkg/protocols/http"
-)
+import "github.com/yhy0/Jie/pkg/protocols/httpx"
 
 type ReqConf struct {
 	Url      string
@@ -24,7 +22,7 @@ var DIFF_TOLERANCE = 0.05
 
 // httpDoTimeout 提供http 请求，返回 响应码 body 和 错误
 func httpDoTimeout(conf *ReqConf) (int, []byte, error, string, string) {
-	res, err := http.Request(conf.Url, conf.Method, conf.Data, false, conf.Headers)
+	res, err := httpx.Request(conf.Url, conf.Method, conf.Data, false, conf.Headers)
 	if err != nil {
 		return 0, nil, err, "", ""
 	}

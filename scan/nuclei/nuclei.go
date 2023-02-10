@@ -4,6 +4,7 @@ package nuclei
   @author: yhy
   @since: 2023/2/1
   @desc: https://github.com/projectdiscovery/nuclei/blob/main/v2/examples/simple.go
+	todo 去除目录爆破等规则，目录爆破通过 bbscan 进行测试
 **/
 
 import (

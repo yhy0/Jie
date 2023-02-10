@@ -1,14 +1,14 @@
 package brute
 
 import (
-	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"net/url"
 	"regexp"
 	"strings"
 )
 
 func CheckLoginPage(inputurl string) bool {
-	if req, err := http.Request(inputurl, "GET", "", true, nil); err == nil {
+	if req, err := httpx.Request(inputurl, "GET", "", true, nil); err == nil {
 		cssurl := regexp.MustCompile(`<link[^>]*href=['"](.*?)['"]`).FindAllStringSubmatch(req.Body, -1)
 		for _, v := range cssurl {
 			if strings.Contains(v[1], ".css") {
@@ -24,7 +24,7 @@ func CheckLoginPage(inputurl string) bool {
 					return false
 				}
 				hrefurl := u.ResolveReference(href)
-				if reqcss, err := http.Request(hrefurl.String(), "GET", "", true, nil); err == nil {
+				if reqcss, err := httpx.Request(hrefurl.String(), "GET", "", true, nil); err == nil {
 					if strings.Contains(reqcss.Body, "login") || strings.Contains(reqcss.Body, "Login") {
 						return true
 					}

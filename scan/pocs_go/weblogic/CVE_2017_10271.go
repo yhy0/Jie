@@ -1,7 +1,7 @@
 package weblogic
 
 import (
-	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"strings"
 )
 
@@ -28,7 +28,7 @@ func CVE_2017_10271(url string) bool {
 	header := make(map[string]string)
 	header["Content-Type"] = "text/xml;charset=UTF-8"
 	header["SOAPAction"] = ""
-	if req, err := http.Request(url+"/wls-wsat/CoordinatorPortType", "POST", post_str, false, header); err == nil {
+	if req, err := httpx.Request(url+"/wls-wsat/CoordinatorPortType", "POST", post_str, false, header); err == nil {
 		if (strings.Contains(req.Body, "<faultstring>java.lang.ProcessBuilder")) || (strings.Contains(req.Body, "<faultstring>0")) {
 			return true
 		}

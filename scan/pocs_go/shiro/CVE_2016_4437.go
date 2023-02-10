@@ -10,7 +10,7 @@ import (
 	"fmt"
 	uuid "github.com/satori/go.uuid"
 	"github.com/yhy0/Jie/logging"
-	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"io"
 	"regexp"
 	"strings"
@@ -62,7 +62,7 @@ func aES_GCM_Encrypt(key []byte, Content []byte) string {
 func getkeylen(u string, indexlen int, rememberMe string) (int, error) {
 	var header = make(map[string]string, 1)
 	header["Cookie"] = "rememberMe=" + rememberMe
-	if req, err := http.Request(u, "GET", "", false, header); err == nil {
+	if req, err := httpx.Request(u, "GET", "", false, header); err == nil {
 		var SetCookieAll string
 		for i := range req.Header["Set-Cookie"] {
 			SetCookieAll += req.Header["Set-Cookie"][i]

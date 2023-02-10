@@ -1,11 +1,11 @@
-package dirScan
+package bbscan
 
 import (
 	"github.com/antlabs/strsim"
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/output"
-	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/util"
 	"github.com/yhy0/Jie/scan/swagger"
 	"net/url"
@@ -124,7 +124,7 @@ func getTitle(body string) string {
 	return ""
 }
 
-func ReqPage(u string) (*page, *http.Response, error) {
+func ReqPage(u string) (*page, *httpx.Response, error) {
 	page := &page{}
 	var backUpSuffixList = []string{".tar", ".tar.gz", ".zip", ".rar", ".7z", ".bz2", ".gz", ".war"}
 	var method = "GET"
@@ -136,7 +136,7 @@ func ReqPage(u string) (*page, *http.Response, error) {
 		}
 	}
 
-	if res, err := http.Request(u, method, "", false, conf.DefaultHeader); err == nil {
+	if res, err := httpx.Request(u, method, "", false, conf.DefaultHeader); err == nil {
 		if util.IntInSlice(res.StatusCode, []int{301, 302, 307, 308}) {
 			page.is302 = true
 		}
@@ -177,7 +177,7 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 		count502     = 0
 		technologies []string
 		url404       *page
-		url404res    *http.Response
+		url404res    *httpx.Response
 		err          error
 	)
 
@@ -383,7 +383,7 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 
 						// swagger 自动化测试
 						if strings.Contains(path, "swagger") {
-							swagger.SwaggerScan(u+path, ip)
+							swagger.Scan(u+path, ip)
 						}
 
 						technologies = addFingerprintsnormal(path, technologies, res) // 基于200页面文件扫描指纹添加

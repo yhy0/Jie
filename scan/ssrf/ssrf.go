@@ -5,7 +5,7 @@ import (
 	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/output"
-	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/reverse"
 	"github.com/yhy0/Jie/pkg/util"
 	"time"
@@ -21,7 +21,7 @@ import (
 var sensitiveWords = []string{"url", "path", "uri", "api", "target", "host", "domain", "ip", "file"}
 
 func Scan(crawlResult *input.CrawlResult) {
-	params, err := http.ParseUri(crawlResult.Url, []byte(crawlResult.Resp.Body), crawlResult.Method, crawlResult.ContentType, crawlResult.Headers)
+	params, err := httpx.ParseUri(crawlResult.Url, []byte(crawlResult.Resp.Body), crawlResult.Method, crawlResult.ContentType, crawlResult.Headers)
 	if err != nil {
 		logging.Logger.Debug(err.Error())
 		return
@@ -49,7 +49,7 @@ func Scan(crawlResult *input.CrawlResult) {
 // ssrf
 func ssrf(in *input.CrawlResult, payloads []string, dnslog *reverse.Reverse) bool {
 	for _, payload := range payloads {
-		res, err := http.Request(in.Url, payload, in.Method, false, in.Headers)
+		res, err := httpx.Request(in.Url, payload, in.Method, false, in.Headers)
 		if err != nil {
 			logging.Logger.Errorln(err)
 			continue
@@ -90,7 +90,7 @@ func ssrf(in *input.CrawlResult, payloads []string, dnslog *reverse.Reverse) boo
 // readFile 任意文件读取
 func readFile(in *input.CrawlResult, payloads []string) {
 	for _, payload := range payloads {
-		res, err := http.Request(in.Url, payload, in.Method, false, in.Headers)
+		res, err := httpx.Request(in.Url, payload, in.Method, false, in.Headers)
 		if err != nil {
 			logging.Logger.Errorln(err)
 			continue

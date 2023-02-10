@@ -35,6 +35,13 @@ func RandFromChoices(n int, choices string) string {
 	return string(b)
 }
 
+// RandNumber 随机数字
+func RandNumber(n int, m int) int {
+	rand.Seed(time.Now().Unix())
+	rand.Intn(n)
+	return rand.Intn(m-n) + n
+}
+
 // RandLetters 随机小写字母
 func RandLetters(n int) string {
 	return RandFromChoices(n, letterBytes)

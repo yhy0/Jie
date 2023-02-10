@@ -1,7 +1,7 @@
 package input
 
 import (
-	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/reverse"
 )
 
@@ -55,7 +55,7 @@ type CrawlResult struct {
 	Param                 []string          `json:"param"`    // 参数名  user,password
 	IsSensorServerEnabled bool              // 是否开启传感器服务
 	Waf                   []string          `json:"waf"` // 是否存在 waf
-	Resp                  *http.Response    `json:"resp"`
+	Resp                  *httpx.Response   `json:"resp"`
 }
 
 //

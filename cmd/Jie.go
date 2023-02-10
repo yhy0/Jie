@@ -7,7 +7,6 @@ import (
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/output"
-	"github.com/yhy0/Jie/pkg/protocols/http"
 	"github.com/yhy0/Jie/pkg/util"
 	"os"
 )
@@ -130,7 +129,7 @@ func run(c *cli.Context) error {
 		Passive()
 	} else {
 		// 初始化 session ,todo 后续优化一下，不同网站共用一个不知道会不会出问题，应该不会
-		http.NewSession()
+		httpx.NewSession()
 
 		Active(target)
 	}

@@ -1,7 +1,7 @@
 package fastjson
 
 import (
-	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"net/url"
 	"regexp"
 	"strings"
@@ -38,7 +38,7 @@ func Check(u string, finalURL string) string {
 		//} else {
 		header["cmd"] = "echo jsonvuln"
 		for _, payload := range fastjsonEchoPayloads {
-			if req, err := http.Request(jsonurl, "POST", payload, false, header); err == nil {
+			if req, err := httpx.Request(jsonurl, "POST", payload, false, header); err == nil {
 				if strings.Contains(req.Body, "jsonvuln") {
 					//pkg.GoPocLog(fmt.Sprintf("Found vuln FastJson ECHO RCE |%s\n", u))
 					return "ECHO RCE"
@@ -51,7 +51,7 @@ func Check(u string, finalURL string) string {
 }
 
 func getinputurl(domainurl string) (domainurlx []string) {
-	req, err := http.Request(domainurl, "GET", "", true, nil)
+	req, err := httpx.Request(domainurl, "GET", "", true, nil)
 	if err != nil {
 		return nil
 	}
@@ -59,7 +59,7 @@ func getinputurl(domainurl string) (domainurlx []string) {
 	hrefreg := regexp.MustCompile(`location.href='(.*?)'`)
 	hreflist := hrefreg.FindStringSubmatch(req.Body)
 	if hreflist != nil {
-		req, err = http.Request(domainurl+"/"+hreflist[len(hreflist)-1:][0], "GET", "", true, nil)
+		req, err = httpx.Request(domainurl+"/"+hreflist[len(hreflist)-1:][0], "GET", "", true, nil)
 		if err != nil {
 			return nil
 		}

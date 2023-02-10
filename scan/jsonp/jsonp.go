@@ -8,7 +8,7 @@ import (
 	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/output"
-	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"io"
 	"net/url"
 	"regexp"
@@ -100,7 +100,7 @@ func CheckIsSensitiveKey(key string) (bool, error) {
 }
 
 func GetJsResponse(in *input.CrawlResult) (string, *JsonpInfo, error) {
-	res, err := http.Request(in.Url, in.Method, "", false, in.Headers)
+	res, err := httpx.Request(in.Url, in.Method, "", false, in.Headers)
 	if err != nil {
 		return "", nil, err
 	}

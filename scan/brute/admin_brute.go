@@ -4,7 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"github.com/yhy0/Jie/logging"
-	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/util"
 	"net/url"
 	"regexp"
@@ -16,7 +16,7 @@ var SkipAdminBrute bool
 func getinput(inputurl string) (usernamekey string, passwordkey string, loginurl string, ismd5 bool) {
 	usernamekey = "username"
 	passwordkey = "password"
-	if req, err := http.Request(inputurl, "GET", "", true, nil); err == nil {
+	if req, err := httpx.Request(inputurl, "GET", "", true, nil); err == nil {
 		if strings.Contains(req.Body, "md5.js") {
 			ismd5 = true
 		}
@@ -37,7 +37,7 @@ func getinput(inputurl string) (usernamekey string, passwordkey string, loginurl
 				return "", "", "", false
 			}
 			hrefurl := u.ResolveReference(href)
-			req, err = http.Request(hrefurl.String(), "GET", "", true, nil)
+			req, err = httpx.Request(hrefurl.String(), "GET", "", true, nil)
 			if err != nil {
 				return "", "", "", false
 			}
@@ -99,7 +99,7 @@ func Admin_brute(u string) (username string, password string, loginurl string) {
 		adminfalse302location string
 		testfalse302location  string
 	)
-	if adminfalseurl, err := http.Request(loginurl, "POST", adminfalsedata, false, nil); err == nil {
+	if adminfalseurl, err := httpx.Request(loginurl, "POST", adminfalsedata, false, nil); err == nil {
 		code := adminfalseurl.StatusCode
 		switch code {
 		case 301, 302, 307, 308:
@@ -123,7 +123,7 @@ func Admin_brute(u string) (username string, password string, loginurl string) {
 		falseis500 = true
 	}
 
-	if testfalseurl, err := http.Request(loginurl, "POST", testfalsedata, false, nil); err == nil {
+	if testfalseurl, err := httpx.Request(loginurl, "POST", testfalsedata, false, nil); err == nil {
 		code := testfalseurl.StatusCode
 		switch code {
 		case 301, 302, 307, 308:
@@ -168,7 +168,7 @@ func Admin_brute(u string) (username string, password string, loginurl string) {
 				has := md5.Sum(data)
 				pass = fmt.Sprintf("%x", has)
 			}
-			if req, err2 := http.Request(loginurl, "POST", fmt.Sprintf("%s=%s&%s=%s", usernamekey, user, passwordkey, pass), false, nil); err2 == nil {
+			if req, err2 := httpx.Request(loginurl, "POST", fmt.Sprintf("%s=%s&%s=%s", usernamekey, user, passwordkey, pass), false, nil); err2 == nil {
 				if falseis401 {
 					if req.StatusCode != 401 {
 						logging.Logger.Infof(fmt.Sprintf("Found vuln admin password|%s:%s|%s\n", user, pass, loginurl))
@@ -181,7 +181,7 @@ func Admin_brute(u string) (username string, password string, loginurl string) {
 					}
 					if req.Location != adminfalse302location && req.Location != testfalse302location {
 						sucesstestdata := fmt.Sprintf("%s=%s&%s=Qweasd123zxc", usernamekey, user, passwordkey)
-						if sucesstest, err := http.Request(loginurl, "POST", sucesstestdata, false, nil); err == nil {
+						if sucesstest, err := httpx.Request(loginurl, "POST", sucesstestdata, false, nil); err == nil {
 							if sucesstest.Location != req.Location {
 								logging.Logger.Infof(fmt.Sprintf("1.Found vuln admin password|%s:%s|%s\n", user, pass, loginurl))
 								return user, pass, loginurl
@@ -203,7 +203,7 @@ func Admin_brute(u string) (username string, password string, loginurl string) {
 					}
 					if (req.ContentLength != 0 || req.StatusCode == 301 || req.StatusCode == 302 || req.StatusCode == 307 || req.StatusCode == 308) && adminlenabs > 2 && testlenabs > 2 {
 						sucesstestdata := fmt.Sprintf("%s=%s&%s=Qweasd123zxc", usernamekey, user, passwordkey)
-						if sucesstest, err := http.Request(loginurl, "POST", sucesstestdata, false, nil); err == nil {
+						if sucesstest, err := httpx.Request(loginurl, "POST", sucesstestdata, false, nil); err == nil {
 							if sucesstest.ContentLength != req.ContentLength {
 								logging.Logger.Infof(fmt.Sprintf("2. Found vuln admin password|%s:%s|%s\n", user, pass, loginurl))
 								return user, pass, loginurl

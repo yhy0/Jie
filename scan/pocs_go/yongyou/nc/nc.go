@@ -2,7 +2,7 @@ package nc
 
 import (
 	"github.com/yhy0/Jie/logging"
-	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 )
 
 /**
@@ -26,16 +26,16 @@ var paths = []string{
 }
 
 func Scan(u string) bool {
-	var resp *http.Response
+	var resp *httpx.Response
 	var err error
 	for _, path := range paths {
 		if path == "/ServiceDispatcherServlet" {
-			resp, err = http.Request(u+path, "POST", "", false, nil)
+			resp, err = httpx.Request(u+path, "POST", "", false, nil)
 			if err != nil {
 				continue
 			}
 		} else {
-			resp, err = http.Request(u+path, "GET", "", false, nil)
+			resp, err = httpx.Request(u+path, "GET", "", false, nil)
 			if err != nil {
 				continue
 			}

@@ -4,7 +4,7 @@ import (
 	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/output"
-	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"regexp"
 	"strings"
 	"time"
@@ -33,7 +33,7 @@ func Scan(in *input.CrawlResult) {
 	for _, pl := range payloadTemplate {
 		if strings.ToUpper(in.Method) == "GET" {
 			npl := in.Url + pl
-			res, err := http.Request(npl, in.Method, "", false, in.Headers)
+			res, err := httpx.Request(npl, in.Method, "", false, in.Headers)
 
 			if err != nil {
 				logging.Logger.Debugf("Request error: %v", err)
@@ -46,7 +46,7 @@ func Scan(in *input.CrawlResult) {
 				return
 			}
 
-			C := r.FindAllStringSubmatch(http.Header(res.Header), -1)
+			C := r.FindAllStringSubmatch(httpx.Header(res.Header), -1)
 			if len(C) != 0 {
 				output.OutChannel <- output.VulMessage{
 					DataType: "web_vul",
@@ -67,12 +67,12 @@ func Scan(in *input.CrawlResult) {
 			}
 
 		} else {
-			res, err := http.Request(in.Url, in.Method, in.Resp.Body+pl, false, in.Headers)
+			res, err := httpx.Request(in.Url, in.Method, in.Resp.Body+pl, false, in.Headers)
 			if err != nil {
 				logging.Logger.Debugf("Request error: %v", err)
 				return
 			}
-			if str := r.FindString(http.Header(res.Header)); str != "" {
+			if str := r.FindString(httpx.Header(res.Header)); str != "" {
 				output.OutChannel <- output.VulMessage{
 					DataType: "web_vul",
 					Plugin:   "CRLF",

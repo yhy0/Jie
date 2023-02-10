@@ -1,13 +1,13 @@
-package dirScan
+package bbscan
 
 import (
 	"fmt"
-	"github.com/yhy0/Jie/pkg/protocols/http"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/scan/brute"
 	"strings"
 )
 
-func addFingerprints404(technologies []string, req *http.Response) []string {
+func addFingerprints404(technologies []string, req *httpx.Response) []string {
 	// StatusCode 404
 	if strings.Contains(req.Body, "thinkphp") {
 		technologies = append(technologies, "ThinkPHP")
@@ -33,7 +33,7 @@ func addFingerprints403(path string, technologies []string) []string {
 	return technologies
 }
 
-func addFingerprintsnormal(path string, technologies []string, req *http.Response) []string {
+func addFingerprintsnormal(path string, technologies []string, req *httpx.Response) []string {
 	// StatusCode 200, 301, 302, 401, 500
 	switch path {
 	case "/manager/html":
@@ -57,7 +57,7 @@ func addFingerprintsnormal(path string, technologies []string, req *http.Respons
 			technologies = append(technologies, "seeyon")
 		}
 	case "/admin", "/admin-console", "/admin.asp", "/admin.aspx", "/admin.do", "/admin.html", "/admin.jsp", "/admin.php", "/admin/", "/admin/admin", "/admin/adminLogin.do", "/admin/checkLogin.do", "/admin/index.do", "/Admin/Login", "/admin/Login.aspx", "/admin/login.do", "/admin/menu", "/Adminer", "/adminer.php", "/administrator", "/adminLogin.do", "/checkLogin.do", "/doc/page/login.asp", "/login", "/Login.aspx", "/login/login", "/login/Login.jsp", "/manage", "/manage/login.htm", "/management", "/manager", "/manager.aspx", "/manager.do", "/manager.jsp", "/manager.jspx", "/manager.php", "/memadmin/index.php", "/myadmin/login.php", "/Systems/", "/user-login.html", "/wp-login.php":
-		if reqlogin, err := http.Request(req.RequestUrl, "GET", "", true, nil); err == nil {
+		if reqlogin, err := httpx.Request(req.RequestUrl, "GET", "", true, nil); err == nil {
 			if strings.Contains(reqlogin.Body, "<input") && (strings.Contains(reqlogin.Body, "pass") || strings.Contains(reqlogin.Body, "Pass") || strings.Contains(reqlogin.Body, "PASS")) {
 				technologies = append(technologies, "AdminLoginPage")
 				username, password, loginurl := brute.Admin_brute(req.RequestUrl)

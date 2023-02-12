@@ -25,9 +25,9 @@ func (sql *Sqlmap) checkErrorBased(pos int) {
 		if index == pos {
 			var payload string
 			if regex.MatchString(p.Value) {
-				payload = sql.Variations.SetPayloadByindex(p.Index, sql.Url, util.RandLetters(4)+getErrorBasedPreCheckPayload(), sql.Method)
+				payload = sql.Variations.SetPayloadByIndex(p.Index, sql.Url, util.RandLetters(4)+getErrorBasedPreCheckPayload(), sql.Method)
 			} else {
-				payload = sql.Variations.SetPayloadByindex(p.Index, sql.Url, strconv.Itoa(util.RandNumber(99999, 9999999))+getErrorBasedPreCheckPayload(), sql.Method)
+				payload = sql.Variations.SetPayloadByIndex(p.Index, sql.Url, strconv.Itoa(util.RandNumber(99999, 9999999))+getErrorBasedPreCheckPayload(), sql.Method)
 			}
 			sql.checkError(payload, p)
 		}
@@ -35,7 +35,13 @@ func (sql *Sqlmap) checkErrorBased(pos int) {
 }
 
 func (sql *Sqlmap) checkError(payload string, param httpx.Param) {
-	res, err := httpx.Request(sql.Url, sql.Method, payload, false, sql.Headers)
+	var res *httpx.Response
+	var err error
+	if sql.Method == "GET" {
+		res, err = httpx.Request(payload, sql.Method, "", false, sql.Headers)
+	} else {
+		res, err = httpx.Request(sql.Url, sql.Method, payload, false, sql.Headers)
+	}
 
 	if err != nil {
 		logging.Logger.Debugln("尝试检测 Error-Based SQL Injection Payload 失败")

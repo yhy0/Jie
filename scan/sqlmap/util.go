@@ -27,10 +27,9 @@ func getErrorBasedPreCheckPayload() string {
 
 // getNormalRespondTime 对目标发起5次请求, 正常的响应时间应该小于等于这个值
 func getNormalRespondTime(sql *Sqlmap) (error, float64) {
-
 	var timeRec []float64
 	for i := 0; i < 5; i++ {
-		res, err := httpx.Request(sql.Url, sql.Method, sql.PostData, false, sql.Headers)
+		res, err := httpx.Request(sql.Url, sql.Method, sql.RequestBody, false, sql.Headers)
 		if err != nil {
 			return err, -1
 		}

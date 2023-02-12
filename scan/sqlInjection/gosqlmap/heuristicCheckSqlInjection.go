@@ -74,7 +74,6 @@ func HeuristicCheckSqlInjection(conf *ReqConf) (SQLInfo, error) {
 		flag := checkIsSamePage(currentBody, conf.BaseData.BaseBody)
 		if flag == false {
 			payloadStr := fmt.Sprintf("[method]%s [url]%s [args]%s [key]%s", conf.Method, currentUrl, currentData, key)
-			logging.Logger.Debugln("[PAYLOAD] ", payloadStr)
 			dbms := getDBMSBasedOnErrors(currentBody)
 			if dbms != "" {
 				logging.Logger.Infoln("heuristic (basic) test shows that GET parameter [", key, "]might be injectable,  possible DBMS:", dbms)

@@ -72,6 +72,42 @@ HEURISTIC_CHECK_ALPHABET = ('"', '\'', ')', '(', ',', '.')
 >
 >Copilot 告诉我的, 还挺好使，哈哈
 
+代码实现
+
+```go
+timeRec 是一个记录五次访问时间的数组
+mean(timeRec) + 7*std(timeRec)
+
+// 期望,也就是平均响应时间
+func mean(v []float64) float64 {
+	var res float64 = 0
+	var n = len(v)
+	for i := 0; i < n; i++ {
+		res += v[i]
+	}
+	return res / float64(n)
+}
+
+// 方差
+func variance(v []float64) float64 {
+	var res float64 = 0
+	var m = mean(v)
+	var n = len(v)
+	for i := 0; i < n; i++ {
+		res += (v[i] - m) * (v[i] - m)
+	}
+	return res / float64(n-1)
+}
+
+// 标准差
+func std(v []float64) float64 {
+	return math.Sqrt(variance(v))
+}
+```
+
+
+
+
 
 #### UNION 注入
 

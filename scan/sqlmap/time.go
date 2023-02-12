@@ -34,12 +34,19 @@ func (sql *Sqlmap) checkTimeBasedBlind(pos int, closeType int, lineBreak bool) {
 		if index == pos {
 			logging.Logger.Debugln("尝试时间注入")
 
-			payload = sql.Variations.SetPayloadByindex(param.Index, sql.Url, param.Value+payload, sql.Method)
+			payload = sql.Variations.SetPayloadByIndex(param.Index, sql.Url, param.Value+payload, sql.Method)
 
-			res, err := httpx.Request(sql.Url, sql.Method, payload, false, sql.Headers)
+			var res *httpx.Response
+			if sql.Method == "GET" {
+				res, err = httpx.Request(payload, sql.Method, "", false, sql.Headers)
+			} else {
+				res, err = httpx.Request(sql.Url, sql.Method, payload, false, sql.Headers)
+			}
+
 			if err != nil {
 				continue
 			}
+			
 			if res.ServerDurationMs > standardRespTime+2000 {
 				logging.Logger.Debugf("存在基于时间的 SQL 注入: [参数名:%v 原值:%v]", param.Name, param.Value)
 

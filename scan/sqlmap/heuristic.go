@@ -39,51 +39,63 @@ func (sql *Sqlmap) HeuristicCheckSqlInjection() {
 	randString := util.RandFromChoices(4, randomTestString)
 	cast := false
 
-	variations, err := httpx.ParseUri(sql.Url, []byte(sql.Resp.Body), sql.Method, sql.ContentType, sql.Headers)
-	if err != nil {
-		return
-	}
-
-	// todo 这里不对, variations 值是不断变换的，这应该会导致参数的 payload 出现异常，应该吧？
-	// todo 还有就是  sql.Variations.SetPayloadByindex(param.Index, sql.Url, positivePayload, sql.Method) 这返回的是个什么？
-	sql.Variations = variations
-
-	logging.Logger.Debugf("总共测试参数共%d个", len(variations.Params))
-
 	// 匹配参数的值为整形的情况
 	regex := regexp.MustCompile(`^[0-9]+$`)
 
+	var err error
+	var flag bool
+
+	if len(sql.DynamicPara) == 0 {
+		flag = true
+	}
+	// 检测是否存咋转型的参数 	转型参数代表无法注入
 	for pos, p := range sql.Variations.Params {
-		var payload string
-		if funk.Any(regex.FindAllString(p.Value, -1)) {
-			payload = sql.Variations.SetPayloadByindex(p.Index, sql.Url, randomTestString+randString, sql.Method)
-		} else {
-			payload = sql.Variations.SetPayloadByindex(p.Index, sql.Url, randomTestString+strconv.Itoa(util.RandNumber(0, 9999)), sql.Method)
+		// 如果检测动态参数结果为空，则进行暴力检测，每个参数都检测;若不为空，则只对动态参数进行检测
+		if !flag && funk.Contains(sql.DynamicPara, p.Name) {
+			flag = true
 		}
 
-		res, err := httpx.Request(sql.Url, sql.Method, payload, false, sql.Headers)
-		time.Sleep(0.5)
-
-		if err != nil {
-			logging.Logger.Debugf("checkIfInjectable Fuzz请求出错")
-			continue
-		}
-
-		for _, value := range FormatExceptionStrings {
-			if funk.Contains(res.Body, value) {
-				cast = true
-				logging.Logger.Debugf(sql.Url + " 参数: " + p.Name + " 因数值转型无法注入")
-				break
+		if flag {
+			var payload string
+			if regex.MatchString(p.Value) {
+				payload = sql.Variations.SetPayloadByIndex(p.Index, sql.Url, randomTestString+randString, sql.Method)
+			} else {
+				payload = sql.Variations.SetPayloadByIndex(p.Index, sql.Url, randomTestString+strconv.Itoa(util.RandNumber(0, 9999)), sql.Method)
 			}
+
+			logging.Logger.Debugln(payload)
+
+			var res *httpx.Response
+			if sql.Method == "GET" {
+				res, err = httpx.Request(payload, sql.Method, "", false, sql.Headers)
+			} else {
+				res, err = httpx.Request(sql.Url, sql.Method, payload, false, sql.Headers)
+			}
+
+			time.Sleep(time.Millisecond * 500)
+
+			if err != nil {
+				logging.Logger.Debugf("checkIfInjectable Fuzz请求出错")
+				continue
+			}
+
+			for _, value := range FormatExceptionStrings {
+				if funk.Contains(res.Body, value) {
+					cast = true
+					logging.Logger.Debugf(sql.Url + " 参数: " + p.Name + " 因数值转型无法注入")
+					break
+				}
+			}
+
+			if cast {
+				cast = false
+				continue
+			}
+
+			injectableParamsPos = append(injectableParamsPos, pos)
+			logging.Logger.Debugf(sql.Url + " 参数: " + p.Name + " 未检测到转型")
 		}
 
-		if cast {
-			cast = false
-			continue
-		}
-
-		injectableParamsPos = append(injectableParamsPos, pos)
-		logging.Logger.Debugf(sql.Url + " 参数: " + p.Name + " 未检测到转型")
 	}
 
 	if len(injectableParamsPos) == 0 {

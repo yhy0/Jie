@@ -61,6 +61,8 @@ type Variations struct {
 	MimeType string `json:"mimeType"`
 	// Params is a list of posted parameters (in case of URL encoded parameters).
 	Params []Param `json:"params"`
+	// OriginalParams 存储原始的值
+	OriginalParams []Param `json:"params"`
 	// Text contains the posted data. Although its type is string, it may contain
 	// binary data.
 	Text string `json:"text"`
@@ -102,24 +104,10 @@ func ParseUri(uri string, body []byte, method string, contentType string, header
 						if value, ok := v.(string); ok {
 							Post := Param{Name: k, Value: value, Index: index, ContentType: contentType}
 							variations.Params = append(variations.Params, Post)
+							variations.OriginalParams = append(variations.OriginalParams, Post)
 						}
 					}
 
-				}
-				variations.MimeType = contentType
-			case applicationUrlencoded:
-				strs := strings.Split(string(body), "&")
-				for i, kv := range strs {
-					kvs := strings.Split(string(kv), "=")
-					if len(kvs) == 2 {
-						key := kvs[0]
-						value := kvs[1]
-						Post := Param{Name: key, Value: value, Index: i, ContentType: contentType}
-						variations.Params = append(variations.Params, Post)
-					} else {
-						logging.Logger.Error("exec function strings.Split fail")
-						return nil, err
-					}
 				}
 				variations.MimeType = contentType
 			case multipartData:
@@ -189,8 +177,35 @@ func ParseUri(uri string, body []byte, method string, contentType string, header
 						Index:  iindex,
 					})
 
+					variations.OriginalParams = append(variations.OriginalParams, Param{
+						Name:        p.FormName(),
+						Boundary:    boundary,
+						Filename:    p.FileName(),
+						ContentType: p.Header.Get("Content-Type"),
+						// FileContent: body,
+						Value:  string(body),
+						IsFile: isfile,
+						Index:  iindex,
+					})
+
 					p.Close()
 				}
+			default:
+				strs := strings.Split(string(body), "&")
+				for i, kv := range strs {
+					kvs := strings.Split(kv, "=")
+					if len(kvs) == 2 {
+						key := kvs[0]
+						value := kvs[1]
+						Post := Param{Name: key, Value: value, Index: i, ContentType: contentType}
+						variations.Params = append(variations.Params, Post)
+						variations.OriginalParams = append(variations.OriginalParams, Post)
+					} else {
+						logging.Logger.Error("exec function strings.Split fail")
+						return nil, err
+					}
+				}
+				variations.MimeType = contentType
 			}
 
 			sort.Sort(variations)
@@ -211,6 +226,7 @@ func ParseUri(uri string, body []byte, method string, contentType string, header
 				key := kvs[0]
 				value := kvs[1]
 				variations.Params = append(variations.Params, Param{Name: key, Value: value, Index: i, ContentType: contentType})
+				variations.OriginalParams = append(variations.OriginalParams, Param{Name: key, Value: value, Index: i, ContentType: contentType})
 			} else {
 				logging.Logger.Errorln("exec function strings.Split fail, ", uri)
 				return nil, err
@@ -238,7 +254,6 @@ func getContentType(data string) string {
 }
 
 func (p *Variations) Release() string {
-
 	var buf bytes.Buffer
 	mjson := make(map[string]interface{})
 	if p.MimeType == "application/json" {
@@ -345,16 +360,29 @@ func (p *Variations) SetPayload(uri string, payload string, method string, key .
 	return result
 }
 
-func (p *Variations) SetPayloadByindex(index int, uri string, payload string, method string) string {
+/*
+SetPayloadByIndex 根据索引设置payload
+
+GET 返回 http://testphp.vulnweb.com/listproducts.php?artist=((,”"(,"","((
+
+POST 返回 artist=')”,)'(())')(
+*/
+func (p *Variations) SetPayloadByIndex(index int, uri string, payload string, method string) string {
 	var result string
+
+	// 对 payload 进行 url 编码
+	payload = url.QueryEscape(payload)
+
 	if strings.ToUpper(method) == "POST" {
 		for idx, kv := range p.Params {
 			//小于5一个链接参数不能超过5
 			if idx <= MAX_SEND_COUNT {
 				if idx == index {
+					// 先改变参数，生成 payload，然后再将参数改回来，将现场还原
 					p.Set(kv.Name, payload)
 					str := p.Release()
-					p.Set(kv.Name, kv.Value)
+					p.Set(kv.Name, p.OriginalParams[idx].Value)
+					p.Release()
 					return str
 				}
 			} else {
@@ -376,6 +404,9 @@ func (p *Variations) SetPayloadByindex(index int, uri string, payload string, me
 					stv := p.Release()
 					str := strings.Split(uri, "?")[0] + "?" + stv
 					v.Set(kv.Name, kv.Value)
+
+					p.Set(kv.Name, p.OriginalParams[idx].Value)
+					p.Release()
 					return str
 				}
 			} else {

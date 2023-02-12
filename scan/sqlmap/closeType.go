@@ -29,7 +29,7 @@ func (sql *Sqlmap) checkCloseType(pos int) (int, bool) {
 
 			closeType := sql.checkParam(p, numeric)
 			if closeType == -1 {
-				sql.Variations.SetPayloadByindex(p.Index, sql.Url, p.Value+"\n", sql.Method)
+				sql.Variations.SetPayloadByIndex(p.Index, sql.Url, p.Value+"\n", sql.Method)
 				closeType = sql.checkParam(p, numeric)
 				if closeType == -1 {
 					return -1, false //进行下一个参数的检测
@@ -67,12 +67,13 @@ func (sql *Sqlmap) checkParam(param httpx.Param, isNumeric bool) int {
 
 	for k, v := range CloseType {
 		positivePayload = strings.ReplaceAll(positivePayload, "{{type}}", v)
+		negativePayload = strings.ReplaceAll(negativePayload, "{{type}}", v)
 		res := sql.checkType(param, positivePayload, negativePayload, paramType, v+"闭合")
 		if res {
 			return k
 		}
 
-		time.Sleep(0.5)
+		time.Sleep(time.Millisecond * 500)
 	}
 
 	if isNumeric {
@@ -85,6 +86,7 @@ func (sql *Sqlmap) checkParam(param httpx.Param, isNumeric bool) int {
 		negativePayload = "(select/**/1/**/regexp/**/if(1=2,1,0x00))"
 	}
 
+	// todo 这种检测到了，但是没有进行闭合， 没有进行适配
 	res := sql.checkType(param, positivePayload, negativePayload, paramType, "order by无闭合")
 	if res {
 		logging.Logger.Debugf("检测到ORDER BY")
@@ -93,19 +95,30 @@ func (sql *Sqlmap) checkParam(param httpx.Param, isNumeric bool) int {
 }
 
 func (sql *Sqlmap) checkType(param httpx.Param, positivePayload, negativePayload, paramType, closeType string) bool {
+	payload := sql.Variations.SetPayloadByIndex(param.Index, sql.Url, positivePayload, sql.Method)
 
-	payload := sql.Variations.SetPayloadByindex(param.Index, sql.Url, positivePayload, sql.Method)
-
-	p1rsp, err := httpx.Request(sql.Url, sql.Method, payload, false, sql.Headers)
+	var p1rsp *httpx.Response
+	var err error
+	if sql.Method == "GET" {
+		p1rsp, err = httpx.Request(payload, sql.Method, "", false, sql.Headers)
+	} else {
+		p1rsp, err = httpx.Request(sql.Url, sql.Method, payload, false, sql.Headers)
+	}
 
 	if err != nil {
 		logging.Logger.Debugf("request positive rsp error: %s", err)
 		return false
 	}
 
-	payload = sql.Variations.SetPayloadByindex(param.Index, sql.Url, negativePayload, sql.Method)
+	payload = sql.Variations.SetPayloadByIndex(param.Index, sql.Url, negativePayload, sql.Method)
 
-	n1rsp, err := httpx.Request(sql.Url, sql.Method, payload, false, sql.Headers)
+	var n1rsp *httpx.Response
+	if sql.Method == "GET" {
+		n1rsp, err = httpx.Request(payload, sql.Method, "", false, sql.Headers)
+	} else {
+		n1rsp, err = httpx.Request(sql.Url, sql.Method, payload, false, sql.Headers)
+	}
+
 	if err != nil {
 		logging.Logger.Debugf("request positive rsp error: %s", err)
 		return false
@@ -118,7 +131,7 @@ func (sql *Sqlmap) checkType(param httpx.Param, positivePayload, negativePayload
 
 	opResult := strsim.Compare(sql.OriginalBody, p1rsp.Body)
 	if opResult < SimilarityRatio {
-		logging.Logger.Debugf("参数为%v，假定[%v]边界，[%v]与原参数结果不相同", paramType, closeType, positivePayload)
+		logging.Logger.Debugf("参数为%v，假定[%v]边界，[%v]与原参数结果不相同, 相似度%v", paramType, closeType, positivePayload, opResult)
 		return false
 	}
 

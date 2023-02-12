@@ -1,6 +1,7 @@
 package sqlInjection
 
 import (
+	"github.com/thoas/go-funk"
 	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/output"
@@ -40,7 +41,7 @@ func Scan(in *input.CrawlResult) {
 	}
 
 	// 可能存在注入
-	if sqlInfo != (gosqlmap.SQLInfo{}) {
+	if funk.Any(sqlInfo) {
 		output.OutChannel <- output.VulMessage{
 			DataType: "web_vul",
 			Plugin:   "SQL Injection",

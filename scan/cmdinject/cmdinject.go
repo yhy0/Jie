@@ -42,7 +42,7 @@ func Scan(in *input.CrawlResult) {
 }
 
 func startTesting(in *input.CrawlResult) (*httpx.Response, string, bool) {
-	variations, err := httpx.ParseUri(in.Url, []byte(in.Resp.Body), in.Method, in.ContentType, in.Headers)
+	variations, err := httpx.ParseUri(in.Url, []byte(in.RequestBody), in.Method, in.ContentType, in.Headers)
 	if err != nil {
 		logging.Logger.Errorln(err)
 		return nil, "", false
@@ -66,10 +66,17 @@ func startTesting(in *input.CrawlResult) (*httpx.Response, string, bool) {
 				for _, payload := range domainPayloadList {
 					s1 := strings.ReplaceAll(payload, "{domain}", dnslog.Url)
 
-					originpayload := variations.SetPayloadByindex(p.Index, in.Url, s1, in.Method)
+					originpayload := variations.SetPayloadByIndex(p.Index, in.Url, s1, in.Method)
 
 					logging.Logger.Debugln("payload:", originpayload)
-					res, err := httpx.Request(in.Url, in.Method, originpayload, false, in.Headers)
+
+					var res *httpx.Response
+					if in.Method == "GET" {
+						res, err = httpx.Request(originpayload, in.Method, "", false, in.Headers)
+					} else {
+						res, err = httpx.Request(in.Url, in.Method, originpayload, false, in.Headers)
+					}
+
 					if err != nil {
 						continue
 					}
@@ -98,10 +105,16 @@ func startTesting(in *input.CrawlResult) (*httpx.Response, string, bool) {
 	if variations != nil {
 		for _, p := range variations.Params {
 			for _, payload := range payloads {
-				originpayload := variations.SetPayloadByindex(p.Index, in.Url, payload, in.Method)
+				originpayload := variations.SetPayloadByIndex(p.Index, in.Url, payload, in.Method)
+
+				var res *httpx.Response
+				if in.Method == "GET" {
+					res, err = httpx.Request(originpayload, in.Method, "", false, in.Headers)
+				} else {
+					res, err = httpx.Request(in.Url, in.Method, originpayload, false, in.Headers)
+				}
 
 				logging.Logger.Debugln("payload:", originpayload)
-				res, err := httpx.Request(in.Url, in.Method, originpayload, false, in.Headers)
 				if err != nil {
 					continue
 				}

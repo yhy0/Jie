@@ -8,6 +8,7 @@ import (
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/task"
 	"github.com/yhy0/Jie/pkg/util"
+	"github.com/yhy0/Jie/scan/bbscan"
 	"github.com/yhy0/Jie/scan/nuclei"
 	"github.com/yhy0/Jie/scan/waf"
 	"regexp"
@@ -45,6 +46,11 @@ func Active(target string) {
 	}
 
 	logging.Logger.Debugln("Start active crawler scan")
+
+	// bbscan 进行敏感目录扫描
+
+	bbscan.BBscan(target, "", resp.StatusCode, resp.ContentLength, resp.Body)
+
 	t := task.Task{
 		TaskId:      util.UUID(),
 		Target:      target,

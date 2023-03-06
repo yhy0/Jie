@@ -155,7 +155,8 @@ func RequestBasic(username string, password string, target string, method string
 	if resplocation, err := resp.Location(); err == nil {
 		location = resplocation.String()
 	}
-	return &Response{resp.Status, resp.StatusCode, reqbody, string(requestDump), string(responseDump), resp.Header, len(reqbody), resp.Request.URL.String(), location, 0}, nil
+
+	return &Response{resp.Status, resp.StatusCode, reqbody, string(requestDump), string(responseDump), resp.Header, int(resp.ContentLength), resp.Request.URL.String(), location, 0}, nil
 }
 
 func Request(target string, method string, postdata string, isredirect bool, headers map[string]string) (*Response, error) {
@@ -210,7 +211,7 @@ func Request(target string, method string, postdata string, isredirect bool, hea
 		location = resplocation.String()
 	}
 
-	return &Response{resp.Status, resp.StatusCode, respbody, string(requestDump), string(responseDump), resp.Header, len(respbody), resp.Request.URL.String(), location, float64(time.Since(start).Milliseconds())}, nil
+	return &Response{resp.Status, resp.StatusCode, respbody, string(requestDump), string(responseDump), resp.Header, int(resp.ContentLength), resp.Request.URL.String(), location, float64(time.Since(start).Milliseconds())}, nil
 }
 
 // UploadRequest 新建上传请求
@@ -265,5 +266,5 @@ func UploadRequest(target string, params map[string]string, name, path string) (
 		location = resplocation.String()
 	}
 
-	return &Response{resp.Status, resp.StatusCode, respbody, string(requestDump), string(responseDump), resp.Header, len(respbody), resp.Request.URL.String(), location, 0}, nil
+	return &Response{resp.Status, resp.StatusCode, respbody, string(requestDump), string(responseDump), resp.Header, int(resp.ContentLength), resp.Request.URL.String(), location, 0}, nil
 }

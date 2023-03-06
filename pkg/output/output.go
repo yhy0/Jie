@@ -2,6 +2,7 @@ package output
 
 import (
 	"fmt"
+	"github.com/logrusorgru/aurora"
 )
 
 /**
@@ -10,7 +11,7 @@ import (
   @desc: //TODO
 **/
 
-var OutChannel = make(chan VulMessage)
+var OutChannel = make(chan VulMessage, 100)
 
 // 漏洞等级
 var (
@@ -42,6 +43,8 @@ type VulData struct {
 
 func (vul *VulMessage) PrintScreen() string {
 	var screen []string
+
+	aurora.Red("asdasd").String()
 	screen = append(screen, fmt.Sprintf("[Vuln: %s]", vul.Plugin))
 	screen = append(screen, fmt.Sprintf("Level: %s", vul.Level))
 	screen = append(screen, fmt.Sprintf("Target: %s", vul.VulData.Target))
@@ -68,7 +71,9 @@ func (vul *VulMessage) PrintScreen() string {
 
 	var res = ""
 	for i := 0; i < len(screen); i++ {
-		res += fmt.Sprintf("%s\n ", screen[i])
+		//res += aurora.Red(screen[i] + "\n").String()
+		res += screen[i] + "\n  "
 	}
+
 	return "\n" + res
 }

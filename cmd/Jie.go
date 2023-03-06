@@ -6,7 +6,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/logging"
-	"github.com/yhy0/Jie/pkg/output"
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/util"
 	"os"
 )
@@ -96,15 +96,10 @@ func RunApp() {
 			},
 		},
 	}
+
 	if err := app.Run(os.Args); err != nil {
 		logging.Logger.Fatal(err)
 	}
-
-	go func() {
-		for v := range output.OutChannel {
-			logging.Logger.Infoln(v.PrintScreen())
-		}
-	}()
 }
 
 func run(c *cli.Context) error {

@@ -4,20 +4,18 @@ import (
 	_ "embed"
 	"github.com/antlabs/strsim"
 	"github.com/beevik/etree"
-	"github.com/thoas/go-funk"
 	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/util"
 	"strconv"
-	"strings"
 	"time"
 )
 
 /**
   @author: yhy
   @since: 2023/2/6
-  @desc: //TODO
+  @desc: 提取自 Yakit 插件: 启发式SQL注入检测
 **/
 
 //go:embed xml/errors.xml
@@ -30,7 +28,12 @@ var (
 
 	DiffTolerance = 0.05 // 容差
 
+	// MaxDifflibSequenceLength 用于检测页面相似度的最大长度
+	MaxDifflibSequenceLength = 10 * 1024 * 1024
+
 	CloseType = map[int]string{0: `'`, 1: `"`, 2: ``, 3: `')`, 4: `")`}
+
+	//CloseType = map[int]string{0: `'`}
 
 	// FormatExceptionStrings 用于检测格式错误的字符串
 	FormatExceptionStrings = []string{
@@ -46,24 +49,30 @@ var (
 		"InvalidDataException", "Arguments are of the wrong type",
 	}
 
-	// HeuristicCheckAlphabet 用于启发式检查的字母表
-	HeuristicCheckAlphabet = []string{`"`, `'`, `)`, `(`, `,`, `.`}
+	// DummyNonSqliCheckAppendix String used for dummy non-SQLi (e.g. XSS) heuristic checks of a tested parameter value
+	DummyNonSqliCheckAppendix = "<'\">"
+
+	//FiErrorRegex Regular expression used for recognition of file inclusion errors
+	FiErrorRegex = `(?i)[^\n]{0,100}(no such file|failed (to )?open)[^\n]{0,100}`
 
 	// DbmsErrors 用于报错检查的字典
 	DbmsErrors = map[string][]string{}
 )
 
 type Sqlmap struct {
-	OriginalBody string // 原始请求页面
-	TemplateBody string // 经过处理去除动态部分的模板页面
-	TemplateCode int
-	DynamicPara  []string // 动态参数
-	Method       string
-	Url          string
-	RequestBody  string
-	Headers      map[string]string
-	ContentType  string
-	Variations   *httpx.Variations
+	Method      string
+	Url         string
+	RequestBody string
+	Headers     map[string]string
+	ContentType string
+	Variations  *httpx.Variations
+
+	OriginalBody    string // 原始请求页面
+	TemplateBody    string // 经过处理去除动态部分的模板页面
+	TemplateCode    int
+	DynamicPara     []string          // 动态参数
+	DynamicMarkings map[string]string // 动态标记内容
+	DBMS            string            // 数据库类型
 }
 
 func init() {
@@ -77,11 +86,13 @@ func init() {
 		root := doc.SelectElement("root")
 		for _, dbms := range root.SelectElements("dbms") {
 			for _, dbName := range dbms.Attr {
+				var errWords []string
 				for _, e := range dbms.SelectElements("error") {
 					for _, errWord := range e.Attr {
-						DbmsErrors[errWord.Value] = append(DbmsErrors[errWord.Value], dbName.Value)
+						errWords = append(errWords, errWord.Value)
 					}
 				}
+				DbmsErrors[dbName.Value] = errWords
 			}
 		}
 
@@ -89,6 +100,11 @@ func init() {
 }
 
 func Scan(c *input.CrawlResult) {
+	if c.Method != "GET" && c.Method != "POST" {
+		logging.Logger.Debugln("请求方法不支持检测")
+		return
+	}
+
 	//waf 只判断作为提示信息 不做进一步操作 如果检出存在注入 则可以考虑附加信息
 	if len(c.Waf) > 0 {
 		logging.Logger.Warnf("heuristics detected that the target is protected by some kind of WAF/IPS(%+v)", c.Waf)
@@ -105,9 +121,6 @@ func Scan(c *input.CrawlResult) {
 		return
 	}
 
-	// todo 参数预处理， 动态参数检测，模板页面
-
-	//开始启发式sql注入检测
 	sql := &Sqlmap{
 		Url:          c.Url,
 		OriginalBody: c.Resp.Body,
@@ -115,6 +128,12 @@ func Scan(c *input.CrawlResult) {
 		Headers:      c.Headers,
 		ContentType:  c.ContentType,
 		RequestBody:  c.RequestBody,
+		TemplateCode: c.Resp.StatusCode,
+		TemplateBody: c.Resp.Body, // 先赋值, 确定好相似标记后，再重新赋值，防止为空
+		DynamicMarkings: map[string]string{
+			"prefix": "",
+			"suffix": "",
+		},
 	}
 
 	sql.TemplateCode = c.Resp.StatusCode
@@ -128,16 +147,18 @@ func Scan(c *input.CrawlResult) {
 
 	logging.Logger.Debugf("总共测试参数共%d个 %+v", len(variations.Params), variations.Params)
 
+	// 参数预处理，动态参数检测，模板页面
 	if !sql.check() {
 		logging.Logger.Infoln(c.Target, " 动态页面检测失败")
 		return
 	}
 
+	//开始启发式、sql注入检测
 	sql.HeuristicCheckSqlInjection()
 
 }
 
-// check 检测动态参数
+// check 检测动态页面，参数
 func (sql *Sqlmap) check() bool {
 	res, err := httpx.Request(sql.Url, sql.Method, sql.RequestBody, false, sql.Headers)
 
@@ -145,20 +166,22 @@ func (sql *Sqlmap) check() bool {
 		return false
 	}
 
-	// todo 这种方式感觉不太好，有待优化
-	if strsim.Compare(res.Body, sql.OriginalBody) < SimilarityRatio {
-		logging.Logger.Debugln("检测到动态页面 ")
-		d1, d2 := funk.Difference(strings.Split(res.Body, " "), strings.Split(sql.OriginalBody, " "))
-		// 去除动态部分
-		for _, v := range d1.([]string) {
-			sql.TemplateBody = strings.ReplaceAll(sql.OriginalBody, v, "")
-		}
+	if len(res.Body) < MaxDifflibSequenceLength && len(sql.OriginalBody) < MaxDifflibSequenceLength {
+		// todo 没有经过大量测试，有待优化
+		sim := strsim.Compare(res.Body, sql.OriginalBody)
+		if sim < SimilarityRatio {
+			logging.Logger.Debugln(sql.Url, " 检测到动态页面, 相似度为：", sim)
+			prefix, suffix := findDynamicContent(sql.OriginalBody, res.Body)
+			sql.DynamicMarkings["prefix"] = prefix
+			sql.DynamicMarkings["suffix"] = suffix
 
-		for _, v := range d2.([]string) {
-			sql.TemplateBody = strings.ReplaceAll(sql.OriginalBody, v, "")
+			// 去除请求页面的动态内容，设置模板页面
+			sql.TemplateBody = sql.removeDynamicContent(sql.OriginalBody)
+
 		}
 	}
 
+	// 动态参数检测
 	for _, p := range sql.Variations.Params {
 		payload := sql.Variations.SetPayloadByIndex(p.Index, sql.Url, strconv.Itoa(util.RandNumber(0, 9999)), sql.Method)
 
@@ -174,7 +197,9 @@ func (sql *Sqlmap) check() bool {
 			continue
 		}
 
-		if strsim.Compare(res.Body, sql.OriginalBody) < SimilarityRatio {
+		res.Body = sql.removeDynamicContent(res.Body)
+
+		if strsim.Compare(res.Body, sql.TemplateBody) < SimilarityRatio {
 			sql.DynamicPara = append(sql.DynamicPara, p.Name)
 			logging.Logger.Debugln("检测到动态参数 ", p.Name)
 		}

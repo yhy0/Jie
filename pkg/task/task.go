@@ -5,11 +5,10 @@ import (
 	"github.com/thoas/go-funk"
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/pkg/input"
-	"github.com/yhy0/Jie/scan/brute"
 	"github.com/yhy0/Jie/scan/cmdinject"
 	"github.com/yhy0/Jie/scan/crlf"
 	"github.com/yhy0/Jie/scan/jsonp"
-	"github.com/yhy0/Jie/scan/sqlInjection"
+	"github.com/yhy0/Jie/scan/sqlmap"
 	"github.com/yhy0/Jie/scan/ssrf"
 	"github.com/yhy0/Jie/scan/xss"
 	"github.com/yhy0/Jie/scan/xxe"
@@ -65,9 +64,9 @@ func (t *Task) Distribution(crawlResult *input.CrawlResult) {
 
 		}
 
-		if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "BRUTE") {
-			go brute.Hydra("", 0, "")
-		}
+		//if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "BRUTE") {
+		//	go brute.Hydra("", 0, "")
+		//}
 
 		if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "JSONP") {
 			go t.jsonp(crawlResult)
@@ -82,7 +81,7 @@ func (t *Task) Distribution(crawlResult *input.CrawlResult) {
 // sql 注入检测
 func (t *Task) sqlInjection(crawlResult *input.CrawlResult) {
 	t.wg.Add()
-	sqlInjection.Scan(crawlResult)
+	sqlmap.Scan(crawlResult)
 	t.wg.Done()
 }
 

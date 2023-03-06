@@ -10,13 +10,13 @@ import (
   @desc: //TODO
 **/
 
-func MatchAnyOfRegexp(regexps []string, match string) bool {
+func MatchAnyOfRegexp(regexps []string, match string) (bool, string) {
 	for _, value := range regexps {
 		regex := regexp.MustCompile(value)
 		if regex.MatchString(match) {
-			return true
+			return true, value
 		}
 	}
 
-	return false
+	return false, ""
 }

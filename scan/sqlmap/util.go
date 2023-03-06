@@ -1,10 +1,14 @@
 package sqlmap
 
 import (
+	"fmt"
 	"github.com/antlabs/strsim"
+	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"math"
 	"math/rand"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -14,12 +18,24 @@ import (
   @desc: 工具类辅助函数
 **/
 
-// getErrorBasedPreCheckPayload 闭合 payload
+// getErrorBasedPreCheckPayload 闭合 payload,  ,'"().六种字符随机组成的长度为10的字符串，同时满足'和"都只有一个。
 func getErrorBasedPreCheckPayload() string {
 	rand.Seed(time.Now().Unix())
 	randomTestString := ""
-	for i := 0; i < 10; i++ {
-		randomTestString += HeuristicCheckAlphabet[rand.Intn(len(HeuristicCheckAlphabet)-1)]
+	randI := rand.Intn(8)
+	randJ := rand.Intn(8)
+
+	// HeuristicCheckAlphabet 用于闭合字符串的字母表
+	heuristicCheckAlphabet := []string{`)`, `(`, `,`, `.`}
+	for i := 0; i < 8; i++ {
+		str := heuristicCheckAlphabet[rand.Intn(len(heuristicCheckAlphabet)-1)]
+		randomTestString += str
+		if i == randI {
+			randomTestString += "'"
+		}
+		if i == randJ {
+			randomTestString += "\""
+		}
 	}
 
 	return randomTestString
@@ -68,23 +84,114 @@ func std(v []float64) float64 {
 	return math.Sqrt(variance(v))
 }
 
-func comparison(respBody string, respCode int, templateBody string, templCode int, defaultRatio float64) (bool, float64) {
-	if respCode == templCode {
-		ratio := strsim.Compare(respBody, templateBody)
-		if defaultRatio == -1 {
+// 找出不同处的前 20 字符，和后 20 个字符 ，不知道有没有问题，感觉应该是存在点问题的
+func findDynamicContent(s1, s2 string) (prefix, suffix string) {
+	dmp := diffmatchpatch.New()
+
+	diffs := dmp.DiffMain(s1, s2, true)
+
+	diffString := ""
+	for _, diff := range diffs {
+		if diff.Type != diffmatchpatch.DiffEqual {
+			diffString = diff.Text
+			break
+		}
+	}
+
+	index := strings.Index(s1, diffString)
+
+	if index != -1 {
+		if index > 20 {
+			prefix = s1[index-20 : index]
+			if index+len(diffString)+20 < len(s1) {
+				suffix = s1[index+len(diffString) : index+len(diffString)+20]
+			} else {
+				suffix = s1[index+len(diffString):]
+			}
+		} else {
+			prefix = s1[:index]
+			if index+len(diffString)+20 < len(s1) {
+				suffix = s1[index+len(diffString) : index+len(diffString)+20]
+			} else {
+				suffix = s1[index+len(diffString):]
+			}
+		}
+
+	} else {
+		index = strings.Index(s2, diffString)
+		if index > 20 {
+			prefix = s2[index-20 : index]
+			if index+len(diffString)+20 < len(s2) {
+				suffix = s2[index+len(diffString) : index+len(diffString)+20]
+			} else {
+				suffix = s2[index+len(diffString):]
+			}
+		} else {
+			prefix = s2[:index]
+			if index+len(diffString)+20 < len(s2) {
+				suffix = s2[index+len(diffString) : index+len(diffString)+20]
+			} else {
+				suffix = s2[index+len(diffString):]
+			}
+		}
+	}
+
+	return
+}
+
+// 删除动态内容
+func (sql *Sqlmap) removeDynamicContent(page string) string {
+
+	var regex *regexp.Regexp
+	if sql.DynamicMarkings["prefix"] == "" && sql.DynamicMarkings["suffix"] != "" {
+		regex = regexp.MustCompile(fmt.Sprintf(`(?s)^.+%s`, sql.DynamicMarkings["suffix"]))
+	} else if sql.DynamicMarkings["suffix"] == "" && sql.DynamicMarkings["prefix"] != "" {
+		regex = regexp.MustCompile(fmt.Sprintf(`(?s)%s.+$`, sql.DynamicMarkings["prefix"]))
+	} else if sql.DynamicMarkings["suffix"] != "" && sql.DynamicMarkings["prefix"] != "" {
+		regex = regexp.MustCompile(fmt.Sprintf(`(?s)%s.+%s`, sql.DynamicMarkings["prefix"], sql.DynamicMarkings["suffix"]))
+	} else {
+		return page
+	}
+
+	return regex.ReplaceAllString(page, fmt.Sprintf("%s%s", sql.DynamicMarkings["prefix"], sql.DynamicMarkings["suffix"]))
+}
+
+// comparison 与模板比较响应页面的相似度
+func (sql *Sqlmap) comparison(respBody string, respCode int, criticalRatio float64) (bool, float64) {
+	if respCode == sql.TemplateCode {
+		// 确定临界时, 先去除动态部分
+		respBody = sql.removeDynamicContent(respBody)
+
+		ratio := strsim.Compare(respBody, sql.TemplateBody)
+		// 如果是第一次比较, 就把这个值作为默认值
+		if criticalRatio == -1 {
 			if ratio >= LowerRatioBound && ratio <= UpperRatioBound {
-				defaultRatio = ratio
+				criticalRatio = ratio
 			}
 		}
 
 		if ratio > UpperRatioBound {
-			return true, defaultRatio
+			return true, ratio
 		} else if ratio < LowerRatioBound {
-			return false, defaultRatio
-		} else {
-			return (ratio - defaultRatio) > DiffTolerance, defaultRatio
+			return false, ratio
+		} else { // 相似度在临界值之间，则判断相似度和传入的相似度的差值是否大默认的容差, 如果大于容差, 则认为是不同的页面
+			return (ratio - criticalRatio) > DiffTolerance, ratio
 		}
 
 	}
-	return false, defaultRatio
+	return false, -1
+}
+
+// compare 与模板比较响应页面的相似度
+func (sql *Sqlmap) compare(respBody string, respCode int) float64 {
+	if respCode == sql.TemplateCode {
+		// 确定临界时, 先去除动态部分
+		respBody = sql.removeDynamicContent(respBody)
+
+		ratio := strsim.Compare(respBody, sql.TemplateBody)
+
+		return ratio
+	}
+
+	return -1
 }

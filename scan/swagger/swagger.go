@@ -10,7 +10,7 @@ import (
 	"github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/util"
-	"github.com/yhy0/Jie/scan/sqlInjection"
+	"github.com/yhy0/Jie/scan/sqlmap"
 	"mime/multipart"
 	"net/url"
 	"path/filepath"
@@ -478,7 +478,7 @@ func scan(method, target, bodyParams string, header map[string]string, ip string
 				Method:  method,
 			}
 
-			sqlInjection.Scan(in)
+			sqlmap.Scan(in)
 
 			output.OutChannel <- output.VulMessage{
 				DataType: "web_vul",
@@ -556,7 +556,7 @@ func scan(method, target, bodyParams string, header map[string]string, ip string
 				Method:  method,
 			}
 
-			sqlInjection.Scan(in)
+			sqlmap.Scan(in)
 
 			output.OutChannel <- output.VulMessage{
 				DataType: "web_vul",

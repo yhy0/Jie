@@ -2,16 +2,17 @@ package types
 
 import (
 	"context"
+	"net/url"
 	"time"
 
 	"github.com/projectdiscovery/fastdialer/fastdialer"
 	"github.com/projectdiscovery/ratelimit"
 	errorutil "github.com/projectdiscovery/utils/errors"
+	wappalyzer "github.com/projectdiscovery/wappalyzergo"
 	"github.com/yhy0/Jie/crawler/katana/pkg/output"
 	"github.com/yhy0/Jie/crawler/katana/pkg/utils/extensions"
 	"github.com/yhy0/Jie/crawler/katana/pkg/utils/filters"
 	"github.com/yhy0/Jie/crawler/katana/pkg/utils/scope"
-	wappalyzer "github.com/yhy0/wappalyzergo"
 )
 
 // CrawlerOptions contains helper utilities for the crawler
@@ -39,7 +40,11 @@ type CrawlerOptions struct {
 func NewCrawlerOptions(options *Options) (*CrawlerOptions, error) {
 	extensionsValidator := extensions.NewValidator(options.ExtensionsMatch, options.ExtensionFilter)
 
-	fastdialerInstance, err := fastdialer.NewDialer(fastdialer.DefaultOptions)
+	dialerOpts := fastdialer.DefaultOptions
+	if len(options.Resolvers) > 0 {
+		dialerOpts.BaseResolvers = options.Resolvers
+	}
+	fastdialerInstance, err := fastdialer.NewDialer(dialerOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +68,8 @@ func NewCrawlerOptions(options *Options) (*CrawlerOptions, error) {
 		StoreResponseDir: options.StoreResponseDir,
 		FieldConfig:      options.FieldConfig,
 		ErrorLogFile:     options.ErrorLogFile,
+		MatchRegex:       options.MatchRegex,
+		FilterRegex:      options.FilterRegex,
 	}
 	outputWriter, err := output.New(outputOptions)
 	if err != nil {
@@ -97,4 +104,23 @@ func NewCrawlerOptions(options *Options) (*CrawlerOptions, error) {
 func (c *CrawlerOptions) Close() error {
 	c.UniqueFilter.Close()
 	return c.OutputWriter.Close()
+}
+
+func (c *CrawlerOptions) ValidatePath(path string) bool {
+	if c.ExtensionsValidator != nil {
+		return c.ExtensionsValidator.ValidatePath(path)
+	}
+	return true
+}
+
+// ValidateScope validates scope for an AbsURL
+func (c *CrawlerOptions) ValidateScope(absURL, rootHostname string) (bool, error) {
+	parsed, err := url.Parse(absURL)
+	if err != nil {
+		return false, err
+	}
+	if c.ScopeManager != nil {
+		return c.ScopeManager.Validate(parsed, rootHostname)
+	}
+	return true, nil
 }

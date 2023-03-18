@@ -1,8 +1,8 @@
 package nc
 
 import (
-	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
+	"github.com/yhy0/logging"
 )
 
 /**

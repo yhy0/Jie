@@ -3,6 +3,7 @@ package util
 import (
 	"math/rand"
 	"time"
+	"unicode"
 )
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyz"
@@ -64,4 +65,32 @@ func RandString(n int) string {
 // RandLowLetterNumber 随机小写字母和数字
 func RandLowLetterNumber(n int) string {
 	return RandFromChoices(n, lowletterNumberBytes)
+}
+
+func RandomUpper(s string) string {
+	r := []rune(s)
+	// 随机选择需要修改大小写的位置
+	for {
+		pos := rand.Intn(len(r))
+		if unicode.IsLower(r[pos]) {
+			r[pos] = unicode.ToUpper(r[pos])
+			break
+		} else if unicode.IsUpper(r[pos]) {
+			r[pos] = unicode.ToLower(r[pos])
+			break
+		}
+	}
+
+	// 随机修改其余字符的大小写
+	for i := 0; i < len(r); i++ {
+		if !unicode.IsLetter(r[i]) {
+			continue
+		}
+		if rand.Intn(2) == 0 {
+			r[i] = unicode.ToLower(r[i])
+		} else {
+			r[i] = unicode.ToUpper(r[i])
+		}
+	}
+	return string(r)
 }

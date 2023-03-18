@@ -3,11 +3,11 @@ package bbscan
 import (
 	"github.com/antlabs/strsim"
 	"github.com/yhy0/Jie/conf"
-	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/util"
 	"github.com/yhy0/Jie/scan/swagger"
+	"github.com/yhy0/logging"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -106,12 +106,13 @@ func init() {
 		}
 	}
 
-	for _, path := range util.CvtLines(filedic) {
-		if _, ok := rules[path]; ok {
-			continue
-		}
-		rules[path] = Rule{}
-	}
+	// TODO 暂时去除纯字典的形式，只采用 bbscan 的规则
+	//for _, path := range util.CvtLines(filedic) {
+	//	if _, ok := rules[path]; ok {
+	//		continue
+	//	}
+	//	rules[path] = Rule{}
+	//}
 
 }
 
@@ -391,7 +392,7 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 						output.OutChannel <- output.VulMessage{
 							DataType: "web_vul",
 							Plugin:   "BBscan",
-							VulData: output.VulData{
+							VulnData: output.VulnData{
 								CreateTime: time.Now().Format("2006-01-02 15:04:05"),
 								Target:     u,
 								Ip:         ip,

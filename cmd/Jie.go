@@ -3,12 +3,18 @@ package cmd
 import (
 	"fmt"
 	"github.com/logrusorgru/aurora"
+	"github.com/thoas/go-funk"
 	"github.com/urfave/cli/v2"
 	"github.com/yhy0/Jie/conf"
-	"github.com/yhy0/Jie/logging"
+	"github.com/yhy0/Jie/pkg/output"
+	"github.com/yhy0/Jie/pkg/protocols/headless"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
+	"github.com/yhy0/Jie/pkg/task"
 	"github.com/yhy0/Jie/pkg/util"
+	"github.com/yhy0/logging"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 /**
@@ -24,6 +30,7 @@ var (
 	Listen  string
 	target  string
 	debug   bool
+	show    bool
 )
 
 func init() {
@@ -55,9 +62,16 @@ func RunApp() {
 					// 设置需要开启的插件
 					&cli.StringSliceFlag{
 						Name:        "plugin",
-						Usage:       "Vulnerable Plugin, (example: --plugin xss,csrf,sql, ...)",
+						Usage:       "Vulnerable Plugin, (example: --plugin xss,csrf,sql,bbscan ...)",
 						Destination: &Plugins,
 					},
+					// 设置需要开启的插件
+					&cli.BoolFlag{
+						Name:        "show",
+						Usage:       "specifies whether the show the browser in headless mode",
+						Destination: &show,
+					},
+
 					// 设置需要开启的插件
 					&cli.StringSliceFlag{
 						Name:        "poc",
@@ -103,7 +117,14 @@ func RunApp() {
 }
 
 func run(c *cli.Context) error {
-	logging.New(debug)
+	logging.New(debug, "Jie")
+
+	go func() {
+		for v := range output.OutChannel {
+			logging.Logger.Infoln(aurora.Red(v.PrintScreen()).String())
+		}
+	}()
+
 	var plugins []string
 	if len(Plugins.Value()) == 0 {
 		plugins = conf.DefaultPlugins
@@ -119,14 +140,38 @@ func run(c *cli.Context) error {
 	conf.GlobalConfig.Reverse.Domain = ""
 	conf.GlobalConfig.Reverse.Token = ""
 
+	// 初始化 session ,todo 后续优化一下，不同网站共用一个不知道会不会出问题，应该不会
+	httpx.NewSession()
+
+	// 初始化 rod
+	if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "XSS") {
+		headless.Rod()
+	}
+
 	if Listen != "" {
 		// 被动扫描
-		Passive()
+		task.Passive()
 	} else {
-		// 初始化 session ,todo 后续优化一下，不同网站共用一个不知道会不会出问题，应该不会
-		httpx.NewSession()
+		task.Active(target, show)
+	}
 
-		Active(target)
+	cc := make(chan os.Signal)
+	// 监听信号
+	signal.Notify(cc, syscall.SIGINT)
+	go func() {
+		for s := range cc {
+			switch s {
+			case syscall.SIGINT:
+				if headless.RodHeadless != nil {
+					headless.RodHeadless.Close()
+				}
+			default:
+			}
+		}
+	}()
+
+	if headless.RodHeadless != nil {
+		headless.RodHeadless.Close()
 	}
 
 	return nil

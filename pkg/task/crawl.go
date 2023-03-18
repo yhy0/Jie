@@ -7,9 +7,9 @@ import (
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/crawler"
 	"github.com/yhy0/Jie/crawler/katana/pkg/output"
-	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
+	"github.com/yhy0/logging"
 	"golang.org/x/net/publicsuffix"
 	"net/url"
 	"path"
@@ -33,28 +33,29 @@ type res struct {
 }
 
 // Crawler 运行 Katana 爬虫
-func (t *Task) Crawler(waf []string) {
+func (t *Task) Crawler(waf []string, show bool) {
+	fmt.Println("==================")
 	t.wg = sizedwaitgroup.New(t.Parallelism)
 
 	fingerprints := make([]string, 0)
 
 	single := make(map[string][]res)
 
-	// todo 目前无头模式下不能获取 响应信息，尝试更改，但是响应还是有问题，等官方的看看，目前解决方案是，使用 http 请求一次
 	// 获取结果
 	outputWriter := output.NewMockOutputWriter()
 	outputWriter.WriteCallback = func(result *output.Result) {
 		// 对爬虫结果格式化
 		var crawlResult = &input.CrawlResult{
 			Target:      t.Target,
-			Method:      result.Method,
-			Source:      result.Source,
+			Method:      strings.ToUpper(result.Request.Method),
+			Source:      result.Request.Source,
 			Headers:     make(map[string]string),
-			RequestBody: result.Body,
+			RequestBody: result.Response.Body,
 			Waf:         waf,
 		}
 
-		fingerprints = append(fingerprints, result.SourceTechnologies...)
+		fingerprints = append(fingerprints, result.Response.Technologies...)
+		//todo  处理 POST
 		StoreFields(crawlResult, result)
 
 		tempUrl := strings.Split(crawlResult.Url, "?")[0]
@@ -93,21 +94,42 @@ func (t *Task) Crawler(waf []string) {
 		}
 
 		if flag {
-			resp, err := httpx.Request(result.URL, result.Method, result.Body, false, crawlResult.Headers)
-			if err != nil {
-				logging.Logger.Errorf("[Crawler] %s", err)
-			} else {
-				// 响应为 200 的才会进行扫描
-				if resp.StatusCode == 200 {
-					crawlResult.Resp = resp
-					//logging.Logger.Infof("[*Crawler] URL: %s, Method: %s, Body: %s, Source: %s, Headers: %s, Path: %s, Hostname: %s, Rdn: %s, Rurl: %s, Dir: %s", crawlResult.Url, crawlResult.Method, crawlResult.RequestBody, crawlResult.Source, crawlResult.Headers, crawlResult.Path, crawlResult.Hostname, crawlResult.Rdn, crawlResult.RUrl, crawlResult.Dir)
-					logging.Logger.Infof("[Processing] %s %s ", crawlResult.Method, crawlResult.Url)
-					t.Distribution(crawlResult)
-				} else {
-					logging.Logger.Debugf("[Crawler] URL: %s Status: %d", crawlResult.Url, resp.StatusCode)
-				}
-
+			var location string
+			if resplocation, err := result.Response.Resp.Location(); err == nil {
+				location = resplocation.String()
 			}
+
+			crawlResult.Resp = &httpx.Response{
+				Status:           result.Response.Resp.Status,
+				StatusCode:       result.Response.StatusCode,
+				Body:             result.Response.Body,
+				RequestDump:      result.Request.URL,
+				ResponseDump:     result.Response.Body,
+				Header:           result.Response.Resp.Header,
+				ContentLength:    int(result.Response.Resp.ContentLength),
+				RequestUrl:       result.Response.Resp.Request.URL.String(),
+				Location:         location,
+				ServerDurationMs: 0,
+			}
+
+			logging.Logger.Infof("[Processing] %s %s", crawlResult.Method, crawlResult.Url)
+			t.Distribution(crawlResult)
+
+			//resp, err := httpx.Request(result.Request.URL, result.Request.Method, result.Response.Body, false, crawlResult.Headers)
+			//if err != nil {
+			//	logging.Logger.Errorf("[Crawler] %s", err)
+			//} else {
+			// 响应为 200 的才会进行扫描
+			//if resp.StatusCode == 200 {
+			//	crawlResult.Resp = resp
+			//	//logging.Logger.Infof("[*Crawler] URL: %s, Method: %s, Body: %s, Source: %s, Headers: %s, Path: %s, Hostname: %s, Rdn: %s, Rurl: %s, Dir: %s", crawlResult.Url, crawlResult.Method, crawlResult.RequestBody, crawlResult.Source, crawlResult.Headers, crawlResult.Path, crawlResult.Hostname, crawlResult.Rdn, crawlResult.RUrl, crawlResult.Dir)
+			//	logging.Logger.Infof("[Processing] %s %s %s", crawlResult.Method, crawlResult.Url, crawlResult.Param)
+			//	t.Distribution(crawlResult)
+			//} else {
+			//	logging.Logger.Debugf("[Crawler] URL: %s Status: %d", crawlResult.Url, resp.StatusCode)
+			//}
+
+			//}
 		}
 	}
 
@@ -117,10 +139,9 @@ func (t *Task) Crawler(waf []string) {
 		OutputWriter: outputWriter,
 	}
 
-	task.StartCrawler()
+	task.StartCrawler(show)
 
 	outputWriter.Close()
-
 	t.wg.Wait()
 
 	t.Fingerprints = funk.UniqString(fingerprints)
@@ -130,7 +151,7 @@ func (t *Task) Crawler(waf []string) {
 // StoreFields stores fields for a result into individual files
 // based on name.
 func StoreFields(c *input.CrawlResult, output *output.Result) {
-	parsed, err := url.Parse(output.URL)
+	parsed, err := url.Parse(output.Request.URL)
 	if err != nil {
 		return
 	}
@@ -147,8 +168,8 @@ func StoreFields(c *input.CrawlResult, output *output.Result) {
 func getValueForField(c *input.CrawlResult, output *output.Result, parsed *url.URL, hostname, rdn, rurl, field string) string {
 	switch field {
 	case "url":
-		c.Url = output.URL
-		return output.URL
+		c.Url = output.Request.URL
+		return output.Request.URL
 	case "path":
 		c.Path = parsed.Path
 		return parsed.Path

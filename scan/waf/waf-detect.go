@@ -4,8 +4,8 @@ import (
 	"embed"
 	"github.com/antlabs/strsim"
 	"github.com/projectdiscovery/nuclei/v2/pkg/templates"
-	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
+	"github.com/yhy0/logging"
 	"gopkg.in/yaml.v2"
 	"math/rand"
 	"regexp"
@@ -34,7 +34,7 @@ func init() {
 }
 
 func Scan(target, body string) (wafs []string) {
-	resp, err := httpx.Request(target, "POST", "_="+strconv.Itoa(rand.Intn(100))+payload, false, nil)
+	resp, err := httpx.Request(target, "GET", "_="+strconv.Itoa(rand.Intn(100))+payload, false, nil)
 
 	if err != nil {
 		logging.Logger.Errorln(err)

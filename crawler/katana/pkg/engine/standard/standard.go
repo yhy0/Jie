@@ -3,14 +3,13 @@ package standard
 import (
 	"bytes"
 	"context"
-	"github.com/yhy0/Jie/logging"
 	"io"
 	"net/http"
 	"net/url"
-	"sync/atomic"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/projectdiscovery/gologger"
 	errorutil "github.com/projectdiscovery/utils/errors"
 	mapsutil "github.com/projectdiscovery/utils/maps"
 	"github.com/remeh/sizedwaitgroup"
@@ -38,7 +37,7 @@ func New(options *types.CrawlerOptions) (*Crawler, error) {
 		options: options,
 	}
 	if options.Options.KnownFiles != "" {
-		httpclient, _, err := common.BuildClient(options.Dialer, options.Options, nil)
+		httpclient, _, err := common.BuildHttpClient(options.Dialer, options.Options, nil)
 		if err != nil {
 			return nil, errorutil.NewWithTag("standard", "could not create http client").Wrap(err)
 		}
@@ -66,60 +65,59 @@ func (c *Crawler) Crawl(rootURL string) error {
 	}
 	defer cancel()
 
-	queue := queue.New(c.options.Options.Strategy)
+	queue, err := queue.New(c.options.Options.Strategy, c.options.Options.Timeout)
+	if err != nil {
+		return err
+	}
 	queue.Push(navigation.Request{Method: http.MethodGet, URL: rootURL, Depth: 0}, 0)
-	parseResponseCallback := c.makeParseResponseCallback(queue)
 
 	if c.knownFiles != nil {
-		if err := c.knownFiles.Request(rootURL, func(nr navigation.Request) {
-			parseResponseCallback(nr)
-		}); err != nil {
-			logging.Logger.Debugf("Could not parse known files for %s: %s", rootURL, err)
+		navigationRequests, err := c.knownFiles.Request(rootURL)
+		if err != nil {
+			gologger.Warning().Msgf("Could not parse known files for %s: %s\n", rootURL, err)
 		}
+		c.enqueue(queue, navigationRequests...)
 	}
-	httpclient, _, err := common.BuildClient(c.options.Dialer, c.options.Options, func(resp *http.Response, depth int) {
+	httpclient, _, err := common.BuildHttpClient(c.options.Dialer, c.options.Options, func(resp *http.Response, depth int) {
 		body, _ := io.ReadAll(resp.Body)
 		reader, _ := goquery.NewDocumentFromReader(bytes.NewReader(body))
 		technologies := c.options.Wappalyzer.Fingerprint(resp.Header, body)
 		navigationResponse := navigation.Response{
 			Depth:        depth + 1,
-			Options:      c.options,
 			RootHostname: hostname,
 			Resp:         resp,
-			Body:         body,
+			Body:         string(body),
 			Reader:       reader,
 			Technologies: mapsutil.GetKeys(technologies),
+			StatusCode:   resp.StatusCode,
+			Headers:      utils.FlattenHeaders(resp.Header),
 		}
-		parser.ParseResponse(navigationResponse, parseResponseCallback)
+		navigationRequests := parser.ParseResponse(navigationResponse)
+		c.enqueue(queue, navigationRequests...)
 	})
 	if err != nil {
 		return errorutil.NewWithTag("standard", "could not create http client").Wrap(err)
 	}
 
 	wg := sizedwaitgroup.New(c.options.Options.Concurrency)
-	running := int32(0)
-	for {
+	for item := range queue.Pop() {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return ctxErr
 		}
-		// Quit the crawling for zero items or context timeout
-		if !(atomic.LoadInt32(&running) > 0) && (queue.Len() == 0) {
-			break
-		}
-		item := queue.Pop()
+
 		req, ok := item.(navigation.Request)
 		if !ok {
 			continue
 		}
+
 		if !utils.IsURL(req.URL) {
 			continue
 		}
+
 		wg.Add()
-		atomic.AddInt32(&running, 1)
 
 		go func() {
 			defer wg.Done()
-			defer atomic.AddInt32(&running, -1)
 
 			c.options.RateLimit.Take()
 
@@ -129,7 +127,7 @@ func (c *Crawler) Crawl(rootURL string) error {
 			}
 			resp, err := c.makeRequest(ctx, req, hostname, req.Depth, httpclient)
 			if err != nil {
-				logging.Logger.Debugf("Could not request seed URL %s: %s", req.URL, err)
+				gologger.Warning().Msgf("Could not request seed URL %s: %s\n", req.URL, err)
 				outputError := &output.Error{
 					Timestamp: time.Now(),
 					Endpoint:  req.RequestURL(),
@@ -142,7 +140,11 @@ func (c *Crawler) Crawl(rootURL string) error {
 			if resp.Resp == nil || resp.Reader == nil {
 				return
 			}
-			parser.ParseResponse(resp, parseResponseCallback)
+
+			c.output(req, resp)
+
+			navigationRequests := parser.ParseResponse(resp)
+			c.enqueue(queue, navigationRequests...)
 		}()
 	}
 	wg.Wait()
@@ -151,52 +153,51 @@ func (c *Crawler) Crawl(rootURL string) error {
 }
 
 // makeParseResponseCallback returns a parse response function callback
-func (c *Crawler) makeParseResponseCallback(queue *queue.VarietyQueue) func(nr navigation.Request) {
-	return func(nr navigation.Request) {
+func (c *Crawler) enqueue(queue *queue.Queue, navigationRequests ...navigation.Request) {
+	for _, nr := range navigationRequests {
 		if nr.URL == "" || !utils.IsURL(nr.URL) {
-			return
+			continue
 		}
-		parsed, err := url.Parse(nr.URL)
-		if err != nil {
-			return
-		}
+
 		// Ignore blank URL items and only work on unique items
 		if !c.options.UniqueFilter.UniqueURL(nr.RequestURL()) && len(nr.CustomFields) == 0 {
-			return
+			continue
 		}
 		// - URLs stuck in a loop
 		if c.options.UniqueFilter.IsCycle(nr.RequestURL()) {
-			return
+			continue
 		}
 
-		// Write the found result to output
-		result := &output.Result{
-			Timestamp:          time.Now(),
-			Body:               nr.Body,
-			URL:                nr.URL,
-			Source:             nr.Source,
-			Tag:                nr.Tag,
-			Attribute:          nr.Attribute,
-			CustomFields:       nr.CustomFields,
-			SourceTechnologies: nr.SourceTechnologies,
-		}
-		if nr.Method != http.MethodGet {
-			result.Method = nr.Method
-		}
-		scopeValidated, err := c.options.ScopeManager.Validate(parsed, nr.RootHostname)
-		if err != nil {
-			return
-		}
-		if scopeValidated || c.options.Options.DisplayOutScope {
-			_ = c.options.OutputWriter.Write(result, nil)
-		}
-		if c.options.Options.OnResult != nil {
-			c.options.Options.OnResult(*result)
-		}
+		scopeValidated := c.validateScope(nr.URL, nr.RootHostname)
+
 		// Do not add to crawl queue if max items are reached
 		if nr.Depth >= c.options.Options.MaxDepth || !scopeValidated {
-			return
+			continue
 		}
 		queue.Push(nr, nr.Depth)
+	}
+}
+
+func (c *Crawler) validateScope(URL string, root string) bool {
+	parsedURL, err := url.Parse(URL)
+	if err != nil {
+		return false
+	}
+	scopeValidated, err := c.options.ScopeManager.Validate(parsedURL, root)
+	return err == nil && scopeValidated
+}
+
+func (c *Crawler) output(navigationRequest navigation.Request, navigationResponse navigation.Response) {
+	// Write the found result to output
+	result := &output.Result{
+		Timestamp: time.Now(),
+		Request:   navigationRequest,
+		Response:  navigationResponse,
+	}
+
+	_ = c.options.OutputWriter.Write(result)
+
+	if c.options.Options.OnResult != nil {
+		c.options.Options.OnResult(*result)
 	}
 }

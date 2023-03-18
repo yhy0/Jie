@@ -3,9 +3,9 @@ package nuclei
 import (
 	"github.com/logrusorgru/aurora"
 	"github.com/yhy0/Jie/conf"
-	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
+	"github.com/yhy0/logging"
 	"sync"
 	"testing"
 )

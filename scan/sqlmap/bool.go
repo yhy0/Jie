@@ -2,10 +2,10 @@ package sqlmap
 
 import (
 	"fmt"
-	"github.com/yhy0/Jie/logging"
 	JieOutput "github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/util"
+	"github.com/yhy0/logging"
 	"time"
 )
 
@@ -218,7 +218,7 @@ func (sql *Sqlmap) checkBoolBased(pos int, closeType string) bool {
 			JieOutput.OutChannel <- JieOutput.VulMessage{
 				DataType: "web_vul",
 				Plugin:   "SQL Injection",
-				VulData: JieOutput.VulData{
+				VulnData: JieOutput.VulnData{
 					CreateTime:  time.Now().Format("2006-01-02 15:04:05"),
 					Target:      sql.Url,
 					Ip:          "",

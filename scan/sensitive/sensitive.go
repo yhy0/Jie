@@ -85,7 +85,7 @@ func Detection(url, resStr, assets, uuid, cuuid, user string) {
 		output.OutChannel <- output.VulMessage{
 			DataType: "web_vul",
 			Plugin:   "Sensitive",
-			VulData: output.VulData{
+			VulnData: output.VulnData{
 				CreateTime: time.Now().Format("2006-01-02 15:04:05"),
 				Target:     url,
 				Payload:    fmt.Sprintf("%+v", sensitive),

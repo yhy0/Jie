@@ -19,7 +19,6 @@ import (
 func (c *Crawler) makeRequest(ctx context.Context, request navigation.Request, rootHostname string, depth int, httpclient *retryablehttp.Client) (navigation.Response, error) {
 	response := navigation.Response{
 		Depth:        request.Depth + 1,
-		Options:      c.options,
 		RootHostname: rootHostname,
 	}
 	ctx = context.WithValue(ctx, navigation.Depth{}, depth)
@@ -72,11 +71,12 @@ func (c *Crawler) makeRequest(ctx context.Context, request navigation.Request, r
 	response.Technologies = mapsutil.GetKeys(technologies)
 
 	resp.Body = io.NopCloser(strings.NewReader(string(data)))
-	_ = c.options.OutputWriter.Write(nil, resp)
 
-	response.Body = data
+	response.Body = string(data)
 	response.Resp = resp
 	response.Reader, err = goquery.NewDocumentFromReader(bytes.NewReader(data))
+	response.StatusCode = resp.StatusCode
+	response.Headers = utils.FlattenHeaders(resp.Header)
 	if err != nil {
 		return response, errorutil.NewWithTag("standard", "could not make document from reader").Wrap(err)
 	}

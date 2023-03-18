@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/spaolacci/murmur3"
 	"github.com/thoas/go-funk"
-	"github.com/yhy0/Jie/logging"
+	"github.com/yhy0/logging"
 	"net"
 	"net/url"
 	"reflect"
@@ -299,15 +299,6 @@ func MD5(str string) string {
 	c.Write([]byte(str))
 	bytes := c.Sum(nil)
 	return hex.EncodeToString(bytes)
-}
-
-// ReverseString 反向string
-func ReverseString(s string) string {
-	runes := []rune(s)
-	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
-		runes[i], runes[j] = runes[j], runes[i]
-	}
-	return string(runes)
 }
 
 // FirstToUpper 字符串首字母大写

@@ -4,18 +4,17 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/yhy0/Jie/logging"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
-	"sync/atomic"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
 	"github.com/go-rod/rod/lib/launcher/flags"
+	"github.com/projectdiscovery/gologger"
 	errorutil "github.com/projectdiscovery/utils/errors"
 	mapsutil "github.com/projectdiscovery/utils/maps"
 	stringsutil "github.com/projectdiscovery/utils/strings"
@@ -57,7 +56,6 @@ func New(options *types.CrawlerOptions) (*Crawler, error) {
 
 	previousPIDs := findChromeProcesses()
 
-	// todo yhy
 	chromeLauncher := launcher.New().
 		Leakless(false).
 		Set("disable-gpu", "true").
@@ -69,16 +67,8 @@ func New(options *types.CrawlerOptions) (*Crawler, error) {
 		Set("window-size", fmt.Sprintf("%d,%d", 1080, 1920)).
 		Set("mute-audio", "true").
 		Set("disable-images", "true").
-		Set("disable-web-security", "true").
-		Set("disable-xss-auditor", "true").
-		Set("disable-setuid-sandbox", "true").
-		Set("allow-running-insecure-content", "true").
-		// todo 这个 3d 图形 禁用的话，这个网站 https://bot.sannysoft.com/ webgl 检查是红的(正常浏览器是全绿的)，
-		// todo katana 是没有禁用的，其他爬虫(crawlergo)是禁用的，也不知道会不会导致有些检测不通过，先注释
-		// todo crawlergo 是通过 https://intoli.com/blog/not-possible-to-block-chrome-headless/chrome-headless-test.html 检查的
-		//Set("disable-webgl", "true").
-		Set("disable-popup-blocking", "、true").
-		//Delete("use-mock-keychain").
+		Set("disable-popup-blocking", "true").
+		Delete("use-mock-keychain").
 		UserDataDir(dataStore)
 
 	if options.Options.UseInstalledChrome {
@@ -132,12 +122,13 @@ func New(options *types.CrawlerOptions) (*Crawler, error) {
 		tempDir:      dataStore,
 	}
 	if options.Options.KnownFiles != "" {
-		httpclient, _, err := common.BuildClient(options.Dialer, options.Options, nil)
+		httpclient, _, err := common.BuildHttpClient(options.Dialer, options.Options, nil)
 		if err != nil {
 			return nil, errorutil.NewWithTag("hybrid", "could not create http client").Wrap(err)
 		}
 		crawler.knownFiles = files.New(httpclient, options.Options.KnownFiles)
 	}
+
 	return crawler, nil
 }
 
@@ -168,32 +159,36 @@ func (c *Crawler) Crawl(rootURL string) error {
 	}
 	hostname := parsed.Hostname()
 
-	queue := queue.New(c.options.Options.Strategy)
+	queue, err := queue.New(c.options.Options.Strategy, c.options.Options.Timeout)
+	if err != nil {
+		return err
+	}
 	queue.Push(navigation.Request{Method: http.MethodGet, URL: rootURL, Depth: 0}, 0)
-	parseResponseCallback := c.makeParseResponseCallback(queue)
 
 	if c.knownFiles != nil {
-		if err := c.knownFiles.Request(rootURL, func(nr navigation.Request) {
-			parseResponseCallback(nr)
-		}); err != nil {
-			logging.Logger.Debugf("Could not parse known files for %s: %s", rootURL, err)
+		navigationRequests, err := c.knownFiles.Request(rootURL)
+		if err != nil {
+			gologger.Warning().Msgf("Could not parse known files for %s: %s\n", rootURL, err)
 		}
+		c.enqueue(queue, navigationRequests...)
 	}
 
-	httpclient, _, err := common.BuildClient(c.options.Dialer, c.options.Options, func(resp *http.Response, depth int) {
+	httpclient, _, err := common.BuildHttpClient(c.options.Dialer, c.options.Options, func(resp *http.Response, depth int) {
 		body, _ := io.ReadAll(resp.Body)
 		reader, _ := goquery.NewDocumentFromReader(bytes.NewReader(body))
+		technologies := c.options.Wappalyzer.Fingerprint(resp.Header, body)
 		navigationResponse := navigation.Response{
 			Depth:        depth + 1,
-			Options:      c.options,
 			RootHostname: hostname,
 			Resp:         resp,
-			Body:         body,
+			Body:         string(body),
 			Reader:       reader,
-			Technologies: mapsutil.GetKeys(c.options.Wappalyzer.Fingerprint(resp.Header, body)),
+			Technologies: mapsutil.GetKeys(technologies),
+			StatusCode:   resp.StatusCode,
+			Headers:      utils.FlattenHeaders(resp.Header),
 		}
-
-		parser.ParseResponse(navigationResponse, parseResponseCallback)
+		navigationRequests := parser.ParseResponse(navigationResponse)
+		c.enqueue(queue, navigationRequests...)
 	})
 	if err != nil {
 		return errorutil.NewWithTag("hybrid", "could not create http client").Wrap(err)
@@ -215,29 +210,22 @@ func (c *Crawler) Crawl(rootURL string) error {
 	}
 
 	wg := sizedwaitgroup.New(c.options.Options.Concurrency)
-	running := int32(0)
-	for {
+	for item := range queue.Pop() {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		// Quit the crawling for zero items or context timeout
-		if !(atomic.LoadInt32(&running) > 0) && (queue.Len() == 0) {
-			break
-		}
-		item := queue.Pop()
 		req, ok := item.(navigation.Request)
 		if !ok {
 			continue
 		}
+
 		if !utils.IsURL(req.URL) {
 			continue
 		}
 		wg.Add()
-		atomic.AddInt32(&running, 1)
 
 		go func() {
 			defer wg.Done()
-			defer atomic.AddInt32(&running, -1)
 
 			c.options.RateLimit.Take()
 
@@ -245,9 +233,10 @@ func (c *Crawler) Crawl(rootURL string) error {
 			if c.options.Options.Delay > 0 {
 				time.Sleep(time.Duration(c.options.Options.Delay) * time.Second)
 			}
-			resp, err := c.navigateRequest(ctx, httpclient, queue, parseResponseCallback, newBrowser, req, hostname)
+
+			resp, err := c.navigateRequest(ctx, httpclient, queue, newBrowser, req, hostname)
 			if err != nil {
-				logging.Logger.Debugf("Could not request seed URL %s: %s", req.URL, err)
+				gologger.Warning().Msgf("Could not request seed URL %s: %s\n", req.URL, err)
 
 				outputError := &output.Error{
 					Timestamp: time.Now(),
@@ -262,8 +251,12 @@ func (c *Crawler) Crawl(rootURL string) error {
 			if resp == nil || resp.Resp == nil && resp.Reader == nil {
 				return
 			}
+
+			c.output(req, *resp)
+
 			// process the dom-rendered response
-			parser.ParseResponse(*resp, parseResponseCallback)
+			navigationRequests := parser.ParseResponse(*resp)
+			c.enqueue(queue, navigationRequests...)
 		}()
 	}
 	wg.Wait()
@@ -271,52 +264,27 @@ func (c *Crawler) Crawl(rootURL string) error {
 	return nil
 }
 
-// makeParseResponseCallback returns a parse response function callback
-func (c *Crawler) makeParseResponseCallback(queue *queue.VarietyQueue) func(nr navigation.Request) {
-	return func(nr navigation.Request) {
+// enqueue new navigation requests
+func (c *Crawler) enqueue(queue *queue.Queue, navigationRequests ...navigation.Request) {
+	for _, nr := range navigationRequests {
 		if nr.URL == "" || !utils.IsURL(nr.URL) {
-			return
+			continue
 		}
-		parsed, err := url.Parse(nr.URL)
-		if err != nil {
-			return
-		}
+
 		// Ignore blank URL items and only work on unique items
 		if !c.options.UniqueFilter.UniqueURL(nr.RequestURL()) && len(nr.CustomFields) == 0 {
-			return
+			continue
 		}
 		// - URLs stuck in a loop
 		if c.options.UniqueFilter.IsCycle(nr.RequestURL()) {
-			return
+			continue
 		}
 
-		// Write the found result to output
-		result := &output.Result{
-			Timestamp:          time.Now(),
-			Body:               nr.Body,
-			URL:                nr.URL,
-			Source:             nr.Source,
-			Tag:                nr.Tag,
-			Attribute:          nr.Attribute,
-			CustomFields:       nr.CustomFields,
-			SourceTechnologies: nr.SourceTechnologies,
-		}
-		result.Method = nr.Method
-		scopeValidated, err := c.options.ScopeManager.Validate(parsed, nr.RootHostname)
-		if err != nil {
-			return
-		}
-		if scopeValidated || c.options.Options.DisplayOutScope {
-			// todo yhy 获取结果
-			c.options.Options.WriteCallback.Write(result)
-			_ = c.options.OutputWriter.Write(result, nil)
-		}
-		if c.options.Options.OnResult != nil {
-			c.options.Options.OnResult(*result)
-		}
+		scopeValidated := c.validateScope(nr.URL, nr.RootHostname)
+
 		// Do not add to crawl queue if max items are reached
 		if nr.Depth >= c.options.Options.MaxDepth || !scopeValidated {
-			return
+			continue
 		}
 		queue.Push(nr, nr.Depth)
 	}
@@ -367,4 +335,31 @@ func isChromeProcess(process *ps.Process) bool {
 	name, _ := process.Name()
 	executable, _ := process.Exe()
 	return stringsutil.ContainsAny(name, "chrome", "chromium") || stringsutil.ContainsAny(executable, "chrome", "chromium")
+}
+
+func (c *Crawler) validateScope(URL string, root string) bool {
+	parsedURL, err := url.Parse(URL)
+	if err != nil {
+		return false
+	}
+	scopeValidated, err := c.options.ScopeManager.Validate(parsedURL, root)
+	return err == nil && scopeValidated
+}
+
+func (c *Crawler) output(navigationRequest navigation.Request, navigationResponse navigation.Response) {
+	// Write the found result to output
+	result := &output.Result{
+		Timestamp: time.Now(),
+		Request:   navigationRequest,
+		Response:  navigationResponse,
+	}
+
+	//_ = c.options.OutputWriter.Write(result)
+
+	// todo yhy
+	c.options.Options.WriteCallback.Write(result)
+
+	if c.options.Options.OnResult != nil {
+		c.options.Options.OnResult(*result)
+	}
 }

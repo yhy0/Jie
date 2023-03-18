@@ -47,19 +47,35 @@ https://github.com/projectdiscovery/katana
 
 ![BypassHeadlessDetect.png](https://cdn.jsdelivr.net/gh/yhy0/PicGoImg@master/img/202303062213518.png)
 
+如果报错
+error while loading shared libraries:
+
+手动安装缺失的库
+
+```bash
+    yum install libpcap-devel 或 apt install libpcap-dev 
+apt-get install libpangocairo-1.0-0 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxi6 libxtst6 libnss3 libcups2 libxss1 libxrandr2 libasound2 libatk1.0-0 libgtk-3-0
+```
+
+都不行，手动安装
+
+https://go-rod.github.io/#/compatibility
+
 ### 被动扫描代理
 
 https://github.com/lqqyt2423/go-mitmproxy
 
 ### Xss
 
-https://github.com/hahwul/dalfox 什么玩意，发的包也太多了，后续去掉
+语义分析、原型链污染、dom 污染点传播分析
+
+https://github.com/w-digital-scanner/w13scan
 
 https://github.com/ac0d3r/xssfinder
 
 https://github.com/kleiton0x00/ppmap
 
-### SQL 注入  TODO
+### SQL 注入 
 
 提取 [sqlmap](https://github.com/sqlmapproject/sqlmap) 中关于检测的代码，提取一部分思想就行了
 
@@ -91,6 +107,20 @@ https://github.com/veo/vscan
 
 ### 一些其他漏洞
 
-### Fastjson
+#### 敏感信息
+
+https://github.com/mazen160/secrets-patterns-db
+
+#### Fastjson
 
 https://github.com/a1phaboy/FastjsonScan
+
+
+
+## License
+
+This code is distributed under the MIT license. See [LICENSE](https://github.com/prompt-engineering/click-prompt/blob/dev/LICENSE) in this directory.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=yhy0/Jie&type=Date)](https://star-history.com/#yhy0/Jie&Date)

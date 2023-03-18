@@ -5,6 +5,7 @@ import (
 	fileutil "github.com/projectdiscovery/utils/file"
 	"github.com/yhy0/Jie/crawler/katana/pkg/engine"
 	"github.com/yhy0/Jie/crawler/katana/pkg/engine/hybrid"
+	"github.com/yhy0/Jie/crawler/katana/pkg/engine/parser"
 	"github.com/yhy0/Jie/crawler/katana/pkg/engine/standard"
 	"github.com/yhy0/Jie/crawler/katana/pkg/types"
 	"go.uber.org/multierr"
@@ -21,17 +22,17 @@ type Runner struct {
 
 // New returns a new crawl runner structure
 func New(options *types.Options) (*Runner, error) {
-	//configureOutput(options)
-	//showBanner()
+	// configureOutput(options)
+	// showBanner()
 
-	//if options.Version {
-	//	gologger.Info().Msgf("Current version: %s", version)
-	//	return nil, nil
-	//}
+	// if options.Version {
+	// 	gologger.Info().Msgf("Current version: %s", version)
+	// 	return nil, nil
+	// }
 
-	//if err := initExampleFormFillConfig(); err != nil {
-	//	return nil, errorutil.NewWithErr(err).Msgf("could not init default config")
-	//}
+	// if err := initExampleFormFillConfig(); err != nil {
+	// 	return nil, errorutil.NewWithErr(err).Msgf("could not init default config")
+	// }
 	if err := validateOptions(options); err != nil {
 		return nil, errorutil.NewWithErr(err).Msgf("could not validate options")
 	}
@@ -45,9 +46,9 @@ func New(options *types.Options) (*Runner, error) {
 		return nil, errorutil.NewWithErr(err).Msgf("could not create crawler options")
 	}
 
-	var (
-		crawler engine.Engine
-	)
+	parser.InitWithOptions(options)
+
+	var crawler engine.Engine
 
 	switch {
 	case options.Headless:

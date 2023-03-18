@@ -40,17 +40,17 @@ func (t *Task) Distribution(crawlResult *input.CrawlResult) {
 			crawlResult.ContentType = value
 		}
 
-		// 有参数，进行 xss、sql 注入检测
+		if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "XSS") {
+			go t.xss(crawlResult)
+		}
+
+		// 有参数，进行 sql 注入检测
 		if crawlResult.Kv != "" {
 			if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "SQL") {
 				go t.sqlInjection(crawlResult)
 			}
 
-			if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "XSS") {
-				go t.xss(crawlResult)
-			}
-
-			if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "CMD-INJECT") {
+			if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "CMD") {
 				go t.cmdinject(crawlResult)
 			}
 
@@ -88,7 +88,6 @@ func (t *Task) sqlInjection(crawlResult *input.CrawlResult) {
 // xss 检测
 func (t *Task) xss(crawlResult *input.CrawlResult) {
 	t.wg.Add()
-	// todo 后续改改，这个 dalfox 发送了太多请求
 	xss.Scan(crawlResult)
 	t.wg.Done()
 }

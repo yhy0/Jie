@@ -2,8 +2,8 @@ package brute
 
 import (
 	"fmt"
-	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
+	"github.com/yhy0/logging"
 )
 
 func JbossBrute(url string) (username string, password string) {

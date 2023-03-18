@@ -2,9 +2,9 @@ package brute
 
 import (
 	"fmt"
-	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/scan/brute/hydra"
+	"github.com/yhy0/logging"
 	"strings"
 	"time"
 )
@@ -67,7 +67,7 @@ func Hydra(host string, port int, service string) {
 	output.OutChannel <- output.VulMessage{
 		DataType: "host_vul",
 		Plugin:   "Hydra " + service,
-		VulData: output.VulData{
+		VulnData: output.VulnData{
 			CreateTime: time.Now().Format("2006-01-02 15:04:05"),
 			Target:     host,
 			Ip:         host,

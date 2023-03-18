@@ -2,9 +2,9 @@ package jenkins
 
 import (
 	"fmt"
-	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/util"
+	"github.com/yhy0/logging"
 )
 
 func Unauthorized(u string) bool {

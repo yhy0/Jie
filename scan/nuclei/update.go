@@ -17,7 +17,7 @@ import (
 	"github.com/projectdiscovery/nuclei/v2/pkg/templates"
 	"github.com/projectdiscovery/nuclei/v2/pkg/types"
 	stringsutil "github.com/projectdiscovery/utils/strings"
-	"github.com/yhy0/Jie/logging"
+	"github.com/yhy0/logging"
 	"io"
 	"net/http"
 	"os"

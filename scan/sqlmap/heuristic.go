@@ -3,10 +3,10 @@ package sqlmap
 import (
 	"fmt"
 	"github.com/thoas/go-funk"
-	"github.com/yhy0/Jie/logging"
 	JieOutput "github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/util"
+	"github.com/yhy0/logging"
 	"regexp"
 	"strings"
 	"time"
@@ -104,7 +104,7 @@ func (sql *Sqlmap) HeuristicCheckSqlInjection() {
 				JieOutput.OutChannel <- JieOutput.VulMessage{
 					DataType: "web_vul",
 					Plugin:   "XSS",
-					VulData: JieOutput.VulData{
+					VulnData: JieOutput.VulnData{
 						CreateTime: time.Now().Format("2006-01-02 15:04:05"),
 						Target:     sql.Url,
 						Method:     sql.Method,
@@ -125,7 +125,7 @@ func (sql *Sqlmap) HeuristicCheckSqlInjection() {
 					JieOutput.OutChannel <- JieOutput.VulMessage{
 						DataType: "web_vul",
 						Plugin:   "FI",
-						VulData: JieOutput.VulData{
+						VulnData: JieOutput.VulnData{
 							CreateTime: time.Now().Format("2006-01-02 15:04:05"),
 							Target:     sql.Url,
 							Method:     sql.Method,

@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"github.com/corpix/uarand"
 	"github.com/yhy0/Jie/conf"
-	"github.com/yhy0/Jie/logging"
+	"github.com/yhy0/logging"
 	"go.uber.org/ratelimit"
 	"io/ioutil"
 	"mime/multipart"
@@ -47,7 +47,7 @@ type Session struct {
 
 var session *Session
 
-var rateLimit = 50
+var rateLimit = 20
 
 func NewSession() {
 	Transport := &http.Transport{

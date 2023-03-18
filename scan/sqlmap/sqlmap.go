@@ -4,10 +4,10 @@ import (
 	_ "embed"
 	"github.com/antlabs/strsim"
 	"github.com/beevik/etree"
-	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/util"
+	"github.com/yhy0/logging"
 	"strconv"
 	"time"
 )

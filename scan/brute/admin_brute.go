@@ -3,9 +3,9 @@ package brute
 import (
 	"crypto/md5"
 	"fmt"
-	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/util"
+	"github.com/yhy0/logging"
 	"net/url"
 	"regexp"
 	"strings"

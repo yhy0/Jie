@@ -1,55 +1,27 @@
 package xss
 
 import (
-	"fmt"
-	dalfox "github.com/hahwul/dalfox/v2/lib"
-	"github.com/yhy0/Jie/conf"
-	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/input"
-	"github.com/yhy0/Jie/pkg/output"
-	"time"
+	"github.com/yhy0/Jie/pkg/protocols/headless"
+	"github.com/yhy0/logging"
 )
 
 /**
   @author: yhy
   @since: 2023/1/5
-  @desc: https://github.com/hahwul/dalfox/
+  @desc: 语义分析、原型链污染、dom 污染点传播分析
 **/
 
 func Scan(in *input.CrawlResult) {
-	opt := dalfox.Options{
-		Timeout:      10,
-		Delay:        2,     // 请求限速器，单位毫秒， 代表每秒 2 次请求，防止过快导致 EOF
-		Mining:       false, // 使用字典攻击查找新参数，默认为GF-Patterns=>XSS
-		FindingDOM:   false, // 在DOM中查找新参数(attribute/js值)
-		ProxyAddress: conf.GlobalConfig.WebScan.Proxy,
-		Concurrence:  10,
-		NoBAV:        true,
-		NoGrep:       true,
-		UniqParam:    in.Param, // 需要限制参数， 不然请求太多了
+	Audit(in)
+
+	if headless.RodHeadless == nil || headless.RodHeadless.Browser == nil {
+		logging.Logger.Errorln("browser nil")
+		return
 	}
-	result, err := dalfox.NewScan(dalfox.Target{
-		URL:     in.Url,
-		Method:  in.Method,
-		Options: opt,
-	})
-	if err != nil {
-		logging.Logger.Errorln(err)
-	} else if len(result.PoCs) > 0 {
-		for _, v := range result.PoCs {
-			output.OutChannel <- output.VulMessage{
-				DataType: "web_vul",
-				Plugin:   "XSS - " + v.InjectType,
-				VulData: output.VulData{
-					CreateTime: time.Now().Format("2006-01-02 15:04:05"),
-					Target:     in.Url,
-					Method:     in.Method,
-					Ip:         "",
-					Param:      "",
-					Payload:    fmt.Sprintf("%s \n", v.Data),
-				},
-				Level: v.Severity,
-			}
-		}
-	}
+
+	// dom 随主动爬虫检测了，默认就会检测
+
+	// 原型链污染查找 xss
+	Prototype(in.Url)
 }

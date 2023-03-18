@@ -9,7 +9,6 @@ package nuclei
 
 import (
 	"context"
-	"fmt"
 	"github.com/logrusorgru/aurora"
 	"github.com/projectdiscovery/nuclei/v2/pkg/catalog/config"
 	"github.com/projectdiscovery/nuclei/v2/pkg/catalog/disk"
@@ -30,9 +29,9 @@ import (
 	"github.com/projectdiscovery/nuclei/v2/pkg/types"
 	"github.com/projectdiscovery/ratelimit"
 	"github.com/yhy0/Jie/conf"
-	"github.com/yhy0/Jie/logging"
 	JieOutput "github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/util"
+	"github.com/yhy0/logging"
 	"os"
 	"path"
 	"sync"
@@ -51,7 +50,7 @@ func Scan(target string, fingerprints []string) {
 		JieOutput.OutChannel <- JieOutput.VulMessage{
 			DataType: "web_vul",
 			Plugin:   "POC",
-			VulData: JieOutput.VulData{
+			VulnData: JieOutput.VulnData{
 				CreateTime:  time.Now().Format("2006-01-02 15:04:05"),
 				Target:      target,
 				Ip:          event.IP,
@@ -81,7 +80,6 @@ func nuclei(target string, templates []string, tags []string, outputWriter *test
 	home, _ := os.UserHomeDir()
 	defaultOpts := &types.Options{
 		Targets:       []string{target},
-		Proxy:         []string{conf.GlobalConfig.WebScan.Proxy},
 		AutomaticScan: false, // 根据识别到的指纹自动映射标签扫描
 		Templates:     templates,
 		ExcludedTemplates: []string{
@@ -122,6 +120,14 @@ func nuclei(target string, templates []string, tags []string, outputWriter *test
 		UpdateTemplates:            true, // 更新模板
 	}
 
+	if conf.GlobalConfig.WebScan.Proxy != "" {
+		defaultOpts.Proxy = []string{}
+		// 只在 option 中指定代理并不行, nuclei 会对 proxy 代理进行处理，最终使用的是 types.ProxyURL 或 types.ProxySocksURL, 这里直接将原方法执行一遍
+		if err := loadProxyServers(defaultOpts); err != nil {
+			logging.Logger.Errorln(err)
+		}
+	}
+
 	// 防止多个进程一起更新、下载模板，加锁
 	updateOptions := &Runner{
 		options: defaultOpts,
@@ -137,7 +143,7 @@ func nuclei(target string, templates []string, tags []string, outputWriter *test
 
 	// 只在 option 中指定代理并不行, nuclei 会对 proxy 代理进行处理，最终使用的是 types.ProxyURL 或 types.ProxySocksURL, 这里直接将原方法执行一般
 	if err := loadProxyServers(defaultOpts); err != nil {
-		fmt.Println(err)
+		logging.Logger.Errorln(err)
 	}
 
 	defaultOpts.ExcludeTags = config.ReadIgnoreFile().Tags

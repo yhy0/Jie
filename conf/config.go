@@ -7,7 +7,7 @@ package conf
 **/
 
 var (
-	DefaultPlugins = []string{"XSS", "SQL", "CMD-INJECT", "XXE", "SSRF", "POC", "BRUTE", "JSONP", "CRLF"}
+	DefaultPlugins = []string{"XSS", "SQL", "CMD", "XXE", "SSRF", "BRUTE", "JSONP", "CRLF", "BBSCAN"}
 )
 
 type Config struct {

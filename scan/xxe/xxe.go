@@ -2,10 +2,10 @@ package xxe
 
 import (
 	"github.com/thoas/go-funk"
-	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
+	"github.com/yhy0/logging"
 	"time"
 )
 
@@ -38,7 +38,7 @@ func Scan(in *input.CrawlResult) {
 		output.OutChannel <- output.VulMessage{
 			DataType: "web_vul",
 			Plugin:   "XXE",
-			VulData: output.VulData{
+			VulnData: output.VulnData{
 				CreateTime: time.Now().Format("2006-01-02 15:04:05"),
 				Target:     in.Url,
 				Method:     in.Method,

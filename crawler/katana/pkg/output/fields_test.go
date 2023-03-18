@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/yhy0/Jie/crawler/katana/pkg/navigation"
 )
 
 func TestValidateFieldNames(t *testing.T) {
@@ -38,7 +39,7 @@ func TestFormatField(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		result := formatField(&Result{URL: test.url}, test.fields)
+		result := formatField(&Result{Request: navigation.Request{URL: test.url}}, test.fields)
 		require.ElementsMatch(t, test.result, result, "could not equal value")
 	}
 }

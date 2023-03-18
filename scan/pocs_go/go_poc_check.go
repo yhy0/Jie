@@ -273,7 +273,7 @@ func PocCheck(technologies []string, target string, finalURL string, ip string) 
 		output.OutChannel <- output.VulMessage{
 			DataType: "web_vul",
 			Plugin:   plugin,
-			VulData: output.VulData{
+			VulnData: output.VulnData{
 				CreateTime: time.Now().Format("2006-01-02 15:04:05"),
 				Target:     target,
 				Ip:         ip,

@@ -2,6 +2,12 @@ package hybrid
 
 import (
 	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"github.com/yhy0/Jie/pkg/output"
+	"github.com/yhy0/Jie/scan/xss/dom"
+	"github.com/yhy0/logging"
+	"time"
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/proto"
@@ -50,6 +56,31 @@ func (h *Hijack) Start(handler HijackHandler) func() error {
 	wait := p.EachEvent(func(e *proto.FetchRequestPaused) {
 		if handler != nil {
 			err = handler(e)
+		}
+	}, func(e *proto.RuntimeBindingCalled) { // 实现绑定调用监听，接收污点分析结果
+		switch e.Name {
+		case eventPushVul:
+			logging.Logger.Infoln("[dom-based] EventBindingCalled", e.Payload)
+			points := make([]dom.VulPoint, 0)
+			if err := json.Unmarshal([]byte(e.Payload), &points); err != nil {
+				logging.Logger.Errorln("[dom-based] json.Unmarshal error:", err)
+				return
+			}
+
+			for _, point := range points {
+				output.OutChannel <- output.VulMessage{
+					DataType: "web_vul",
+					Plugin:   "XSS",
+					VulnData: output.VulnData{
+						CreateTime: time.Now().Format("2006-01-02 15:04:05"),
+						Target:     point.Url,
+						VulnType:   "Dom XSS",
+						Method:     "GET",
+						Payload:    fmt.Sprintf("Source:%v \t Sink:%v\n", point.Source, point.Sink),
+					},
+					Level: output.Medium,
+				}
+			}
 		}
 	})
 

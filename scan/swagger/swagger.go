@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"github.com/buger/jsonparser"
 	"github.com/yhy0/Jie/conf"
-	"github.com/yhy0/Jie/logging"
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/util"
 	"github.com/yhy0/Jie/scan/sqlmap"
+	"github.com/yhy0/logging"
 	"mime/multipart"
 	"net/url"
 	"path/filepath"
@@ -405,11 +405,10 @@ func scanApi(method, baseUrl, path, queryParams, bodyParams string, header map[s
 		}
 
 		if resp.StatusCode == 200 {
-
 			output.OutChannel <- output.VulMessage{
 				DataType: "web_vul",
 				Plugin:   "Swagger 文件上传",
-				VulData: output.VulData{
+				VulnData: output.VulnData{
 					CreateTime: time.Now().Format("2006-01-02 15:04:05"),
 					Target:     target,
 					Method:     method,
@@ -483,7 +482,7 @@ func scan(method, target, bodyParams string, header map[string]string, ip string
 			output.OutChannel <- output.VulMessage{
 				DataType: "web_vul",
 				Plugin:   "Swagger unauthorized",
-				VulData: output.VulData{
+				VulnData: output.VulnData{
 					CreateTime: time.Now().Format("2006-01-02 15:04:05"),
 					Target:     target,
 					Method:     method,
@@ -502,7 +501,7 @@ func scan(method, target, bodyParams string, header map[string]string, ip string
 				output.OutChannel <- output.VulMessage{
 					DataType: "web_vul",
 					Plugin:   "Swagger SSRF",
-					VulData: output.VulData{
+					VulnData: output.VulnData{
 						CreateTime: time.Now().Format("2006-01-02 15:04:05"),
 						Target:     target,
 						Method:     method,
@@ -522,7 +521,7 @@ func scan(method, target, bodyParams string, header map[string]string, ip string
 				output.OutChannel <- output.VulMessage{
 					DataType: "web_vul",
 					Plugin:   "Swagger File Reading",
-					VulData: output.VulData{
+					VulnData: output.VulnData{
 						CreateTime: time.Now().Format("2006-01-02 15:04:05"),
 						Target:     target,
 						Method:     method,
@@ -561,7 +560,7 @@ func scan(method, target, bodyParams string, header map[string]string, ip string
 			output.OutChannel <- output.VulMessage{
 				DataType: "web_vul",
 				Plugin:   "Swagger unauthorized",
-				VulData: output.VulData{
+				VulnData: output.VulnData{
 					CreateTime: time.Now().Format("2006-01-02 15:04:05"),
 					Target:     target,
 					Method:     method,
@@ -580,7 +579,7 @@ func scan(method, target, bodyParams string, header map[string]string, ip string
 				output.OutChannel <- output.VulMessage{
 					DataType: "web_vul",
 					Plugin:   "Swagger SSRF",
-					VulData: output.VulData{
+					VulnData: output.VulnData{
 						CreateTime: time.Now().Format("2006-01-02 15:04:05"),
 						Target:     target,
 						Method:     method,
@@ -600,7 +599,7 @@ func scan(method, target, bodyParams string, header map[string]string, ip string
 				output.OutChannel <- output.VulMessage{
 					DataType: "web_vul",
 					Plugin:   "Swagger File Reading",
-					VulData: output.VulData{
+					VulnData: output.VulnData{
 						CreateTime: time.Now().Format("2006-01-02 15:04:05"),
 						Target:     target,
 						Method:     method,

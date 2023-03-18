@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/thoas/go-funk"
-	"github.com/yhy0/Jie/logging"
+	"github.com/yhy0/logging"
 	"io"
 	"io/ioutil"
 	"mime"
@@ -229,11 +229,12 @@ func ParseUri(uri string, body []byte, method string, contentType string, header
 				variations.OriginalParams = append(variations.OriginalParams, Param{Name: key, Value: value, Index: i, ContentType: contentType})
 			} else {
 				logging.Logger.Errorln("exec function strings.Split fail, ", uri)
-				return nil, err
+				continue
 			}
 		}
 		sort.Sort(variations)
 		return &variations, nil
+
 	} else {
 		err = fmt.Errorf("method not supported")
 	}

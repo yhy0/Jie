@@ -2,7 +2,7 @@ package util
 
 import (
 	"bufio"
-	"github.com/yhy0/Jie/logging"
+	"github.com/yhy0/logging"
 	"io"
 	"io/ioutil"
 	"os"

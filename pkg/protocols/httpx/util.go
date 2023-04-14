@@ -19,21 +19,18 @@ import (
 
 /*
 *
-
 	@author: yhy
 	@since: 2023/1/30
 	@desc: //TODO
-
 *
 */
+
 const (
 	applicationJson       = "application/json"
 	applicationUrlencoded = "application/x-www-form-urlencoded"
 	multipartData         = "multipart/form-data"
 	unknown               = "unknown"
 )
-
-const MAX_SEND_COUNT = 10
 
 // Param describes an individual posted parameter.
 type Param struct {
@@ -218,7 +215,8 @@ func ParseUri(uri string, body []byte, method string, contentType string, header
 		if !funk.Contains(uri, "?") {
 			return nil, fmt.Errorf("GET data is empty")
 		}
-		urlparams := strings.Split(uri, "?")[1]
+		urlparams := strings.TrimRight(uri, "&")
+		urlparams = strings.Split(uri, "?")[1]
 		strs := strings.Split(urlparams, "&")
 		for i, kv := range strs {
 			kvs := strings.Split(kv, "=")
@@ -319,21 +317,22 @@ func (p Variations) Set(key string, value string) error {
 
 func (p *Variations) SetPayload(uri string, payload string, method string, key ...[]string) []string {
 	var result []string
+
+	if p.Params == nil {
+		return result
+	}
+
 	if strings.ToUpper(method) == "POST" {
-		for idx, kv := range p.Params {
+		for _, kv := range p.Params {
 			if len(key) > 0 { // 限定替换关键参数名
 				if !funk.Contains(key, kv.Name) {
 					continue
 				}
 			}
-			//小于MAX_SEND_COUNT一个链接参数不能超过MAX_SEND_COUNT
-			if idx <= MAX_SEND_COUNT {
-				p.Set(kv.Name, payload)
-				result = append(result, p.Release())
-				p.Set(kv.Name, kv.Value)
-			} else {
-				logging.Logger.Warning("当前url超出参数最大发送参数,自动pass不填写参数")
-			}
+
+			p.Set(kv.Name, payload)
+			result = append(result, p.Release())
+			p.Set(kv.Name, kv.Value)
 
 		}
 	} else if strings.ToUpper(method) == "GET" {
@@ -343,19 +342,17 @@ func (p *Variations) SetPayload(uri string, payload string, method string, key .
 			return nil
 		}
 		v := u.Query()
-		for idx, kv := range p.Params {
+		for _, kv := range p.Params {
 			if len(key) > 0 { // 限定替换关键参数名
 				if !funk.Contains(key, kv.Name) {
 					continue
 				}
 			}
-			if idx <= MAX_SEND_COUNT {
-				v.Set(kv.Name, payload)
-				result = append(result, strings.Split(uri, "?")[0]+"?"+v.Encode())
-				v.Set(kv.Name, kv.Value)
-			} else {
-				logging.Logger.Warning("当前url超出参数最小发送数,自动pass不填写参数")
-			}
+
+			v.Set(kv.Name, payload)
+			result = append(result, strings.Split(uri, "?")[0]+"?"+v.Encode())
+			v.Set(kv.Name, kv.Value)
+
 		}
 	}
 	return result
@@ -376,18 +373,13 @@ func (p *Variations) SetPayloadByIndex(index int, uri string, payload string, me
 
 	if strings.ToUpper(method) == "POST" {
 		for idx, kv := range p.Params {
-			//小于5一个链接参数不能超过5
-			if idx <= MAX_SEND_COUNT {
-				if idx == index {
-					// 先改变参数，生成 payload，然后再将参数改回来，将现场还原
-					p.Set(kv.Name, payload)
-					str := p.Release()
-					p.Set(kv.Name, p.OriginalParams[idx].Value)
-					p.Release()
-					return str
-				}
-			} else {
-				logging.Logger.Warning("当前url超出参数最小发送数,自动pass不填写参数")
+			if idx == index {
+				// 先改变参数，生成 payload，然后再将参数改回来，将现场还原
+				p.Set(kv.Name, payload)
+				str := p.Release()
+				p.Set(kv.Name, p.OriginalParams[idx].Value)
+				p.Release()
+				return str
 			}
 
 		}
@@ -399,19 +391,16 @@ func (p *Variations) SetPayloadByIndex(index int, uri string, payload string, me
 		}
 		v := u.Query()
 		for idx, kv := range p.Params {
-			if idx <= MAX_SEND_COUNT {
-				if idx == index {
-					p.Set(kv.Name, payload)
-					stv := p.Release()
-					str := strings.Split(uri, "?")[0] + "?" + stv
-					v.Set(kv.Name, kv.Value)
 
-					p.Set(kv.Name, p.OriginalParams[idx].Value)
-					p.Release()
-					return str
-				}
-			} else {
-				logging.Logger.Warning("当前url超出参数最小发送数,自动pass不填写参数")
+			if idx == index {
+				p.Set(kv.Name, payload)
+				stv := p.Release()
+				str := strings.Split(uri, "?")[0] + "?" + stv
+				v.Set(kv.Name, kv.Value)
+
+				p.Set(kv.Name, p.OriginalParams[idx].Value)
+				p.Release()
+				return str
 			}
 		}
 	}

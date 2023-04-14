@@ -2,78 +2,80 @@ package hybrid
 
 import (
 	"bytes"
-	"context"
+	"github.com/go-rod/rod"
 	"github.com/yhy0/Jie/pkg/protocols/headless"
 	"github.com/yhy0/Jie/pkg/util"
+	"github.com/yhy0/Jie/scan/sensitive"
 	"github.com/yhy0/Jie/scan/xss/dom"
 	"github.com/yhy0/logging"
 	"io"
 	"net/http"
-	"net/url"
+	"net/http/httputil"
 	"regexp"
 	"runtime"
+
 	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/proto"
 	"github.com/projectdiscovery/gologger"
 	"github.com/projectdiscovery/retryablehttp-go"
 	errorutil "github.com/projectdiscovery/utils/errors"
 	mapsutil "github.com/projectdiscovery/utils/maps"
+	stringsutil "github.com/projectdiscovery/utils/strings"
+	urlutil "github.com/projectdiscovery/utils/url"
+	"github.com/yhy0/Jie/crawler/katana/pkg/engine/common"
 	"github.com/yhy0/Jie/crawler/katana/pkg/engine/parser"
 	"github.com/yhy0/Jie/crawler/katana/pkg/navigation"
 	"github.com/yhy0/Jie/crawler/katana/pkg/utils"
-	"github.com/yhy0/Jie/crawler/katana/pkg/utils/queue"
 )
 
 var (
 	eventPushVul = "xssfinderPushDomVul"
-
 	// 提取 script 部分，用于 js ast
 	scriptContentRex = regexp.MustCompile(`<script[^/>]*?>(?:\s*<!--)?\s*(\S[\s\S]+?\S)\s*(?:-->\s*)?<\/script>`)
 )
 
-func (c *Crawler) navigateRequest(ctx context.Context, httpclient *retryablehttp.Client, queue *queue.Queue, browser *rod.Browser, request navigation.Request, rootHostname string) (*navigation.Response, error) {
+func (c *Crawler) navigateRequest(s *common.CrawlSession, request *navigation.Request) (*navigation.Response, error) {
 	// todo 怎么写，才能没有 panic ，现在已知 Must** 字样的都有可能导致
 	defer func() {
 		if err := recover(); err != nil {
-			logging.Logger.Errorln("recover from:", err)
+			logging.Logger.Errorln(request.URL, "recover from:", err)
 			debugStack := make([]byte, 1024)
 			runtime.Stack(debugStack, false)
 			logging.Logger.Errorf("Stack Trace:%v", string(debugStack))
 
 		}
 	}()
-
 	depth := request.Depth + 1
 	response := &navigation.Response{
 		Depth:        depth,
-		RootHostname: rootHostname,
+		RootHostname: s.Hostname,
 	}
 
-	page, err := browser.Page(proto.TargetCreateTarget{})
+	page, err := s.Browser.Page(proto.TargetCreateTarget{})
 	if err != nil {
 		return nil, errorutil.NewWithTag("hybrid", "could not create target").Wrap(err)
 	}
 	defer page.Close()
 
 	// todo yhy 绕过无头浏览器检测 https://bot.sannysoft.com
-	//page.EvalOnNewDocument(`;(() => {` + xss.StealthJS + `})();`)
-	page.EvalOnNewDocument(headless.StealthJS)
+	_, err = page.EvalOnNewDocument(headless.StealthJS)
+	if err != nil {
+		logging.Logger.Errorln(err)
+		return nil, err
+	}
 
 	// 绑定 js 中的 window.xssfinderPushDomVul
 	proto.RuntimeAddBinding{Name: eventPushVul}.Call(page)
-	//page.EvalOnNewDocument(`;(() => {` + xss.StealthJS + `})();`)
 	_, err = page.EvalOnNewDocument(headless.PreloadJS)
 	if err != nil {
 		logging.Logger.Errorln(err)
+		return nil, err
 	}
-
 	// yhy 创建一个劫持请求, 用于屏蔽某些请求, img、font
 	// 	router := browser.HijackRequests()  // 会更改response返回 包内容(增加的替换的 js )， page.HijackRequests() 还是原样的输出
-
 	router := page.HijackRequests()
 	defer router.MustStop()
 
@@ -90,9 +92,9 @@ func (c *Crawler) navigateRequest(ctx context.Context, httpclient *retryablehttp
 			return
 		}
 
-		//fmt.Println(ctx.Request.URL(), ctx.Request.Type())
-		_ = ctx.LoadResponse(http.DefaultClient, true)
+		ctx.LoadResponse(http.DefaultClient, true)
 		if ctx.Request.Type() == proto.NetworkResourceTypeDocument {
+			sensitive.Detection(ctx.Request.URL().String(), ctx.Response.Body())
 			body := []byte(ctx.Response.Body())
 			ss := scriptContentRex.FindAllSubmatch(body, -1)
 			for i := range ss {
@@ -112,7 +114,6 @@ func (c *Crawler) navigateRequest(ctx context.Context, httpclient *retryablehttp
 			}
 		}
 	})
-
 	go router.Run()
 
 	pageRouter := NewHijack(page)
@@ -121,52 +122,70 @@ func (c *Crawler) navigateRequest(ctx context.Context, httpclient *retryablehttp
 		RequestStage: proto.FetchRequestStageResponse,
 	})
 	go pageRouter.Start(func(e *proto.FetchRequestPaused) error {
-		URL, _ := url.Parse(e.Request.URL)
+		URL, _ := urlutil.Parse(e.Request.URL)
 		body, _ := FetchGetResponseBody(page, e)
 		headers := make(map[string][]string)
 		for _, h := range e.ResponseHeaders {
 			headers[h.Name] = []string{h.Value}
 		}
-		var statuscode int
+		var (
+			statusCode     int
+			statucCodeText string
+		)
 		if e.ResponseStatusCode != nil {
-			statuscode = *e.ResponseStatusCode
+			statusCode = *e.ResponseStatusCode
 		}
+		if e.ResponseStatusText != "" {
+			statucCodeText = e.ResponseStatusText
+		} else {
+			statucCodeText = http.StatusText(statusCode)
+		}
+		httpreq, _ := http.NewRequest(e.Request.Method, URL.String(), strings.NewReader(e.Request.PostData))
 		httpresp := &http.Response{
-			StatusCode: statuscode,
-			Status:     e.ResponseStatusText,
-			Header:     headers,
-			Body:       io.NopCloser(bytes.NewReader(body)),
-			Request: &http.Request{
-				Method: e.Request.Method,
-				URL:    URL,
-				Body:   io.NopCloser(strings.NewReader(e.Request.PostData)),
-			},
+			Proto:         "HTTP/1.1",
+			ProtoMajor:    1,
+			ProtoMinor:    1,
+			StatusCode:    statusCode,
+			Status:        statucCodeText,
+			Header:        headers,
+			Body:          io.NopCloser(bytes.NewReader(body)),
+			Request:       httpreq,
+			ContentLength: int64(len(body)),
 		}
 
-		if !c.options.UniqueFilter.UniqueContent(body) {
-			return FetchContinueRequest(page, e)
+		var rawBytesRequest, rawBytesResponse []byte
+		if r, err := retryablehttp.FromRequest(httpreq); err == nil {
+			rawBytesRequest, _ = r.Dump()
+		} else {
+			rawBytesRequest, _ = httputil.DumpRequestOut(httpreq, true)
 		}
+		rawBytesResponse, _ = httputil.DumpResponse(httpresp, true)
 
 		bodyReader, _ := goquery.NewDocumentFromReader(bytes.NewReader(body))
-		technologies := c.options.Wappalyzer.Fingerprint(headers, body)
-		resp := navigation.Response{
+		technologies := c.Options.Wappalyzer.Fingerprint(headers, body)
+		resp := &navigation.Response{
 			Resp:         httpresp,
 			Body:         string(body),
 			Reader:       bodyReader,
 			Depth:        depth,
-			RootHostname: rootHostname,
+			RootHostname: s.Hostname,
 			Technologies: mapsutil.GetKeys(technologies),
-			StatusCode:   statuscode,
+			StatusCode:   statusCode,
 			Headers:      utils.FlattenHeaders(headers),
+			Raw:          string(rawBytesResponse),
 		}
 
-		if request.URL == e.Request.URL {
-			response = &resp
+		// trim trailing /
+		normalizedheadlessURL := strings.TrimSuffix(e.Request.URL, "/")
+		matchOriginalURL := stringsutil.EqualFoldAny(request.URL, e.Request.URL, normalizedheadlessURL)
+		if matchOriginalURL {
+			request.Raw = string(rawBytesRequest)
+			response = resp
 		}
 
 		// process the raw response
 		navigationRequests := parser.ParseResponse(resp)
-		c.enqueue(queue, navigationRequests...)
+		c.Enqueue(s.Queue, navigationRequests...)
 		return FetchContinueRequest(page, e)
 	})() //nolint
 	defer func() {
@@ -175,11 +194,14 @@ func (c *Crawler) navigateRequest(ctx context.Context, httpclient *retryablehttp
 		}
 	}()
 
-	timeout := time.Duration(c.options.Options.Timeout) * time.Second
+	timeout := time.Duration(c.Options.Options.Timeout) * time.Second
 	page = page.Timeout(timeout)
 
+	// todo 这里改一下 使用 PageLifecycleEventNameLoad ，而不是 PageLifecycleEventNameFirstMeaningfulPaint
+	// 为什么？因为 当 使用 PageLifecycleEventNameFirstMeaningfulPaint 时，有些情况下比如空白页面，啥也没有，这种就会导致该页面发生超时错误,并且无法获取当前页面的 body 等信息，发生 panic
+	// PageLifecycleEventNameLoad 会等待全部资源加载完成，比较耗时，
 	// wait the page to be fully loaded and becoming idle
-	waitNavigation := page.WaitNavigation(proto.PageLifecycleEventNameFirstMeaningfulPaint)
+	waitNavigation := page.WaitNavigation(proto.PageLifecycleEventNameLoad)
 
 	if err := page.Navigate(request.URL); err != nil {
 		return nil, errorutil.NewWithTag("hybrid", "could not navigate target").Wrap(err)
@@ -206,16 +228,20 @@ func (c *Crawler) navigateRequest(ctx context.Context, httpclient *retryablehttp
 	var builder strings.Builder
 	traverseDOMNode(result.Root, &builder)
 
-	// 截图
-	//page.MustScreenshot(fmt.Sprintf("/Users/yhy/Documents/blog/%s.png", util.RandString(5)))
-
 	body, err := page.HTML()
 	if err != nil {
 		return nil, errorutil.NewWithTag("hybrid", "could not get html").Wrap(err)
 	}
+	parsed, err := urlutil.Parse(request.URL)
+	if err != nil {
+		return nil, errorutil.NewWithTag("hybrid", "url could not be parsed").Wrap(err)
+	}
 
-	parsed, _ := url.Parse(request.URL)
-	response.Resp = &http.Response{Header: make(http.Header), Request: &http.Request{URL: parsed}}
+	if response.Resp == nil {
+		response.Resp = &http.Response{Header: make(http.Header), Request: &http.Request{URL: parsed.URL}}
+	} else {
+		response.Resp.Request.URL = parsed.URL
+	}
 
 	// Create a copy of intrapolated shadow DOM elements and parse them separately
 	responseCopy := *response
@@ -223,8 +249,8 @@ func (c *Crawler) navigateRequest(ctx context.Context, httpclient *retryablehttp
 
 	responseCopy.Reader, _ = goquery.NewDocumentFromReader(strings.NewReader(responseCopy.Body))
 	if responseCopy.Reader != nil {
-		navigationRequests := parser.ParseResponse(responseCopy)
-		c.enqueue(queue, navigationRequests...)
+		navigationRequests := parser.ParseResponse(&responseCopy)
+		c.Enqueue(s.Queue, navigationRequests...)
 	}
 
 	response.Body = body

@@ -108,11 +108,12 @@ func Prototype(u string) {
 func queryEnum(u, quote string) bool {
 	for _, pp := range ppp {
 		full_url := u + quote + pp
-
+		// 首先根据 payload 检测 js 是否输出 reserved
 		res := runPage(full_url, `() => window.ppmap`)
 		if res == "" {
 			continue
 		}
+		// 具体的指纹检测
 		res = runPage(u, fingerprint)
 
 		logging.Logger.Infoln(full_url, " Gadget found: ", res)
@@ -247,23 +248,25 @@ func runPage(target string, jsCode string) string {
 
 		}
 	}()
+	// 创建tab
+	page, err := headless.RodHeadless.Browser.Page(proto.TargetCreateTarget{URL: target})
 
-	page, err := headless.RodHeadless.Browser.Page(proto.TargetCreateTarget{})
 	if err != nil {
-		logging.Logger.Debugln("could not create target, ", target)
+		logging.Logger.Debugln(target, "could not create target, ", err)
 		return ""
 	}
 	defer page.Close()
 
-	page = page.Timeout(5 * time.Second)
+	// 设置超时时间
+	timeout := 5 * time.Second
+	page = page.Timeout(timeout)
 
-	// 绕过无头浏览器检测 https://bot.sannysoft.com
+	// 整个 dom 加载前注入 js 绕过无头浏览器检测 https://bot.sannysoft.com
 	page.EvalOnNewDocument(`;(() => {` + headless.StealthJS + `})();`)
 
 	// 创建一个劫持请求, 用于屏蔽某些请求, img、font
 	router := headless.RodHeadless.Browser.HijackRequests()
 	defer router.MustStop()
-	// 劫持 html 和 js ，用于将<script>xxx</script>进行替换
 	router.MustAdd("*", func(ctx *rod.Hijack) {
 		// *.woff2 字体
 		if ctx.Request.Type() == proto.NetworkResourceTypeFont {
@@ -280,15 +283,16 @@ func runPage(target string, jsCode string) string {
 	go router.Run()
 
 	// Must 开头的函数 必须在 WaitLoad 后边?
-	if err := page.WaitLoad(); err != nil {
+	if err = page.WaitLoad(); err != nil {
 		logging.Logger.Debugf("\"%s\" on wait load: %s", target, err)
 		return ""
 	}
 
-	// 当 page 超时，这里就会出现异常，导致 panic
+	// dom 加载完后注入js, 检测 原型链 xss
 	res := page.MustEval(jsCode).String()
 
-	if res == "<nil>" {
+	logging.Logger.Println(res)
+	if res != "reserved" {
 		return ""
 	}
 	return res

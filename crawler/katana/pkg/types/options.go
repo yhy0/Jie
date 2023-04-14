@@ -116,9 +116,12 @@ type Options struct {
 	FilterRegex []*regexp.Regexp
 	// MatchRegex is the slice regex to match url
 	MatchRegex []*regexp.Regexp
-
-	// todo yhy
-	WriteCallback *output.MockOutputWriter
+	//DisableUpdateCheck disables automatic update check
+	DisableUpdateCheck bool
+	//IgnoreQueryParams ignore crawling same path with different query-param values
+	IgnoreQueryParams bool
+	// Debug
+	Debug bool
 }
 
 func (options *Options) ParseCustomHeaders() map[string]string {

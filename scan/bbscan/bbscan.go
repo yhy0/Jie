@@ -173,13 +173,12 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 		skip302              = false
 		other200Contentlen   []int
 		other200Title        []string
-		//other200Content      []string
-		errorTimes   = 0
-		count502     = 0
-		technologies []string
-		url404       *page
-		url404res    *httpx.Response
-		err          error
+		errorTimes           = 0
+		count502             = 0
+		technologies         []string
+		url404               *page
+		url404res            *httpx.Response
+		err                  error
 	)
 
 	other200Contentlen = append(other200Contentlen, indexContentLength)

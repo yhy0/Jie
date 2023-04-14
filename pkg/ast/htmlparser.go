@@ -14,7 +14,7 @@ import (
 **/
 
 // GetParamsFromHtml 获取变量 TODO 有待优化
-func GetParamsFromHtml(htmlStr *string) []string {
+func GetParamsFromHtml(htmlStr *string, t string) []string {
 	var result []string
 	var inScript bool // 用于判断当前是否在<script>标签中
 	var scriptContent string
@@ -47,7 +47,7 @@ func GetParamsFromHtml(htmlStr *string) []string {
 			tagname := strings.ToLower(token.Data)
 			if tagname == "script" {
 				inScript = false
-				result = append(result, AnalyseJs(scriptContent)...)
+				result = append(result, AnalyseJs(scriptContent, t)...)
 				scriptContent = ""
 			}
 		} else if tokenType == html.TextToken && inScript {

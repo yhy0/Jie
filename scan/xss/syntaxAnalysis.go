@@ -23,7 +23,7 @@ import (
 
 func Audit(in *input.CrawlResult) {
 	// katanna 爬虫中已经解析过参数了，这里应该没必要再次解析了？等把爬虫中的参数传过来就没必要了，现在爬虫不会传参数(现在传的只是从 url?xx 获取的)
-	params := ast.GetParamsFromHtml(&in.Resp.Body)
+	params := ast.GetParamsFromHtml(&in.Resp.Body, in.Target)
 
 	logging.Logger.Debugln(in.Url, params)
 	// html 解析 中发现的参数、爬虫发现的参数、自定义高危参数

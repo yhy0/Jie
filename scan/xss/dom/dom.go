@@ -13,6 +13,7 @@ import (
   @author: yhy
   @since: 2023/3/14
   @desc: https://github1s.com/s0md3v/XSStrike/blob/HEAD/core/dom.py
+	// 这种不行，没有链路追踪，误报太多
 **/
 
 func Dom(u, response string) {

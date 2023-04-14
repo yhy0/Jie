@@ -49,32 +49,6 @@ type StandardWriter struct {
 	filterRegex      []*regexp.Regexp
 }
 
-// MockOutputWriter is a mocked output writer. todo yhy 实现Writer接口获取输出
-type MockOutputWriter struct {
-	WriteCallback func(o *Result)
-}
-
-// NewMockOutputWriter creates a new mock output writer
-func NewMockOutputWriter() *MockOutputWriter {
-	return &MockOutputWriter{}
-}
-
-// Close closes the output writer interface
-func (m *MockOutputWriter) Close() {}
-
-// Write writes the event to file and/or screen.
-func (m *MockOutputWriter) Write(result *Result) error {
-	if m.WriteCallback != nil {
-		m.WriteCallback(result)
-	}
-	return nil
-}
-
-// WriteErr closes the output writer interface
-func (m *MockOutputWriter) WriteErr(errMessage *Error) error {
-	return nil
-}
-
 // New returns a new output writer instance
 func New(options Options) (Writer, error) {
 	writer := &StandardWriter{
@@ -148,25 +122,25 @@ func New(options Options) (Writer, error) {
 	return writer, nil
 }
 
-// Write writes the event to file and/or screen.
-func (w *StandardWriter) Write(event *Result) error {
-	if event != nil {
+// Write writes the result to file and/or screen.
+func (w *StandardWriter) Write(result *Result) error {
+	if result != nil {
 		if len(w.storeFields) > 0 {
-			storeFields(event, w.storeFields)
+			storeFields(result, w.storeFields)
 		}
-		if !w.matchOutput(event) {
+		if !w.matchOutput(result) {
 			return nil
 		}
-		if w.filterOutput(event) {
+		if w.filterOutput(result) {
 			return nil
 		}
 		var data []byte
 		var err error
 
 		if w.json {
-			data, err = w.formatJSON(event)
+			data, err = w.formatJSON(result)
 		} else {
-			data, err = w.formatScreen(event)
+			data, err = w.formatScreen(result)
 		}
 		if err != nil {
 			return errorutil.NewWithTag("output", "could not format output").Wrap(err)
@@ -188,13 +162,13 @@ func (w *StandardWriter) Write(event *Result) error {
 		}
 	}
 
-	if w.storeResponse && event.Response.Resp != nil {
-		if file, err := getResponseFile(w.storeResponseDir, event.Response.Resp.Request.URL.String()); err == nil {
-			data, err := w.formatResponse(event.Response.Resp)
+	if w.storeResponse && result.HasResponse() {
+		if file, err := getResponseFile(w.storeResponseDir, result.Response.Resp.Request.URL.String()); err == nil {
+			data, err := w.formatResult(result)
 			if err != nil {
 				return errorutil.NewWithTag("output", "could not store response").Wrap(err)
 			}
-			if err := updateIndex(w.storeResponseDir, event.Response.Resp); err != nil {
+			if err := updateIndex(w.storeResponseDir, result); err != nil {
 				return errorutil.NewWithTag("output", "could not store response").Wrap(err)
 			}
 			if err := file.Write(data); err != nil {

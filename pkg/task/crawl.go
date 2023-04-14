@@ -11,6 +11,7 @@ import (
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/logging"
 	"golang.org/x/net/publicsuffix"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
@@ -34,7 +35,6 @@ type res struct {
 
 // Crawler 运行 Katana 爬虫
 func (t *Task) Crawler(waf []string, show bool) {
-	fmt.Println("==================")
 	t.wg = sizedwaitgroup.New(t.Parallelism)
 
 	fingerprints := make([]string, 0)
@@ -42,21 +42,58 @@ func (t *Task) Crawler(waf []string, show bool) {
 	single := make(map[string][]res)
 
 	// 获取结果
-	outputWriter := output.NewMockOutputWriter()
-	outputWriter.WriteCallback = func(result *output.Result) {
+	onResult := func(result output.Result) {
+		var (
+			body          string
+			status        string
+			statusCode    int
+			header        http.Header
+			contentLength int
+			requestUrl    string
+			technologies  []string
+			location      string
+		)
+
+		// 判断一下 result.Response, 有的页面超时，会导致 result.Response 为 nil，这里在使用 http 访问一下确认
+		if result.Response == nil {
+			resp, err := httpx.Request(result.Request.URL, "GET", "", false, nil)
+			if err != nil {
+				return
+			}
+			status = resp.Status
+			statusCode = resp.StatusCode
+			body = resp.Body
+			header = resp.Header
+			contentLength = resp.ContentLength
+			requestUrl = result.Request.URL
+			technologies = []string{""}
+			location = resp.Location
+		} else {
+			status = result.Response.Resp.Status
+			statusCode = result.Response.StatusCode
+			body = result.Response.Body
+			header = result.Response.Resp.Header
+			contentLength = int(result.Response.Resp.ContentLength)
+			requestUrl = result.Response.Resp.Request.URL.String()
+			technologies = result.Response.Technologies
+			if resplocation, err := result.Response.Resp.Location(); err == nil {
+				location = resplocation.String()
+			}
+		}
+
 		// 对爬虫结果格式化
 		var crawlResult = &input.CrawlResult{
 			Target:      t.Target,
 			Method:      strings.ToUpper(result.Request.Method),
 			Source:      result.Request.Source,
 			Headers:     make(map[string]string),
-			RequestBody: result.Response.Body,
+			RequestBody: body,
 			Waf:         waf,
 		}
 
-		fingerprints = append(fingerprints, result.Response.Technologies...)
+		fingerprints = append(fingerprints, technologies...)
 		//todo  处理 POST
-		StoreFields(crawlResult, result)
+		StoreFields(crawlResult, &result)
 
 		tempUrl := strings.Split(crawlResult.Url, "?")[0]
 
@@ -94,20 +131,15 @@ func (t *Task) Crawler(waf []string, show bool) {
 		}
 
 		if flag {
-			var location string
-			if resplocation, err := result.Response.Resp.Location(); err == nil {
-				location = resplocation.String()
-			}
-
 			crawlResult.Resp = &httpx.Response{
-				Status:           result.Response.Resp.Status,
-				StatusCode:       result.Response.StatusCode,
-				Body:             result.Response.Body,
+				Status:           status,
+				StatusCode:       statusCode,
+				Body:             body,
 				RequestDump:      result.Request.URL,
-				ResponseDump:     result.Response.Body,
-				Header:           result.Response.Resp.Header,
-				ContentLength:    int(result.Response.Resp.ContentLength),
-				RequestUrl:       result.Response.Resp.Request.URL.String(),
+				ResponseDump:     body,
+				Header:           header,
+				ContentLength:    contentLength,
+				RequestUrl:       requestUrl,
 				Location:         location,
 				ServerDurationMs: 0,
 			}
@@ -115,7 +147,7 @@ func (t *Task) Crawler(waf []string, show bool) {
 			logging.Logger.Infof("[Processing] %s %s", crawlResult.Method, crawlResult.Url)
 			t.Distribution(crawlResult)
 
-			//resp, err := httpx.Request(result.Request.URL, result.Request.Method, result.Response.Body, false, crawlResult.Headers)
+			//resp, err := httpx.Request(result.Request.URL, result.Request.Method, body, false, crawlResult.Headers)
 			//if err != nil {
 			//	logging.Logger.Errorf("[Crawler] %s", err)
 			//} else {
@@ -134,14 +166,13 @@ func (t *Task) Crawler(waf []string, show bool) {
 	}
 
 	task := crawler.KatanaTask{
-		Target:       []string{t.Target},
-		Proxy:        conf.GlobalConfig.WebScan.Proxy,
-		OutputWriter: outputWriter,
+		Target:   t.Target,
+		Proxy:    conf.GlobalConfig.WebScan.Proxy,
+		OnResult: onResult,
 	}
 
 	task.StartCrawler(show)
 
-	outputWriter.Close()
 	t.wg.Wait()
 
 	t.Fingerprints = funk.UniqString(fingerprints)

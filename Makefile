@@ -10,6 +10,9 @@ LDFLAGS=-ldflags "-s -w"
 default:
 	go build ${LDFLAGS} -o ${DIR}/Jie main.go
 
+debug:
+	go build -o ${DIR}/Jie main.go
+
 # Compile Server - Windows x64
 windows:
 	export GOOS=windows;export GOARCH=amd64;go build ${LDFLAGS} -o ${DIR}/Jie-Windows-x64.exe main.go

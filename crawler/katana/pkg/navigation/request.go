@@ -20,6 +20,7 @@ type Request struct {
 	RootHostname string              `json:"-"`
 	Source       string              `json:"source,omitempty"`
 	CustomFields map[string][]string `json:"-"`
+	Raw          string              `json:"raw,omitempty"`
 }
 
 // RequestURL returns the request URL for the navigation
@@ -39,9 +40,9 @@ func (n *Request) RequestURL() string {
 }
 
 // newNavigationRequestURL generates a navigation request from a relative URL
-func NewNavigationRequestURLFromResponse(path, source, tag, attribute string, resp Response) Request {
+func NewNavigationRequestURLFromResponse(path, source, tag, attribute string, resp *Response) *Request {
 	requestURL := resp.AbsoluteURL(path)
-	request := Request{
+	request := &Request{
 		Method:       http.MethodGet,
 		URL:          requestURL,
 		RootHostname: resp.RootHostname,

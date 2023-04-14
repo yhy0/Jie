@@ -13,7 +13,7 @@ import (
   @author: yhy
   @since: 2023/3/10
   @desc: https://github.com/ac0d3r/xssfinder
-
+	将 js 转换为 pkg/protocols/headless/preload.js 需要的格式，然后交给浏览器进行执行 js，进行污染传播分析
 	todo 有待优化，很多无法识别, 覆盖太少了
 **/
 

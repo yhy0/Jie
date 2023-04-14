@@ -22,6 +22,7 @@ import (
 
 func main() {
 
+	logging.New(true, "Jie")
 	// 获取扫描结果
 	go func() {
 		for v := range output.OutChannel {

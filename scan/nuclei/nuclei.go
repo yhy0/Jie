@@ -71,7 +71,7 @@ func Scan(target string, fingerprints []string) {
 }
 
 func nuclei(target string, templates []string, tags []string, outputWriter *testutils.MockOutputWriter) {
-	cache := hosterrorscache.New(30, hosterrorscache.DefaultMaxHostsCount)
+	cache := hosterrorscache.New(30, hosterrorscache.DefaultMaxHostsCount, nil)
 	defer cache.Close()
 
 	mockProgress := &testutils.MockProgressClient{}
@@ -93,7 +93,6 @@ func nuclei(target string, templates []string, tags []string, outputWriter *test
 		Workflows:                  []string{},
 		Tags:                       tags,
 		RemoteTemplateDomainList:   []string{"api.nuclei.sh"},
-		JSON:                       false,
 		JSONRequests:               false,
 		MaxRedirects:               10,
 		CustomHeaders:              []string{},
@@ -169,6 +168,9 @@ func nuclei(target string, templates []string, tags []string, outputWriter *test
 		Colorizer:       aurora.NewAurora(true),
 		ResumeCfg:       types.NewResumeCfg(),
 	}
+
+	defer executerOpts.RateLimiter.Stop()
+
 	engine := core.New(defaultOpts)
 	engine.SetExecuterOptions(executerOpts)
 

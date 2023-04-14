@@ -1,96 +1,114 @@
 package sensitive
 
 import (
+	"embed"
 	"fmt"
-	"github.com/thoas/go-funk"
 	"github.com/yhy0/Jie/pkg/output"
-	"time"
-
+	"github.com/yhy0/logging"
+	"gopkg.in/yaml.v3"
+	"io/fs"
 	"regexp"
+	"time"
 )
 
 /**
   @author: yhy
   @since: 2022/7/22
-  @desc: //TODO
+  @desc:
+
+  - pattern:
+      name: aws_secret_key
+      regex: "(?i)aws(.{0,20})?(?-i)['\"][0-9a-zA-Z\/+]{40}['\"]"
+
+	报错 found unknown escape character, 反斜杠被解释为转义序列引起的。 改为
+"(?i)aws(.{0,20})?(?-i)['\"][0-9a-zA-Z\\/+]{40}['\"]"
 **/
 
-var regexMap map[string][]string
+//go:embed rules/*
+var ruleFiles embed.FS
+var rules []Rule
 
-func init() {
-	regexMap = make(map[string][]string)
-
-	regexMap["GoogleApi"] = []string{`AIza[0-9A-Za-z-_]{35}`}
-	regexMap["Firebase"] = []string{`AAAA[A-Za-z0-9_-]{7}:[A-Za-z0-9_-]{140}`}
-	regexMap["GoogleCaptcha"] = []string{`6L[0-9A-Za-z-_]{38}|^6[0-9a-zA-Z_-]{39}$`}
-	regexMap["GoogleOauth"] = []string{`ya29\.[0-9A-Za-z\-_]+`}
-	regexMap["AmazonAwsAccessKeyId"] = []string{`A[SK]IA[0-9A-Z]{16}`}
-	regexMap["AmazonMwsAuthToke"] = []string{`amzn\\.mws\\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`}
-	regexMap["AmazonAwsUrl"] = []string{`s3\.amazonaws.com[/]+|[a-zA-Z0-9_-]*\.s3\.amazonaws.com`}
-	regexMap["FacebookAccessToken"] = []string{`EAACEdEose0cBA[0-9A-Za-z]+`}
-	regexMap["AuthorizationBasic"] = []string{`basic [a-zA-Z0-9=:_\+\/-]{10,100}`}
-	regexMap["AuthorizationBearer"] = []string{`bearer [a-zA-Z0-9_\-\.=:_\+\/]{10,100}`}
-	// regexMap["AuthorizationApi"] = []string{`api[key|_key|\s+]+[a-zA-Z0-9_\-]{5,100}`}
-	regexMap["MailgunApiKey"] = []string{`key-[0-9a-zA-Z]{32}`}
-	//regexMap["TwilioApiKey"] = []string{`SK[0-9a-fA-F]{32}`}
-	//regexMap["TwilioAccountSid"] = []string{`AC[a-zA-Z0-9_\-]{32}`}
-	//regexMap["TwilioAppSid"] = []string{`AP[a-zA-Z0-9_\-]{32}`}
-	regexMap["PaypalBraintreeAccessToken"] = []string{`access_token\$production\$[0-9a-z]{16}\$[0-9a-f]{32}`}
-	regexMap["SquareOauthSecret"] = []string{`sq0csp-[ 0-9A-Za-z\-_]{43}|sq0[a-z]{3}-[0-9A-Za-z\-_]{22,43}`}
-	regexMap["SquareAccessToken"] = []string{`sqOatp-[0-9A-Za-z\-_]{22}|EAAA[a-zA-Z0-9]{60}`}
-	regexMap["StripeStandardApi"] = []string{`sk_live_[0-9a-zA-Z]{24}`}
-	regexMap["StripeRestrictedApi"] = []string{`rk_live_[0-9a-zA-Z]{24}`}
-	regexMap["GithubAccessToken"] = []string{`[a-zA-Z0-9_-]*:[a-zA-Z0-9_\-]+@github\.com*`}
-	regexMap["GitHub"] = []string{`[g|G][i|I][t|T][h|H][u|U][b|B].{0,30}['\"\\s][0-9a-zA-Z]{35,40}['\"\\s]`}
-	regexMap["RASPrivateKey"] = []string{`-----BEGIN RSA PRIVATE KEY-----`}
-	regexMap["SSHDsaPrivateKey"] = []string{`-----BEGIN DSA PRIVATE KEY-----`}
-	regexMap["SSHDcPrivateKey"] = []string{`-----BEGIN EC PRIVATE KEY-----`}
-	regexMap["PGPPrivateBlock"] = []string{`-----BEGIN PGP PRIVATE KEY BLOCK-----`}
-	regexMap["JsonWebToken"] = []string{`ey[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$`}
-	regexMap["SlackToken"] = []string{`\"api_token\":\"(xox[a-zA-Z]-[a-zA-Z0-9-]+)\"`}
-	regexMap["SshPrivkey"] = []string{`([-]+BEGIN [^\s]+ PRIVATE KEY[-]+[\s]*[^-]*[-]+END [^\s]+ PRIVATE KEY[-]+)`}
-
-	//误报过多
-	//regexMap["HerokuAPIKEY"] = []string{`[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}`}
-
-	// 邮箱太多重复，先去除
-	//regexMap["Email"] = []string{`[\w\.]+@\w+\.[a-z]{2,3}(\.[a-z]{2,3})?`}
-	regexMap["JDBC"] = []string{`jdbc:[a-z:]+://[a-z0-9\.\-_:;=/@?,&]+`}
-	regexMap["MicrosoftTeamsWebhook"] = []string{`https://outlook\.office\.com/webhook/[a-z0-9@-]+/IncomingWebhook/[a-z0-9-]+/[a-z0-9-]+`}
-	regexMap["ZohoWebhook"] = []string{`https://creator\.zoho\.com/api/[a-z0-9/_.-]+\?authtoken=[a-z0-9]+`}
-	regexMap["Ueditor"] = []string{`ueditor\.(config|all)\.js`}
-	regexMap["OSS"] = []string{`[A|a]ccess[K|k]ey[I|i][d|D]|[A|a]ccess[K|k]ey[S|s]ecret`}
+type Rule struct {
+	Patterns []struct {
+		Pattern struct {
+			Name       string `yaml:"name"`
+			Regex      string `yaml:"regex"`
+			Confidence string `yaml:"confidence"`
+		} `yaml:"pattern"`
+	} `yaml:"patterns"`
 }
 
+// LoadRules 加载规则
+func LoadRules() {
+	ruleDir, err := fs.ReadDir(ruleFiles, "rules")
+	if err != nil {
+		logging.Logger.Errorln("sensitive err:", err)
+		return
+	}
+
+	for _, file := range ruleDir {
+		content, err := ruleFiles.ReadFile("rules/" + file.Name())
+		if err != nil {
+			logging.Logger.Errorf("sensitive[%s] err: %v", file.Name(), err)
+			continue
+		}
+
+		var rule Rule
+		err = yaml.Unmarshal(content, &rule)
+		if err != nil {
+			logging.Logger.Errorf("sensitive[%s] err: %v", file.Name(), err)
+			continue
+		}
+		rules = append(rules, rule)
+	}
+}
+
+//// 待优化的正则
+//var black = []string{"Mapbox - 1"}
+
 // Detection 页面敏感信息检测
-func Detection(url, resStr, assets, uuid, cuuid, user string) {
-	sensitive := make(map[string][]string)
-	for k, vs := range regexMap {
-		for _, value := range vs {
-			regex := regexp.MustCompile(value)
+func Detection(url, body string) {
+	for _, rule := range rules {
+		for _, p := range rule.Patterns {
 
-			sensitiveStr := funk.UniqString(regex.FindAllString(resStr, -1))
-
-			if len(sensitiveStr) > 0 {
-				if sensitive[k] != nil {
-					sensitive[k] = append(sensitive[k], sensitiveStr...)
-				} else {
-					sensitive[k] = sensitiveStr
-				}
+			//if funk.Contains(black, p.Pattern.Name) {
+			//	continue
+			//}
+			re, err := regexp.Compile(p.Pattern.Regex)
+			if err != nil {
+				logging.Logger.Errorln(err)
+				continue
 			}
+
+			match := re.FindStringIndex(body)
+			if match != nil {
+				matchStr := body[match[0]:match[1]]
+				startIndex := match[0] - 20
+				if startIndex < 0 {
+					startIndex = 0
+				}
+				endIndex := match[1] + 20
+				if endIndex > len(body) {
+					endIndex = len(body)
+				}
+				output.OutChannel <- output.VulMessage{
+					DataType: "web_vul",
+					Plugin:   "Sensitive",
+					VulnData: output.VulnData{
+						VulnType:   p.Pattern.Name + " " + p.Pattern.Regex,
+						CreateTime: time.Now().Format("2006-01-02 15:04:05"),
+						Target:     url,
+						Payload:    fmt.Sprintf("%s [%s] %s\n", body[startIndex:match[0]], matchStr, body[match[1]:endIndex]),
+					},
+					Level: p.Pattern.Confidence,
+				}
+
+				fmt.Printf("Matched pattern: %v\n", p.Pattern)
+				fmt.Printf("Context: %s [%s] %s\n", body[startIndex:match[0]], matchStr, body[match[1]:endIndex])
+			}
+
 		}
+
 	}
 
-	if len(sensitive) > 0 {
-		output.OutChannel <- output.VulMessage{
-			DataType: "web_vul",
-			Plugin:   "Sensitive",
-			VulnData: output.VulnData{
-				CreateTime: time.Now().Format("2006-01-02 15:04:05"),
-				Target:     url,
-				Payload:    fmt.Sprintf("%+v", sensitive),
-			},
-			Level: output.Critical,
-		}
-	}
 }

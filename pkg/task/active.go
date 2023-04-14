@@ -45,8 +45,6 @@ func Active(target string, show bool) {
 		return
 	}
 
-	logging.Logger.Infoln("Start active crawler scan")
-
 	var technologies []string
 
 	if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "BBSCAN") {

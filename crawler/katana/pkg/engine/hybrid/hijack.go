@@ -52,7 +52,6 @@ func (h *Hijack) Start(handler HijackHandler) func() error {
 	if err != nil {
 		return func() error { return err }
 	}
-
 	wait := p.EachEvent(func(e *proto.FetchRequestPaused) {
 		if handler != nil {
 			err = handler(e)

@@ -77,7 +77,7 @@ func Duplicate(a interface{}) (ret []interface{}) {
 }
 
 // AnalyseJs Js的ast语法分析，主要目的是抓取变量，返回变量数组
-func AnalyseJs(script string) []string {
+func AnalyseJs(script, t string) []string {
 	var params []string
 	var varDiscover bool
 
@@ -87,7 +87,7 @@ func AnalyseJs(script string) []string {
 		switch tt {
 		case js.ErrorToken:
 			if l.Err() != io.EOF {
-				logging.Logger.Errorln("Error on line:", l.Err())
+				logging.Logger.Errorln(t, "Error on line:", l.Err())
 			}
 			return params
 		case js.VarToken: // var

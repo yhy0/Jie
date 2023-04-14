@@ -4,35 +4,35 @@
 /v1/api-docs                        {status=200}                {root_only} 
 /v2/api-docs                        {status=200}                {root_only}  
 /swagger-ui.html                   {status=200}                 {root_only}
-/actuator                          {status=200}                {root_only}
-/auditevents                       {status=200}                {root_only}
-/autoconfig                        {status=200}                {root_only}
-/beans                             {status=200}                {root_only}
-/eureka                            {status=200}                {root_only}
-/caches                            {status=200}                {root_only}
-/conditions                        {status=200}                {root_only}
-/configprops                       {status=200}                {root_only}
-/docs                              {status=200}                {root_only}
-/dump                              {status=200}                {root_only}
-/env                               {status=200}                {root_only}
-/flyway                            {status=200}                {root_only}
-/health                            {status=200}                {root_only}
-/heapdump                          {status=200}                {root_only}
-/httptrace                         {status=200}                {root_only}
-/info                              {status=200}                {root_only}
-/intergrationgraph                 {status=200}                {root_only}
-/jolokia                           {status=200}                {root_only}
-/logfile                           {status=200}                {root_only}
-/loggers                           {status=200}                {root_only}
-/liquibase                         {status=200}                {root_only}
-/metrics                           {status=200}                {root_only}
-/mappings                          {status=200}                {root_only}
-/prometheus                        {status=200}                {root_only}
-/refresh                           {status=200}                {root_only}
-/scheduledtasks                    {status=200}                {root_only}
-/sessions                          {status=200}                {root_only}
-/shutdown                          {status=200}                {root_only}
-/trace                             {status=200}                {root_only}
+/actuator                       {type="application/json"}       {status=200}                {root_only}
+/auditevents                    {type="application/json"}       {status=200}                {root_only}
+/autoconfig                     {type="application/json"}       {status=200}                {root_only}
+/beans                          {type="application/json"}       {status=200}                {root_only}
+/eureka                         {type="application/json"}       {status=200}                {root_only}
+/caches                         {type="application/json"}       {status=200}                {root_only}
+/conditions                     {type="application/json"}       {status=200}                {root_only}
+/configprops                    {type="application/json"}       {status=200}                {root_only}
+/docs                           {type="application/json"}       {status=200}                {root_only}
+/dump                                {status=200}                {root_only}
+/env                            {type="application/json"}       {status=200}                {root_only}
+/flyway                         {type="application/json"}       {status=200}                {root_only}
+/health                         {type="application/json"}       {status=200}                {root_only}
+/heapdump                            {status=200}                {root_only}
+/httptrace                      {type="application/json"}       {status=200}                {root_only}
+/info                           {type="application/json"}       {status=200}                {root_only}
+/intergrationgraph              {type="application/json"}       {status=200}                {root_only}
+/jolokia                        {type="application/json"}       {status=200}                {root_only}
+/logfile                        {type="application/json"}       {status=200}                {root_only}
+/loggers                        {type="application/json"}       {status=200}                {root_only}
+/liquibase                      {type="application/json"}       {status=200}                {root_only}
+/metrics                        {type="application/json"}       {status=200}                {root_only}
+/mappings                       {type="application/json"}       {status=200}                {root_only}
+/prometheus                     {type="application/json"}       {status=200}                {root_only}
+/refresh                        {type="application/json"}       {status=200}                {root_only}
+/scheduledtasks                 {type="application/json"}       {status=200}                {root_only}
+/sessions                       {type="application/json"}       {status=200}                {root_only}
+/shutdown                       {type="application/json"}       {status=200}                {root_only}
+/trace                          {type="application/json"}       {status=200}                {root_only}
 /threaddump                        {status=200}                {root_only}
 /druid/login.html                  {status=200}                {root_only}
 /entity/all                        {status=200}               {root_only}
@@ -93,29 +93,29 @@
 /actuator/loggers                  {status=200}                {root_only}
 /actuator/heapdump                 {status=200}                {root_only}
 /actuator/threaddump               {status=200}                {root_only}
-/actuator/metrics                  {status=200}                {root_only}
+/actuator/metrics                  {type="application/json"}    {status=200}                {root_only}
 /actuator/scheduledtasks           {status=200}                {root_only}
-/actuator/httptrace                {status=200}                {root_only}
-/actuator/mappings                 {status=200}                {root_only}
-/actuator/jolokia                  {status=200}                {root_only}
+/actuator/httptrace                {type="application/json"}    {status=200}                {root_only}
+/actuator/mappings                {type="application/json"}  {status=200}                {root_only}
+/actuator/jolokia                  {type="application/json"}    {status=200}                {root_only}
 /actuator/hystrix.stream           {status=200}                {root_only}
-/monitor                           {status=200}                {root_only}
-/monitor/auditevents               {status=200}                {root_only}
-/monitor/beans                     {status=200}                {root_only}
-/monitor/health                    {status=200}                {root_only}
-/monitor/conditions                {status=200}                {root_only}
-/monitor/configprops               {status=200}                {root_only}
-/monitor/env                       {status=200}                {root_only}
-/monitor/info                      {status=200}                {root_only}
-/monitor/loggers                   {status=200}                {root_only}
+/monitor                           {type="application/json"}    {status=200}                {root_only}
+/monitor/auditevents               {type="application/json"}    {status=200}                {root_only}
+/monitor/beans                     {type="application/json"}    {status=200}                {root_only}
+/monitor/health                    {type="application/json"}    {status=200}                {root_only}
+/monitor/conditions                {type="application/json"}    {status=200}                {root_only}
+/monitor/configprops               {type="application/json"}    {status=200}                {root_only}
+/monitor/env                       {type="application/json"}    {status=200}                {root_only}
+/monitor/info                      {type="application/json"}    {status=200}                {root_only}
+/monitor/loggers                   {type="application/json"}    {status=200}                {root_only}
 /monitor/heapdump                  {status=200}                {root_only}
 /monitor/threaddump                {status=200}                {root_only}
-/monitor/metrics                   {status=200}                {root_only}
+/monitor/metrics                    {type="application/json"}    {status=200}                {root_only}
 /monitor/scheduledtasks            {status=200}                {root_only}
-/monitor/httptrace                 {status=200}                {root_only}
-/monitor/mappings                  {status=200}                {root_only}
-/monitor/jolokia                   {status=200}                {root_only}
-/monitor/hystrix.stream            {status=200}                {root_only}
+/monitor/httptrace                 {type="application/json"}    {status=200}                {root_only}
+/monitor/mappings                  {type="application/json"}    {status=200}                {root_only}
+/monitor/jolokia                   {type="application/json"}      {status=200}                {root_only}
+/monitor/hystrix.stream            {type="application/json"}    {status=200}                {root_only}
 /api/api-docs                          {status=200}                {root_only}
 /api/v/api-docs                        {status=200}                {root_only} 
 /api/v1/api-docs                        {status=200}                {root_only} 

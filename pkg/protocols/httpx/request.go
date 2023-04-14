@@ -102,11 +102,7 @@ func NewSession() {
 	}
 
 	// Initiate rate limit instance
-	if rateLimit > 0 {
-		session.RateLimiter = ratelimit.New(rateLimit)
-	} else {
-		session.RateLimiter = ratelimit.NewUnlimited()
-	}
+	session.RateLimiter = ratelimit.New(rateLimit)
 
 }
 

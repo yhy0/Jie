@@ -2,7 +2,6 @@ package output
 
 import (
 	"bytes"
-	"fmt"
 )
 
 // formatScreen formats the output for showing on screen.
@@ -17,7 +16,7 @@ func (w *StandardWriter) formatScreen(output *Result) ([]byte, error) {
 				builder.WriteRune(']')
 				builder.WriteRune(' ')
 			}
-			builder.WriteString(fmt.Sprintf("%s\n", fop.value))
+			//builder.WriteString(fmt.Sprintf("%s\n", fop.value))
 		}
 		return builder.Bytes(), nil
 	}
@@ -36,7 +35,7 @@ func (w *StandardWriter) formatScreen(output *Result) ([]byte, error) {
 		builder.WriteRune(' ')
 	}
 
-	builder.WriteString(output.Request.URL)
+	//builder.WriteString(output.Request.URL)
 
 	if output.Request.Body != "" && w.verbose {
 		builder.WriteRune(' ')

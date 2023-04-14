@@ -2,12 +2,12 @@ package types
 
 import (
 	"context"
-	"net/url"
 	"time"
 
 	"github.com/projectdiscovery/fastdialer/fastdialer"
 	"github.com/projectdiscovery/ratelimit"
 	errorutil "github.com/projectdiscovery/utils/errors"
+	urlutil "github.com/projectdiscovery/utils/url"
 	wappalyzer "github.com/projectdiscovery/wappalyzergo"
 	"github.com/yhy0/Jie/crawler/katana/pkg/output"
 	"github.com/yhy0/Jie/crawler/katana/pkg/utils/extensions"
@@ -103,6 +103,8 @@ func NewCrawlerOptions(options *Options) (*CrawlerOptions, error) {
 // Close closes the crawler options resources
 func (c *CrawlerOptions) Close() error {
 	c.UniqueFilter.Close()
+	c.Dialer.Close()
+	c.RateLimit.Stop()
 	return c.OutputWriter.Close()
 }
 
@@ -115,12 +117,12 @@ func (c *CrawlerOptions) ValidatePath(path string) bool {
 
 // ValidateScope validates scope for an AbsURL
 func (c *CrawlerOptions) ValidateScope(absURL, rootHostname string) (bool, error) {
-	parsed, err := url.Parse(absURL)
+	parsed, err := urlutil.Parse(absURL)
 	if err != nil {
 		return false, err
 	}
 	if c.ScopeManager != nil {
-		return c.ScopeManager.Validate(parsed, rootHostname)
+		return c.ScopeManager.Validate(parsed.URL, rootHostname)
 	}
 	return true, nil
 }

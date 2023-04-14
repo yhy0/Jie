@@ -10,7 +10,6 @@ function __xssfinder_push_dmo_vul(sources, sinkLabel) {
             results.push(r);
         }
     )
-    alert("xxx");
     // chrome Runtime.addBinding ==> xssfinderPushDomVuls
     window.xssfinderPushDomVul(JSON.stringify(results));
 }

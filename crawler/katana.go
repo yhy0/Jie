@@ -1,9 +1,11 @@
 package crawler
 
 import (
-	"github.com/yhy0/Jie/crawler/katana/pkg/output"
+	"github.com/projectdiscovery/gologger"
+	"github.com/projectdiscovery/gologger/levels"
 	"github.com/yhy0/Jie/crawler/katana/pkg/types"
-	runner "github.com/yhy0/Jie/crawler/katana/runner"
+	"github.com/yhy0/Jie/crawler/katana/pkg/utils/queue"
+	"github.com/yhy0/Jie/crawler/katana/runner"
 	"github.com/yhy0/logging"
 )
 
@@ -14,9 +16,9 @@ import (
 **/
 
 type KatanaTask struct {
-	Target       []string
-	Proxy        string
-	OutputWriter *output.MockOutputWriter
+	Target   string
+	Proxy    string
+	OnResult types.OnResultCallback
 }
 
 // 默认过滤的后缀名
@@ -31,27 +33,28 @@ var extensionFilter = []string{
 }
 
 func (t *KatanaTask) StartCrawler(show bool) {
+	gologger.DefaultLogger.SetMaxLevel(levels.LevelSilent)
 	options := &types.Options{
-		URLs:                      t.Target,
-		MaxDepth:                  10,              // 最大页面深度限制
-		ScrapeJSResponses:         true,            // 启用 JavaScript 文件解析 + 抓取在 JavaScript 文件中发现的端点的选项
-		CrawlDuration:             0,               // 爬取目标的最长持续时间
-		KnownFiles:                "all",           // 启用对已知文件的爬取(all、robots.txt、sitemap.xml)
-		BodyReadSize:              2 * 1024 * 1024, // 读取响应的最大大小
-		Timeout:                   10,              // 请求超时时间
-		AutomaticFormFill:         true,            // 启用自动表单填充(实验性)
-		Retries:                   0,               // 重试次数
-		Strategy:                  "depth-first",
-		Proxy:                     t.Proxy,    // http/socks5 代理
-		CustomHeaders:             []string{}, // 自定义请求头
-		FormConfig:                "",         // 表单配置文件
-		Headless:                  true,       // 是否使用无头浏览器
-		UseInstalledChrome:        false,      // 是否使用已安装的 Chrome, 否则会自动下载 Chrome
-		ShowBrowser:               show,       // 显示浏览器
-		HeadlessOptionalArguments: nil,        // 无头浏览器可选参数
-		HeadlessNoSandbox:         true,       // 是否以 --no-sandbox 模式启动 Chrome
-		Scope:                     nil,        // 爬取的域名范围的url正则表达式
-		OutOfScope:                nil,        // 不在爬取范围内的url正则表达式
+		URLs:                      []string{t.Target},
+		MaxDepth:                  10,                        // 最大页面深度限制
+		ScrapeJSResponses:         true,                      // 启用 JavaScript 文件解析 + 抓取在 JavaScript 文件中发现的端点的选项
+		CrawlDuration:             0,                         // 爬取目标的最长持续时间
+		KnownFiles:                "all",                     // 启用对已知文件的爬取(all、robots.txt、sitemap.xml)
+		BodyReadSize:              2 * 1024 * 1024,           // 读取响应的最大大小
+		Timeout:                   10,                        // 请求超时时间
+		AutomaticFormFill:         true,                      // 启用自动表单填充(实验性)
+		Retries:                   0,                         // 重试次数
+		Strategy:                  queue.DepthFirst.String(), // 深度优先
+		Proxy:                     t.Proxy,                   // http/socks5 代理
+		CustomHeaders:             []string{},                // 自定义请求头
+		FormConfig:                "",                        // 表单配置文件
+		Headless:                  true,                      // 是否使用无头浏览器
+		UseInstalledChrome:        false,                     // 是否使用已安装的 Chrome, 否则会自动下载 Chrome
+		ShowBrowser:               show,                      // 显示浏览器
+		HeadlessOptionalArguments: nil,                       // 无头浏览器可选参数
+		HeadlessNoSandbox:         true,                      // 是否以 --no-sandbox 模式启动 Chrome
+		Scope:                     nil,                       // 爬取的域名范围的url正则表达式
+		OutOfScope:                nil,                       // 不在爬取范围内的url正则表达式
 		// rdn: 爬取范围为根域名和所有子域(默认), dn:搜索范围为域名关键字 fqdn:爬取范围为给定子(域)
 		FieldScope:      "rdn",                                                          // 默认域名范围的字段(dn、rdn、fqdn)
 		NoScope:         false,                                                          // 禁用域名范围
@@ -72,8 +75,7 @@ func (t *KatanaTask) StartCrawler(show bool) {
 		Verbose:         false,                                                          // 显示详细信息
 		Version:         false,                                                          // 显示版本信息
 	}
-
-	options.WriteCallback = t.OutputWriter
+	options.OnResult = t.OnResult
 
 	runner, err := runner.New(options)
 
@@ -87,5 +89,4 @@ func (t *KatanaTask) StartCrawler(show bool) {
 	if err = runner.ExecuteCrawling(); err != nil {
 		logging.Logger.Errorf("could not execute crawling: %s", err)
 	}
-
 }

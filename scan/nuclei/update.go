@@ -14,7 +14,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"github.com/projectdiscovery/nuclei/v2/pkg/templates"
+	"github.com/projectdiscovery/nuclei/v2/pkg/templates/extensions"
 	"github.com/projectdiscovery/nuclei/v2/pkg/types"
 	stringsutil "github.com/projectdiscovery/utils/strings"
 	"github.com/yhy0/logging"
@@ -622,5 +622,5 @@ func (r *Runner) readNewTemplatesFile() ([]string, error) {
 }
 
 func isTemplate(filename string) bool {
-	return stringsutil.EqualFoldAny(filepath.Ext(filename), templates.TemplateExtension)
+	return stringsutil.EqualFoldAny(filepath.Ext(filename), extensions.YAML)
 }

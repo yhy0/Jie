@@ -15,10 +15,9 @@
 
 如果参数可以回显，那么通过html解析就可以获得参数位置，分析回显的环境(比如是否在html标签内，是否在html属性内，是否在注释中，是否在js中)等等，以此来确定检测的payload。
 
-具体请看 w8ay 师傅的文章 https://paper.seebug.org/1119/#_6
+具体请看 w8ay 师傅的文章[XSS 扫描器成长记](https://paper.seebug.org/1119/)
 
-w13scan 中的实现： https://github.com/w-digital-scanner/w13scan/blob/HEAD/W13SCAN/scanners/PerFile/xss.py
-
+w13scan 中的实现：[xss.py](https://github.com/w-digital-scanner/w13scan/blob/HEAD/W13SCAN/scanners/PerFile/xss.py)
 扫描流程
 
 ```
@@ -43,7 +42,11 @@ TODO 还是有待优化，检测的太少了
 
 https://zhuanlan.zhihu.com/p/450310103
 
-将上述缝合进[katana](https://github.com/projectdiscovery/katana)爬虫，因 [katana](https://github.com/projectdiscovery/katana) 使用 [rod](https://github.com/go-rod/rod) 作为 Devtools 驱动, 需要研究一下类似的实现。
+将上述缝合进 [katana](https://github.com/projectdiscovery/katana)爬虫，因 [katana](https://github.com/projectdiscovery/katana) 使用 [rod](https://github.com/go-rod/rod) 作为 Devtools 驱动, 需要研究一下类似的实现，流程
+
+```
+拦截返回包 --> 提取 js 并对 js 进行解析转换 --> 追加解析转换后的 js 代码到返回包中 --> 通过浏览器执行 js实现污染传播分析 --> 判断 rod 绑定运行时是否执行 --> dom xss
+```
 
 执行`preload.js`, `katana/pkg/engine/hybrid/crawl.go`的`navigateRequest`方法添加 
 
@@ -122,4 +125,7 @@ wait := p.EachEvent(func(e *proto.FetchRequestPaused) {
 
 https://www.leavesongs.com/PENETRATION/javascript-prototype-pollution-attack.html
 
-https://github1s.com/kleiton0x00/ppmap
+https://github.com/kleiton0x00/ppmap
+
+利用已知和现有的小工具(检查全局环境中的特定变量)，但不涵盖代码分析或任何高级原型污染利用，通过原型污染执行XSS。
+

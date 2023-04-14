@@ -22,9 +22,6 @@ func validateOptions(options *types.Options) error {
 	if options.MaxDepth <= 0 && options.CrawlDuration <= 0 {
 		return errorutil.New("either max-depth or crawl-duration must be specified")
 	}
-	if options.Verbose {
-		gologger.DefaultLogger.SetMaxLevel(levels.LevelVerbose)
-	}
 	if len(options.URLs) == 0 && !fileutil.HasStdin() {
 		return errorutil.New("no inputs specified for crawler")
 	}
@@ -39,9 +36,6 @@ func validateOptions(options *types.Options) error {
 	if options.StoreResponseDir != "" && !options.StoreResponse {
 		gologger.Debug().Msgf("store response directory specified, enabling \"sr\" flag automatically\n")
 		options.StoreResponse = true
-	}
-	if options.Headless && (options.StoreResponse || options.StoreResponseDir != "") {
-		return errorutil.New("store responses feature is not supported in headless mode")
 	}
 	for _, mr := range options.OutputMatchRegex {
 		cr, err := regexp.Compile(mr)
@@ -110,9 +104,12 @@ func normalizeInput(value string) string {
 func configureOutput(options *types.Options) {
 	if options.Silent {
 		gologger.DefaultLogger.SetMaxLevel(levels.LevelSilent)
-	}
-	if options.Verbose {
-		gologger.DefaultLogger.SetMaxLevel(levels.LevelVerbose)
+	} else if options.Verbose {
+		gologger.DefaultLogger.SetMaxLevel(levels.LevelWarning)
+	} else if options.Debug {
+		gologger.DefaultLogger.SetMaxLevel(levels.LevelDebug)
+	} else {
+		gologger.DefaultLogger.SetMaxLevel(levels.LevelInfo)
 	}
 
 	// logutil.DisableDefaultLogger()

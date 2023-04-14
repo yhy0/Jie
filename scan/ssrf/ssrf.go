@@ -8,6 +8,7 @@ import (
 	"github.com/yhy0/Jie/pkg/reverse"
 	"github.com/yhy0/Jie/pkg/util"
 	"github.com/yhy0/logging"
+	"runtime"
 	"time"
 )
 
@@ -21,6 +22,16 @@ import (
 var sensitiveWords = []string{"url", "path", "uri", "api", "target", "host", "domain", "ip", "file"}
 
 func Scan(crawlResult *input.CrawlResult) {
+	defer func() {
+		if err := recover(); err != nil {
+			logging.Logger.Errorln("recover from:", err)
+			debugStack := make([]byte, 1024)
+			runtime.Stack(debugStack, false)
+			logging.Logger.Errorf("Stack Trace:%v", string(debugStack))
+
+		}
+	}()
+
 	params, err := httpx.ParseUri(crawlResult.Url, []byte(crawlResult.RequestBody), crawlResult.Method, crawlResult.ContentType, crawlResult.Headers)
 	if err != nil {
 		logging.Logger.Debug(err.Error())
@@ -43,11 +54,7 @@ func Scan(crawlResult *input.CrawlResult) {
 
 	payloads := params.SetPayload(crawlResult.Url, "/etc/passwd", crawlResult.Method, sensitiveWords)
 
-	if payloads != nil {
-		payloads = append(payloads, params.SetPayload(crawlResult.Url, "c:/windows/win.ini", crawlResult.Method, sensitiveWords)...)
-	} else {
-		payloads = params.SetPayload(crawlResult.Url, "c:/windows/win.ini", crawlResult.Method, sensitiveWords)
-	}
+	payloads = append(payloads, params.SetPayload(crawlResult.Url, "c:/windows/win.ini", crawlResult.Method, sensitiveWords)...)
 
 	readFile(crawlResult, payloads)
 }

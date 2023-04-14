@@ -30,6 +30,17 @@ func New(options *types.Options) (*Runner, error) {
 	// 	return nil, nil
 	// }
 
+	// if !options.DisableUpdateCheck {
+	// 	latestVersion, err := updateutils.GetVersionCheckCallback("katana")()
+	// 	if err != nil {
+	// 		if options.Verbose {
+	// 			gologger.Error().Msgf("katana version check failed: %v", err.Error())
+	// 		}
+	// 	} else {
+	// 		gologger.Info().Msgf("Current katana version %v %v", version, updateutils.GetVersionDescription(version, latestVersion))
+	// 	}
+	// }
+
 	// if err := initExampleFormFillConfig(); err != nil {
 	// 	return nil, errorutil.NewWithErr(err).Msgf("could not init default config")
 	// }

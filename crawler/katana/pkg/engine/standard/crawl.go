@@ -5,23 +5,25 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/http/httputil"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/projectdiscovery/retryablehttp-go"
 	errorutil "github.com/projectdiscovery/utils/errors"
 	mapsutil "github.com/projectdiscovery/utils/maps"
+	"github.com/yhy0/Jie/crawler/katana/pkg/engine/common"
 	"github.com/yhy0/Jie/crawler/katana/pkg/navigation"
 	"github.com/yhy0/Jie/crawler/katana/pkg/utils"
 )
 
 // makeRequest makes a request to a URL returning a response interface.
-func (c *Crawler) makeRequest(ctx context.Context, request navigation.Request, rootHostname string, depth int, httpclient *retryablehttp.Client) (navigation.Response, error) {
-	response := navigation.Response{
+func (c *Crawler) makeRequest(s *common.CrawlSession, request *navigation.Request) (*navigation.Response, error) {
+	response := &navigation.Response{
 		Depth:        request.Depth + 1,
-		RootHostname: rootHostname,
+		RootHostname: s.Hostname,
 	}
-	ctx = context.WithValue(ctx, navigation.Depth{}, depth)
+	ctx := context.WithValue(s.Ctx, navigation.Depth{}, request.Depth)
 	httpReq, err := http.NewRequestWithContext(ctx, request.Method, request.URL, nil)
 	if err != nil {
 		return response, err
@@ -39,35 +41,39 @@ func (c *Crawler) makeRequest(ctx context.Context, request navigation.Request, r
 	for k, v := range request.Headers {
 		req.Header.Set(k, v)
 	}
-	for k, v := range c.headers {
+	for k, v := range c.Headers {
 		req.Header.Set(k, v)
 	}
 
-	resp, err := httpclient.Do(req)
+	resp, err := s.HttpClient.Do(req)
 	if resp != nil {
 		defer func() {
 			if resp.Body != nil && resp.StatusCode != http.StatusSwitchingProtocols {
-				_, _ = io.CopyN(io.Discard, resp.Body, 8*1024)
+				_, _ = io.Copy(io.Discard, resp.Body)
 			}
 			_ = resp.Body.Close()
 		}()
 	}
+
+	rawRequestBytes, _ := req.Dump()
+	request.Raw = string(rawRequestBytes)
+
 	if err != nil {
 		return response, err
 	}
 	if resp.StatusCode == http.StatusSwitchingProtocols {
 		return response, nil
 	}
-	limitReader := io.LimitReader(resp.Body, int64(c.options.Options.BodyReadSize))
+	limitReader := io.LimitReader(resp.Body, int64(c.Options.Options.BodyReadSize))
 	data, err := io.ReadAll(limitReader)
 	if err != nil {
 		return response, err
 	}
-	if !c.options.UniqueFilter.UniqueContent(data) {
-		return navigation.Response{}, nil
+	if !c.Options.UniqueFilter.UniqueContent(data) {
+		return &navigation.Response{}, nil
 	}
 
-	technologies := c.options.Wappalyzer.Fingerprint(resp.Header, data)
+	technologies := c.Options.Wappalyzer.Fingerprint(resp.Header, data)
 	response.Technologies = mapsutil.GetKeys(technologies)
 
 	resp.Body = io.NopCloser(strings.NewReader(string(data)))
@@ -77,8 +83,15 @@ func (c *Crawler) makeRequest(ctx context.Context, request navigation.Request, r
 	response.Reader, err = goquery.NewDocumentFromReader(bytes.NewReader(data))
 	response.StatusCode = resp.StatusCode
 	response.Headers = utils.FlattenHeaders(resp.Header)
+
+	resp.ContentLength = int64(len(data))
+
+	rawResponseBytes, _ := httputil.DumpResponse(resp, true)
+	response.Raw = string(rawResponseBytes)
+
 	if err != nil {
 		return response, errorutil.NewWithTag("standard", "could not make document from reader").Wrap(err)
 	}
+
 	return response, nil
 }

@@ -291,7 +291,6 @@ func runPage(target string, jsCode string) string {
 	// dom 加载完后注入js, 检测 原型链 xss
 	res := page.MustEval(jsCode).String()
 
-	logging.Logger.Println(res)
 	if res != "reserved" {
 		return ""
 	}

@@ -41,7 +41,7 @@ func (t *KatanaTask) StartCrawler(show bool) {
 		CrawlDuration:             0,                         // 爬取目标的最长持续时间
 		KnownFiles:                "all",                     // 启用对已知文件的爬取(all、robots.txt、sitemap.xml)
 		BodyReadSize:              2 * 1024 * 1024,           // 读取响应的最大大小
-		Timeout:                   10,                        // 请求超时时间
+		Timeout:                   30,                        // 请求超时时间
 		AutomaticFormFill:         true,                      // 启用自动表单填充(实验性)
 		Retries:                   0,                         // 重试次数
 		Strategy:                  queue.DepthFirst.String(), // 深度优先

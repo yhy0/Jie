@@ -1,5 +1,7 @@
 package conf
 
+import "sync"
+
 /**
   @author: yhy
   @since: 2023/2/1
@@ -28,3 +30,6 @@ type Reverse struct {
 }
 
 var GlobalConfig *Config
+
+// Visited 防止重复爬取的, 保证并发安全
+var Visited = &sync.Map{}

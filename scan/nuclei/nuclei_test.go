@@ -17,7 +17,7 @@ import (
 **/
 
 func TestNuclei(t *testing.T) {
-	logging.New(false)
+	logging.New(false, "")
 	conf.GlobalConfig = &conf.Config{}
 	httpx.NewSession()
 	conf.GlobalConfig.WebScan.Proxy = "http://127.0.0.1:8080"

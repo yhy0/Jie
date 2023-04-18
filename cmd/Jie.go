@@ -14,7 +14,9 @@ import (
 	"github.com/yhy0/logging"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
+	"time"
 )
 
 /**
@@ -122,6 +124,14 @@ func run(c *cli.Context) error {
 	go func() {
 		for v := range output.OutChannel {
 			logging.Logger.Infoln(aurora.Red(v.PrintScreen()).String())
+		}
+	}()
+
+	// 定时器每 24 小时清空记录
+	go func() {
+		for {
+			time.Sleep(24 * time.Hour)
+			conf.Visited = &sync.Map{}
 		}
 	}()
 

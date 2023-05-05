@@ -41,7 +41,7 @@ type Rule struct {
 
 var rules map[string]Rule
 
-type page struct {
+type Page struct {
 	isBackUpPath bool
 	isBackUpPage bool
 	title        string
@@ -101,8 +101,8 @@ func init() {
 			if util.Contains(str, "{root_only}") {
 				rule.Root = true
 			}
-
-			rules[strings.Split(str, " ")[0]] = rule
+			path := util.Trim(strings.Split(str, " ")[0])
+			rules[path] = rule
 		}
 	}
 
@@ -117,16 +117,16 @@ func init() {
 }
 
 func getTitle(body string) string {
-	domainreg2 := regexp.MustCompile(`<title>([\s\S]{1,200})</title>`)
-	titlelist := domainreg2.FindStringSubmatch(body)
-	if len(titlelist) > 1 {
-		return titlelist[1]
+	titleReg := regexp.MustCompile(`<title>([\s\S]{1,200})</title>`)
+	title := titleReg.FindStringSubmatch(body)
+	if len(title) > 1 {
+		return title[1]
 	}
 	return ""
 }
 
-func ReqPage(u string) (*page, *httpx.Response, error) {
-	page := &page{}
+func ReqPage(u string) (*Page, *httpx.Response, error) {
+	page := &Page{}
 	var backUpSuffixList = []string{".tar", ".tar.gz", ".zip", ".rar", ".7z", ".bz2", ".gz", ".war"}
 	var method = "GET"
 
@@ -173,10 +173,8 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 		skip302              = false
 		other200Contentlen   []int
 		other200Title        []string
-		errorTimes           = 0
-		count502             = 0
 		technologies         []string
-		url404               *page
+		url404               *Page
 		url404res            *httpx.Response
 		err                  error
 	)
@@ -205,9 +203,6 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 
 	for path, rule := range rules {
 		var is404Page = false
-		if errorTimes > 20 || count502 > 20 {
-			return technologies
-		}
 
 		if util.Contains(path, "{sub}") {
 			t, _ := url.Parse(u)
@@ -218,14 +213,11 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 
 		go func(path string, rule Rule) {
 			if target, res, err := ReqPage(u + path); err == nil && res != nil {
-				if res.Location != "" && util.Hostname(res.Location) != util.Hostname(u) { // 跳转到别的域，跳过扫描
-					errorTimes = 21
+				if util.In(res.Body, conf.WafContent) {
+					logging.Logger.Infoln(22)
+					technologies = append(technologies, "Waf") // 存在 waf
 					<-ch
 					return
-				}
-
-				if res.StatusCode == 502 {
-					count502 += 1
 				}
 
 				contentType := res.Header.Get("Content-Type")
@@ -245,13 +237,6 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 						<-ch
 						return
 					}
-				}
-
-				if util.In(res.Body, conf.WafContent) {
-					technologies = append(technologies, "Waf") // 存在 waf ，不进行目录扫描
-					errorTimes = 21
-					<-ch
-					return
 				}
 
 				// 文件内容为空丢弃
@@ -371,11 +356,6 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 					//}
 
 					if similar && res.StatusCode != 404 && res.StatusCode != 403 && res.StatusCode != 301 && res.StatusCode != 302 && res.StatusCode != 304 && !target.is403 {
-						//todo 有部分 swagger-ui.html 访问会弹窗，应该是设置错误导致的不能访问，这里筛选一下
-						if strings.Contains(path, "swagger-ui.html") && !strings.Contains(res.Body, "<div class=\"swagger-ui-wrap\">") {
-							<-ch
-							return
-						}
 						//
 						//if len(res.Body) != 0 {
 						//	other200Content = append(other200Content, res.Body)
@@ -405,8 +385,6 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 					}
 				}
 
-			} else {
-				errorTimes += 1
 			}
 
 			<-time.After(time.Duration(500) * time.Millisecond)

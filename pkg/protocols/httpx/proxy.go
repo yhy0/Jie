@@ -5,7 +5,7 @@ import (
 	"net/url"
 )
 
-func validateProxyURL(proxy string) (string, error) {
+func ValidateProxyURL(proxy string) (string, error) {
 	if url, err := url.Parse(proxy); err == nil && isSupportedProtocol(url.Scheme) {
 		return url.Scheme, nil
 	}

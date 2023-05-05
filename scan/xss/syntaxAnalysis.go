@@ -87,14 +87,14 @@ func Audit(in *input.CrawlResult) {
 		for _, item := range locations {
 			//logging.Logger.Debugln(util.StructToJsonString(item))
 			if item.Type == "html" {
-				if item.Details.Value.Tagname == "style" {
+				if item.Details.Value.TagName == "style" {
 					payload := fmt.Sprintf("expression(a(%s))", util.RandLetters(6))
 					resp, tpayload := request(payload, index, xssUrl, in, variations)
 
 					if resp != nil {
 						_locations := ast.SearchInputInResponse(payload, resp.Body)
 						for _, _item := range _locations {
-							if funk.Contains(_item.Details.Value.Content, payload) && _item.Details.Value.Tagname == "style" {
+							if funk.Contains(_item.Details.Value.Content, payload) && _item.Details.Value.TagName == "style" {
 								output.OutChannel <- output.VulMessage{
 									DataType: "web_vul",
 									Plugin:   "XSS",
@@ -118,17 +118,17 @@ func Audit(in *input.CrawlResult) {
 				flag := util.RandString(7)
 
 				// 闭合标签测试
-				payload := fmt.Sprintf("</%s><%s>", util.RandomUpper(item.Details.Value.Tagname), flag)
+				payload := fmt.Sprintf("</%s><%s>", util.RandomUpper(item.Details.Value.TagName), flag)
 
 				// 真实可能触发 xss 的 payload (没发送)
-				truepayload := fmt.Sprintf("</%s><%s>", util.RandomUpper(item.Details.Value.Tagname), "<svg onload=alert`1`>")
+				truepayload := fmt.Sprintf("</%s><%s>", util.RandomUpper(item.Details.Value.TagName), "<svg onload=alert`1`>")
 
 				resp, tpayload := request(payload, index, xssUrl, in, variations)
 
 				if resp != nil {
 					_locations := ast.SearchInputInResponse(flag, resp.Body)
 					for _, _item := range _locations {
-						if _item.Details.Value.Tagname == flag {
+						if _item.Details.Value.TagName == flag {
 							output.OutChannel <- output.VulMessage{
 								DataType: "web_vul",
 								Plugin:   "XSS",
@@ -139,7 +139,7 @@ func Audit(in *input.CrawlResult) {
 									Param:       param,
 									Response:    resp.Body,
 									Payload:     tpayload,
-									Description: fmt.Sprintf("html标签可被闭合, <%s>可被闭合,可使用%s进行攻击测试", item.Details.Value.Tagname, truepayload),
+									Description: fmt.Sprintf("html标签可被闭合, <%s>可被闭合,可使用%s进行攻击测试", item.Details.Value.TagName, truepayload),
 								},
 								Level: output.Medium,
 							}
@@ -160,7 +160,7 @@ func Audit(in *input.CrawlResult) {
 					if resp != nil {
 						_locations := ast.SearchInputInResponse(flag, resp.Body)
 						for _, _item := range _locations {
-							if _item.Details.Value.Tagname == flag {
+							if _item.Details.Value.TagName == flag {
 								output.OutChannel <- output.VulMessage{
 									DataType: "web_vul",
 									Plugin:   "XSS",
@@ -171,7 +171,7 @@ func Audit(in *input.CrawlResult) {
 										Param:       param,
 										Response:    resp.Body,
 										Payload:     tpayload,
-										Description: fmt.Sprintf("html标签可被闭合, <%s>可被闭合,可使用%s进行攻击测试", item.Details.Value.Tagname, truepayload),
+										Description: fmt.Sprintf("html标签可被闭合, <%s>可被闭合,可使用%s进行攻击测试", item.Details.Value.TagName, truepayload),
 									},
 									Level: output.Medium,
 								}
@@ -257,7 +257,7 @@ func Audit(in *input.CrawlResult) {
 						if resp != nil {
 							_locations := ast.SearchInputInResponse(flag, resp.Body)
 							for _, _item := range _locations {
-								if _item.Details.Value.Tagname == flag {
+								if _item.Details.Value.TagName == flag {
 									output.OutChannel <- output.VulMessage{
 										DataType: "web_vul",
 										Plugin:   "XSS",
@@ -385,7 +385,7 @@ func Audit(in *input.CrawlResult) {
 					if resp != nil {
 						_locations := ast.SearchInputInResponse(flag, resp.Body)
 						for _, _item := range _locations {
-							if _item.Details.Value.Tagname == flag {
+							if _item.Details.Value.TagName == flag {
 								output.OutChannel <- output.VulMessage{
 									DataType: "web_vul",
 									Plugin:   "XSS",
@@ -409,7 +409,7 @@ func Audit(in *input.CrawlResult) {
 			} else if item.Type == "script" {
 				// test html
 				flag := util.RandString(7)
-				script_tag := util.RandomUpper(item.Details.Value.Tagname)
+				script_tag := util.RandomUpper(item.Details.Value.TagName)
 
 				payload := fmt.Sprintf("</%s><%s>%s</%s>", script_tag, script_tag, flag, script_tag)
 				truepayload := fmt.Sprintf("</%s><%s>%s</%s>", script_tag, script_tag, "prompt(1)", script_tag)
@@ -418,7 +418,7 @@ func Audit(in *input.CrawlResult) {
 				if resp != nil {
 					_locations := ast.SearchInputInResponse(flag, resp.Body)
 					for _, _item := range _locations {
-						if _item.Details.Value.Content == flag && strings.ToLower(_item.Details.Value.Tagname) == strings.ToLower(script_tag) {
+						if _item.Details.Value.Content == flag && strings.ToLower(_item.Details.Value.TagName) == strings.ToLower(script_tag) {
 							output.OutChannel <- output.VulMessage{
 								DataType: "web_vul",
 								Plugin:   "XSS",
@@ -439,9 +439,8 @@ func Audit(in *input.CrawlResult) {
 				}
 
 				// js 语法树分析反射
-
 				source := item.Details.Value.Content
-				_locations := ast.SearchInputInResponse(payloads[param], source)
+				_locations := ast.SearchInputInScript(payloads[param], source)
 
 				for _, _item := range _locations {
 					if _item.Type == "InlineComment" {
@@ -452,7 +451,7 @@ func Audit(in *input.CrawlResult) {
 						if resp != nil {
 							__locations := ast.SearchInputInResponse(flag, resp.Body)
 							for _, __item := range __locations {
-								if __item.Details.Value.Tagname != "script" {
+								if __item.Details.Value.TagName != "script" {
 									continue
 								}
 								occurence := ast.SearchInputInResponse(flag, __item.Details.Value.Content)
@@ -486,7 +485,7 @@ func Audit(in *input.CrawlResult) {
 						if resp != nil {
 							__locations := ast.SearchInputInResponse(flag, resp.Body)
 							for _, __item := range __locations {
-								if __item.Details.Value.Tagname != "script" {
+								if __item.Details.Value.TagName != "script" {
 									continue
 								}
 								occurence := ast.SearchInputInResponse(flag, __item.Details.Value.Content)

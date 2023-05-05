@@ -1,8 +1,8 @@
 # Spring Boot Actuator
-/api-docs                          {status=200}                {root_only}
-/v/api-docs                        {status=200}                {root_only} 
-/v1/api-docs                        {status=200}                {root_only} 
-/v2/api-docs                        {status=200}                {root_only}  
+/api-docs                          {type="application/json"}    {status=200}                {root_only}
+/v/api-docs                        {type="application/json"}        {status=200}                {root_only}
+/v1/api-docs                        {type="application/json"}   {status=200}                {root_only}
+/v2/api-docs                        {type="application/json"}       {status=200}                {root_only}
 /swagger-ui.html                   {status=200}                 {root_only}
 /actuator                       {type="application/json"}       {status=200}                {root_only}
 /auditevents                    {type="application/json"}       {status=200}                {root_only}

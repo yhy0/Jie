@@ -119,13 +119,14 @@ https://github.com/a1phaboy/FastjsonScan
 
 ## License
 
-This code is distributed under the MIT license. See [LICENSE](https://github.com/prompt-engineering/click-prompt/blob/dev/LICENSE) in this directory.
+This code is distributed under the MIT license. See [LICENSE](https://github.com/yhy0/Jie/blob/main/LICENSE) in this directory.
 
 # 鸣谢
 
 感谢 [JetBrains](https://www.jetbrains.com/) 提供的一系列好用的 IDE 和对本项目的支持。
 
 ![JetBrains Logo (Main) logo](https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg)
+
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=yhy0/Jie&type=Date)](https://star-history.com/#yhy0/Jie&Date)

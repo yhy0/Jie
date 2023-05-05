@@ -2,6 +2,7 @@ package task
 
 import (
 	"fmt"
+	wappalyzer "github.com/projectdiscovery/wappalyzergo"
 	"github.com/thoas/go-funk"
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
@@ -46,6 +47,13 @@ func Active(target string, show bool) {
 	}
 
 	var technologies []string
+
+	wappalyzerClient, err := wappalyzer.New()
+	fingerprints := wappalyzerClient.Fingerprint(resp.Header, []byte(resp.Body))
+
+	for k, _ := range fingerprints {
+		technologies = append(technologies, k)
+	}
 
 	if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "BBSCAN") {
 		// bbscan 进行敏感目录扫描

@@ -55,9 +55,15 @@ require (
 )
 
 require (
+	github.com/microcosm-cc/bluemonday v1.0.23
+	github.com/projectdiscovery/cdncheck v0.0.4-0.20220413175814-b47bc2d578b1
+	github.com/projectdiscovery/httpx v1.2.9
+	github.com/projectdiscovery/rawhttp v0.1.11
+	github.com/projectdiscovery/tlsx v1.0.6-0.20230328111908-f4528797e948
 	github.com/projectdiscovery/wappalyzergo v0.0.90
 	github.com/sergi/go-diff v1.3.1
 	github.com/yhy0/logging v0.0.0-20230316052906-9f857773c4b6
+	golang.org/x/text v0.9.0
 )
 
 require (
@@ -174,7 +180,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/mholt/acmez v1.1.0 // indirect
 	github.com/mholt/archiver v3.1.1+incompatible // indirect
-	github.com/microcosm-cc/bluemonday v1.0.23 // indirect
 	github.com/miekg/dns v1.1.53 // indirect
 	github.com/minio/selfupdate v0.6.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
@@ -197,12 +202,10 @@ require (
 	github.com/projectdiscovery/iputil v0.0.2 // indirect
 	github.com/projectdiscovery/mapcidr v1.1.1 // indirect
 	github.com/projectdiscovery/networkpolicy v0.0.5 // indirect
-	github.com/projectdiscovery/rawhttp v0.1.11 // indirect
 	github.com/projectdiscovery/rdap v0.9.1-0.20221108103045-9865884d1917 // indirect
 	github.com/projectdiscovery/retryabledns v1.0.21 // indirect
 	github.com/projectdiscovery/sarif v0.0.1 // indirect
 	github.com/projectdiscovery/stringsutil v0.0.2 // indirect
-	github.com/projectdiscovery/tlsx v1.0.6-0.20230328111908-f4528797e948 // indirect
 	github.com/projectdiscovery/yamldoc-go v1.0.4 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
@@ -235,6 +238,7 @@ require (
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
+	github.com/yhy0/wappalyzergo v0.0.0-20230424083940-19b992d7b5f3 // indirect
 	github.com/yl2chen/cidranger v1.0.2 // indirect
 	github.com/ysmood/goob v0.4.0 // indirect
 	github.com/ysmood/gson v0.7.3 // indirect
@@ -252,7 +256,6 @@ require (
 	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/sys v0.7.0 // indirect
 	golang.org/x/term v0.7.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.8.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect

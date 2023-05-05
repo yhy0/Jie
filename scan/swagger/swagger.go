@@ -62,6 +62,17 @@ func Scan(target, ip string) {
 		swaggerJson      bool
 	)
 
+	if util.Contains(req.Body, "Swagger UI") { // 传入的是 /swagger-ui.html
+		// 访问 /swagger-resources 获取 对应的 api 集合
+		t := strings.ReplaceAll(target, "swagger-ui.html", "swagger-resources")
+		req, err = httpx.Request(t, "GET", "", false, nil)
+		if err != nil {
+			logging.Logger.Errorln("Scan err: ", err)
+			return
+		}
+		swaggerResources = true
+	}
+
 	if util.Contains(req.Body, "swaggerVersion") {
 		swaggerResources = true
 	} else if util.Contains(req.Body, "swagger") {

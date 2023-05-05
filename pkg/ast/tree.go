@@ -1,5 +1,7 @@
 package ast
 
+import "sort"
+
 type Node struct {
 	Key      int
 	Value    NodeValue
@@ -17,16 +19,21 @@ func (n *Node) Search(key int) (*Node, bool) {
 	return nil, false
 }
 
-func (n *Node) Insert(key int, Tagname *string, Content *string, Attributes *[]*Attribute) {
+// Insert 使用二分查找实现节点插入操作 https://github.com/wrenchonline/glint/issues/12
+func (n *Node) Insert(key int, tagName string, Content *string, Attributes *[]*Attribute) {
 	if n.Length() != 0 {
-		for _, child := range n.Children {
-			if child.Key > key {
-				child.Insert(key, Tagname, Content, Attributes)
-				return
-			}
+		idx := sort.Search(len(n.Children), func(i int) bool { return n.Children[i].Key >= key })
+		if idx < len(n.Children) && n.Children[idx].Key == key {
+			// 如果指定索引值已存在，则进行合并操作或抛出异常等处理
+		} else {
+			node := &Node{Key: key, Value: NodeValue{TagName: tagName, Content: *Content, Attributes: *Attributes}}
+			n.Children = append(n.Children, nil)
+			copy(n.Children[idx+1:], n.Children[idx:])
+			n.Children[idx] = node
 		}
+	} else {
+		n.Children = append(n.Children, &Node{Key: key, Value: NodeValue{TagName: tagName, Content: *Content, Attributes: *Attributes}})
 	}
-	n.Children = append(n.Children, &Node{Key: key, Value: NodeValue{Tagname: *Tagname, Content: *Content, Attributes: *Attributes}})
 }
 
 func (n *Node) Delete(key int) bool {
@@ -57,7 +64,7 @@ func (n *Node) Max() (*Node, bool) {
 }
 
 func (n *Node) Set(node *Node) {
-	n.Insert(node.Key, &node.Value.Tagname, &node.Value.Content, &node.Value.Attributes)
+	n.Insert(node.Key, node.Value.TagName, &node.Value.Content, &node.Value.Attributes)
 }
 
 func (n *Node) Length() int {

@@ -144,7 +144,7 @@ func (t *Task) Crawler(waf []string, show bool) {
 				ServerDurationMs: 0,
 			}
 
-			logging.Logger.Infof("[Processing] %s %s", crawlResult.Method, crawlResult.Url)
+			logging.Logger.Infof("[Processing] %s %s %s", crawlResult.Method, crawlResult.Url, crawlResult.Source)
 			t.Distribution(crawlResult)
 
 			//resp, err := httpx.Request(result.Request.URL, result.Request.Method, body, false, crawlResult.Headers)

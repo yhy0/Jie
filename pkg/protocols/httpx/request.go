@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"github.com/corpix/uarand"
+	"github.com/thoas/go-funk"
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/logging"
 	"go.uber.org/ratelimit"
@@ -194,6 +195,17 @@ func Request(target string, method string, postdata string, isredirect bool, hea
 	if err != nil {
 		//防止空指针
 		return &Response{"999", 999, "", "", "", nil, 0, "", "", 0}, err
+	}
+
+	//TODOs 换成其他请求方法重试
+	if funk.Contains(resp.Status, "Method Not Allowed") {
+		if strings.ToUpper(method) == "GET" {
+			response, err := Request(target, "POST", postdata, isredirect, headers)
+			if err != nil {
+				return nil, err
+			}
+			return response, nil
+		}
 	}
 
 	responseDump, _ := httputil.DumpResponse(resp, true)

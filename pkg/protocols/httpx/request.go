@@ -119,6 +119,7 @@ func RequestBasic(username string, password string, target string, method string
 	}
 	req.SetBasicAuth(username, password)
 	req.Header.Set("User-Agent", uarand.GetRandom())
+	req.Header.Set("Accept-Encoding", "identity")
 	req.Header.Set("Connection", "close")
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 	flag := true
@@ -168,6 +169,7 @@ func Request(target string, method string, postdata string, isredirect bool, hea
 	}
 
 	req.Header.Set("User-Agent", uarand.GetRandom())
+	req.Header.Set("Accept-Encoding", "identity")
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 	req.Header.Set("Connection", "close")
 	flag := true
@@ -251,6 +253,7 @@ func UploadRequest(target string, params map[string]string, name, path string) (
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 	req.Header.Set("Content-Type", writer.FormDataContentType()) // 设置请求头,!!!非常重要，否则远端无法识别请求
 	req.Header.Set("User-Agent", uarand.GetRandom())
+	req.Header.Set("Accept-Encoding", "identity")
 	req.Header.Set("Connection", "close")
 
 	requestDump, _ := httputil.DumpRequestOut(req, true)

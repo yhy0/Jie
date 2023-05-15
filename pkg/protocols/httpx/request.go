@@ -59,32 +59,11 @@ func NewSession() {
 			InsecureSkipVerify: true,
 		},
 	}
-
-	//if options.Cert != "" && options.PrivateKey != "" {
-	//	cer, err := tls.LoadX509KeyPair(options.Cert, options.PrivateKey)
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//	// 设置证书
-	//	client.TLSConfig = &tls.Config{InsecureSkipVerify: true, Certificates: []tls.Certificate{cer}}
-
 	// Add proxy
 	if conf.GlobalConfig.WebScan.Proxy != "" {
 		proxyURL, _ := url.Parse(conf.GlobalConfig.WebScan.Proxy)
 		if isSupportedProtocol(proxyURL.Scheme) {
 			Transport.Proxy = http.ProxyURL(proxyURL)
-			//if proxyURL.Scheme == "socks5" {
-			//	// socks5 代理
-			//	dialer, err := proxy.SOCKS5("tcp", proxyURL.Host, nil, proxy.Direct)
-			//	if err != nil {
-			//		logging.Logger.Errorln(os.Stderr, "can't connect to the proxy:", err)
-			//	} else {
-			//		// set our socks5 as the dialer
-			//		Transport.Dial = dialer.Dial
-			//	}
-			//} else {
-			//	Transport.Proxy = http.ProxyURL(proxyURL)
-			//}
 		} else {
 			logging.Logger.Warnln("Unsupported proxy protocol: %s", proxyURL.Scheme)
 		}
@@ -104,7 +83,6 @@ func NewSession() {
 
 	// Initiate rate limit instance
 	session.RateLimiter = ratelimit.New(rateLimit)
-
 }
 
 func RequestBasic(username string, password string, target string, method string, postdata string, isredirect bool, headers map[string]string) (*Response, error) {

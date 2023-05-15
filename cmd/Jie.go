@@ -11,6 +11,7 @@ import (
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/task"
 	"github.com/yhy0/Jie/pkg/util"
+	"github.com/yhy0/Jie/scan/pocs_go/log4j"
 	"github.com/yhy0/logging"
 	"os"
 	"os/signal"
@@ -45,6 +46,8 @@ func init() {
 }
 
 func RunApp() {
+	conf.GlobalConfig = &conf.Config{}
+
 	app := &cli.App{
 		Name:  "Jie",
 		Usage: "A powerful web security assessment tool",
@@ -67,7 +70,7 @@ func RunApp() {
 						Usage:       "Vulnerable Plugin, (example: --plugin xss,csrf,sql,bbscan ...)",
 						Destination: &Plugins,
 					},
-					// 设置需要开启的插件
+					// 是否显示无头浏览器
 					&cli.BoolFlag{
 						Name:        "show",
 						Usage:       "specifies whether the show the browser in headless mode",
@@ -110,6 +113,37 @@ func RunApp() {
 					return nil
 				},
 			},
+			{
+				Name:    "log4j scan",
+				Aliases: []string{"log4j"},
+				Usage:   "log4j scan",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:        "target",
+						Aliases:     []string{"t"},
+						Usage:       "target",
+						Destination: &target,
+						Required:    true,
+					},
+					&cli.StringFlag{
+						Name:        "domain",
+						Aliases:     []string{"d"},
+						Usage:       "d",
+						Destination: &conf.GlobalConfig.Reverse.Domain,
+						Required:    true,
+					},
+					&cli.StringFlag{
+						Name:        "token",
+						Aliases:     []string{"token"},
+						Usage:       "token",
+						Destination: &conf.GlobalConfig.Reverse.Token,
+					},
+				},
+				Action: func(cCtx *cli.Context) error {
+					log4j.Scan(target, "GET", "")
+					return nil
+				},
+			},
 		},
 	}
 
@@ -141,8 +175,6 @@ func run(c *cli.Context) error {
 	} else {
 		plugins = util.ToUpper(Plugins.Value())
 	}
-
-	conf.GlobalConfig = &conf.Config{}
 
 	conf.GlobalConfig.WebScan.Proxy = Proxy
 	conf.GlobalConfig.WebScan.Plugins = plugins

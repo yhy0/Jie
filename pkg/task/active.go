@@ -9,6 +9,8 @@ import (
 	"github.com/yhy0/Jie/pkg/util"
 	"github.com/yhy0/Jie/scan/bbscan"
 	"github.com/yhy0/Jie/scan/nuclei"
+	"github.com/yhy0/Jie/scan/pocs_go"
+	"github.com/yhy0/Jie/scan/pocs_go/log4j"
 	"github.com/yhy0/Jie/scan/waf"
 	"github.com/yhy0/logging"
 	"regexp"
@@ -65,6 +67,14 @@ func Active(target string, show bool) {
 		}()
 	}
 
+	//todo 目前只进行目标的 header 探测，后期和爬虫结合
+	if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "LOG4J") {
+		// log4j
+		go func() {
+			log4j.Scan(target, "GET", "")
+		}()
+	}
+
 	t := Task{
 		TaskId:      util.UUID(),
 		Target:      target,
@@ -83,6 +93,7 @@ func Active(target string, show bool) {
 		t.Fingerprints = funk.UniqString(append(t.Fingerprints, technologies...))
 
 		// 这里根据指纹进行对应的检测
+		pocs_go.PocCheck(t.Fingerprints, target, resp.RequestUrl, "")
 		nuclei.Scan(target, t.Fingerprints)
 	}
 

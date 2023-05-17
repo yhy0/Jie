@@ -121,18 +121,22 @@ func RequestBasic(username string, password string, target string, method string
 		return &Response{"999", 999, "", "", "", nil, 0, "", "", 0}, err
 	}
 
-	responseDump, _ := httputil.DumpResponse(resp, true)
+	dump, _ := httputil.DumpResponse(resp, false)
+
 	var location string
-	var reqbody string
+	var respbody string
 	defer resp.Body.Close()
 	if body, err := ioutil.ReadAll(resp.Body); err == nil {
-		reqbody = string(body)
+		respbody = string(body)
 	}
+
+	responseDump := string(dump) + respbody
+
 	if resplocation, err := resp.Location(); err == nil {
 		location = resplocation.String()
 	}
 
-	return &Response{resp.Status, resp.StatusCode, reqbody, string(requestDump), string(responseDump), resp.Header, int(resp.ContentLength), resp.Request.URL.String(), location, 0}, nil
+	return &Response{resp.Status, resp.StatusCode, respbody, string(requestDump), responseDump, resp.Header, int(resp.ContentLength), resp.Request.URL.String(), location, 0}, nil
 }
 
 func Request(target string, method string, postdata string, isredirect bool, headers map[string]string) (*Response, error) {
@@ -188,13 +192,16 @@ func Request(target string, method string, postdata string, isredirect bool, hea
 		}
 	}
 
-	responseDump, _ := httputil.DumpResponse(resp, true)
+	dump, _ := httputil.DumpResponse(resp, false)
+
 	var location string
 	var respbody string
 	defer resp.Body.Close()
 	if body, err := ioutil.ReadAll(resp.Body); err == nil {
 		respbody = string(body)
 	}
+
+	responseDump := string(dump) + respbody
 	if resplocation, err := resp.Location(); err == nil {
 		location = resplocation.String()
 	}
@@ -244,16 +251,19 @@ func UploadRequest(target string, params map[string]string, name, path string) (
 		return &Response{"999", 999, "", "", "", nil, 0, "", "", 0}, err
 	}
 
-	responseDump, _ := httputil.DumpResponse(resp, true)
+	dump, _ := httputil.DumpResponse(resp, false)
+
 	var location string
 	var respbody string
 	defer resp.Body.Close()
-	if bodytmp, err := ioutil.ReadAll(resp.Body); err == nil {
-		respbody = string(bodytmp)
+	if rbody, err := ioutil.ReadAll(resp.Body); err == nil {
+		respbody = string(rbody)
 	}
+
+	responseDump := string(dump) + respbody
 	if resplocation, err := resp.Location(); err == nil {
 		location = resplocation.String()
 	}
 
-	return &Response{resp.Status, resp.StatusCode, respbody, string(requestDump), string(responseDump), resp.Header, int(resp.ContentLength), resp.Request.URL.String(), location, 0}, nil
+	return &Response{resp.Status, resp.StatusCode, respbody, string(requestDump), responseDump, resp.Header, int(resp.ContentLength), resp.Request.URL.String(), location, 0}, nil
 }

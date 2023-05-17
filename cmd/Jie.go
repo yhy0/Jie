@@ -126,6 +126,12 @@ func RunApp() {
 						Required:    true,
 					},
 					&cli.StringFlag{
+						Name:        "host",
+						Aliases:     []string{"h"},
+						Usage:       "host (Default:https://dig.pm)",
+						Destination: &conf.GlobalConfig.Reverse.Host,
+					},
+					&cli.StringFlag{
 						Name:        "domain",
 						Aliases:     []string{"d"},
 						Usage:       "d",
@@ -140,6 +146,10 @@ func RunApp() {
 					},
 				},
 				Action: func(cCtx *cli.Context) error {
+					if conf.GlobalConfig.Reverse.Host == "" {
+						conf.GlobalConfig.Reverse.Host = "https://dig.pm"
+					}
+
 					log4j.Scan(target, "GET", "")
 					return nil
 				},

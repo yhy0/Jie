@@ -1,9 +1,6 @@
 package main
 
-import (
-	"fmt"
-	"time"
-)
+import "github.com/yhy0/Jie/cmd"
 
 /**
   @author: yhy
@@ -12,15 +9,5 @@ import (
 **/
 
 func main() {
-	//cmd.RunApp()
-	var Done = make(chan bool, 1)
-
-	go func() {
-		fmt.Println("-------------")
-
-	}()
-	aaa := Done
-	time.Sleep(1 * time.Second)
-	close(Done)
-	fmt.Println("111", aaa)
+	cmd.RunApp()
 }

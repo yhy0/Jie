@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -199,6 +200,8 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 			other200Contentlen = append(other200Contentlen, url404res.ContentLength)
 		}
 	}
+
+	wg := sync.WaitGroup{}
 	ch := make(chan struct{}, 20)
 
 	for path, rule := range rules {
@@ -210,8 +213,9 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 		}
 
 		ch <- struct{}{}
-
+		wg.Add(1)
 		go func(path string, rule Rule) {
+			defer wg.Done()
 			if target, res, err := ReqPage(u + path); err == nil && res != nil {
 				if util.In(res.Body, conf.WafContent) {
 					logging.Logger.Infoln(22)
@@ -392,6 +396,7 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 		}(path, rule)
 	}
 
+	wg.Wait()
 	close(ch)
 
 	return technologies

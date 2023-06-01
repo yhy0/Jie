@@ -141,7 +141,7 @@ func nuclei(target string, templates []string, tags []string, outputWriter *test
 	defer interactClient.Close()
 
 	catalog := disk.NewCatalog(path.Join(home, "nuclei-templates"))
-	executerOpts := protocols.ExecuterOptions{
+	executerOpts := protocols.ExecutorOptions{
 		Output:          outputWriter,
 		Options:         defaultOpts,
 		Progress:        mockProgress,

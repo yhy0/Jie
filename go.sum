@@ -441,8 +441,6 @@ github.com/projectdiscovery/tlsx v1.0.9 h1:StUwVpPG0lrXq6FvxbFarPM+fu9Vke1sOPoyJ
 github.com/projectdiscovery/tlsx v1.0.9/go.mod h1:4vGhl8lxUWjXuyoVvnL2ObMY/FSrb9Mpx5U2KaTV05A=
 github.com/projectdiscovery/utils v0.0.35 h1:+ex4fbJlcbf/5/RXFZcI9SG0Fo27vxlwV5DP+fMLY+4=
 github.com/projectdiscovery/utils v0.0.35/go.mod h1:gyDuJpCGPHN6Lyo3O8PAkTxf88iiAxRZyaMFMrXV0z4=
-github.com/projectdiscovery/wappalyzergo v0.0.94 h1:IVRskuU95MajWCKYgvH5L67+MXDOWJDWSeBD61OsS/A=
-github.com/projectdiscovery/wappalyzergo v0.0.94/go.mod h1:HvYuW0Be4JCjVds/+XAEaMSqRG9yrI97UmZq0TPk6A0=
 github.com/projectdiscovery/yamldoc-go v1.0.4 h1:eZoESapnMw6WAHiVgRwNqvbJEfNHEH148uthhFbG5jE=
 github.com/projectdiscovery/yamldoc-go v1.0.4/go.mod h1:8PIPRcUD55UbtQdcfFR1hpIGRWG0P7alClXNGt1TBik=
 github.com/remeh/sizedwaitgroup v1.0.0 h1:VNGGFwNo/R5+MJBf6yrsr110p0m4/OX4S3DCy7Kyl5E=
@@ -573,6 +571,8 @@ github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 h1:bAn7/zixMGCfxrRT
 github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673/go.mod h1:N3UwUGtsrSj3ccvlPHLoLsHnpR27oXr4ZE984MbSER8=
 github.com/yhy0/logging v0.0.0-20230524073457-06ef86fd9ef3 h1:xBLYPBO2JQ/hPOX1YhDP3BCLPCmuIgJ0CXnDM3S2rHM=
 github.com/yhy0/logging v0.0.0-20230524073457-06ef86fd9ef3/go.mod h1:DjdElPsDqf4IhYGiBtUKGT8i75RBZSwl+KgsaMJlZpU=
+github.com/yhy0/wappalyzergo v0.0.0-20230424083940-19b992d7b5f3 h1:uOnFsIPxbAIbtYrBoSdSnm4uHolEizIq6Vn7de+D1N0=
+github.com/yhy0/wappalyzergo v0.0.0-20230424083940-19b992d7b5f3/go.mod h1:kvWPkBGqNQhmqmfaRHTIBSfRelIjxerTzVUF+/I2wJ4=
 github.com/yl2chen/cidranger v1.0.2 h1:lbOWZVCG1tCRX4u24kuM1Tb4nHqWkDxwLdoS+SevawU=
 github.com/yl2chen/cidranger v1.0.2/go.mod h1:9U1yz7WPYDwf0vpNWFaeRh0bjwz5RVgRy/9UEQfHl0g=
 github.com/ysmood/fetchup v0.2.3 h1:ulX+SonA0Vma5zUFXtv52Kzip/xe7aj4vqT5AJwQ+ZQ=

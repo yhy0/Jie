@@ -8,11 +8,11 @@ import (
 	"github.com/projectdiscovery/ratelimit"
 	errorutil "github.com/projectdiscovery/utils/errors"
 	urlutil "github.com/projectdiscovery/utils/url"
-	wappalyzer "github.com/projectdiscovery/wappalyzergo"
 	"github.com/yhy0/Jie/crawler/katana/pkg/output"
 	"github.com/yhy0/Jie/crawler/katana/pkg/utils/extensions"
 	"github.com/yhy0/Jie/crawler/katana/pkg/utils/filters"
 	"github.com/yhy0/Jie/crawler/katana/pkg/utils/scope"
+	wappalyzer "github.com/yhy0/wappalyzergo"
 )
 
 // CrawlerOptions contains helper utilities for the crawler

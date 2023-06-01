@@ -45,9 +45,9 @@ require (
 require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/projectdiscovery/gologger v1.1.10
-	github.com/projectdiscovery/wappalyzergo v0.0.94
 	github.com/sergi/go-diff v1.3.1
 	github.com/yhy0/logging v0.0.0-20230524073457-06ef86fd9ef3
+	github.com/yhy0/wappalyzergo v0.0.0-20230424083940-19b992d7b5f3
 )
 
 require (

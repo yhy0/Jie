@@ -2,7 +2,6 @@ package task
 
 import (
 	"fmt"
-	wappalyzer "github.com/projectdiscovery/wappalyzergo"
 	"github.com/thoas/go-funk"
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
@@ -13,6 +12,7 @@ import (
 	"github.com/yhy0/Jie/scan/pocs_go/log4j"
 	"github.com/yhy0/Jie/scan/waf"
 	"github.com/yhy0/logging"
+	wappalyzer "github.com/yhy0/wappalyzergo"
 	"regexp"
 	"sync"
 )

@@ -9,7 +9,7 @@ import (
 	"github.com/projectdiscovery/fastdialer/fastdialer"
 	"github.com/projectdiscovery/retryablehttp-go"
 	errorutil "github.com/projectdiscovery/utils/errors"
-	proxyutil "github.com/projectdiscovery/utils/http/proxy"
+	proxyutil "github.com/projectdiscovery/utils/proxy"
 	"github.com/yhy0/Jie/crawler/katana/pkg/navigation"
 	"github.com/yhy0/Jie/crawler/katana/pkg/types"
 )

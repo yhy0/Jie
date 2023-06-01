@@ -63,11 +63,9 @@ func Scan(target string, fingerprints []string) {
 			},
 			Level: util.FirstToUpper(event.Info.SeverityHolder.Severity.String()),
 		}
-
 	}
 
 	nuclei(target, templates, tags, outputWriter)
-
 }
 
 func nuclei(target string, templates []string, tags []string, outputWriter *testutils.MockOutputWriter) {
@@ -89,7 +87,7 @@ func nuclei(target string, templates []string, tags []string, outputWriter *test
 			"fuzzing/wordpress-themes-detect.yaml",
 		},
 		ExcludeTags:                []string{"dos", "tech"},
-		TemplatesDirectory:         path.Join(home, "nuclei-templates"),
+		NewTemplatesDirectory:      path.Join(home, "nuclei-templates"),
 		Workflows:                  []string{},
 		Tags:                       tags,
 		RemoteTemplateDomainList:   []string{"api.nuclei.sh"},
@@ -127,27 +125,14 @@ func nuclei(target string, templates []string, tags []string, outputWriter *test
 		}
 	}
 
-	// 防止多个进程一起更新、下载模板，加锁
-	updateOptions := &Runner{
-		options: defaultOpts,
-	}
-	// parse the runner.options.GithubTemplateRepo and store the valid repos in runner.customTemplateRepos
-	updateOptions.customTemplates = customtemplates.ParseCustomTemplates(defaultOpts)
-	updateLock.Lock()
-	updateOptions.updateTemplates()
-	updateLock.Unlock()
+	update(defaultOpts)
 
 	protocolstate.Init(defaultOpts)
 	protocolinit.Init(defaultOpts)
 
-	// 只在 option 中指定代理并不行, nuclei 会对 proxy 代理进行处理，最终使用的是 types.ProxyURL 或 types.ProxySocksURL, 这里直接将原方法执行一般
-	if err := loadProxyServers(defaultOpts); err != nil {
-		logging.Logger.Errorln(err)
-	}
-
 	defaultOpts.ExcludeTags = config.ReadIgnoreFile().Tags
 
-	interactOpts := interactsh.NewDefaultOptions(outputWriter, reportingClient, mockProgress)
+	interactOpts := interactsh.DefaultOptions(outputWriter, reportingClient, mockProgress)
 	interactClient, err := interactsh.New(interactOpts)
 	if err != nil {
 		logging.Logger.Errorf("Could not create interact client: %s", err)
@@ -181,12 +166,7 @@ func nuclei(target string, templates []string, tags []string, outputWriter *test
 	}
 	executerOpts.WorkflowLoader = workflowLoader
 
-	configObject, err := config.ReadConfiguration()
-	if err != nil {
-		logging.Logger.Errorf("Could not read config: %s", err)
-		return
-	}
-	store, err := loader.New(loader.NewConfig(defaultOpts, configObject, catalog, executerOpts))
+	store, err := loader.New(loader.NewConfig(defaultOpts, catalog, executerOpts))
 	if err != nil {
 		logging.Logger.Errorf("Could not create loader client: %s", err)
 		return
@@ -197,4 +177,43 @@ func nuclei(target string, templates []string, tags []string, outputWriter *test
 
 	_ = engine.Execute(store.Templates(), &inputs.SimpleInputProvider{Inputs: inputArgs})
 	engine.WorkPool().Wait() // Wait for the scan to finish
+}
+
+// update 模板更新、下载
+func update(defaultOpts *types.Options) {
+	// 防止多个进程一起更新、下载模板，加锁
+	// parse the runner.options.GithubTemplateRepo and store the valid repos in runner.customTemplateRepos
+	ctm, err := customtemplates.NewCustomTemplatesManager(defaultOpts)
+	if err != nil {
+		logging.Logger.Errorln(err)
+	}
+
+	updateLock.Lock()
+	// Check for template updates and update if available
+	// if custom templates manager is not nil, we will install custom templates if there is fresh installation
+	tm := &TemplateManager{CustomTemplates: ctm}
+	if err := tm.FreshInstallIfNotExists(); err != nil {
+		logging.Logger.Warnf("failed to install nuclei templates: %s\n", err)
+	}
+	if err := tm.UpdateIfOutdated(); err != nil {
+		logging.Logger.Warnf("failed to update nuclei templates: %s\n", err)
+	}
+
+	if config.DefaultConfig.NeedsIgnoreFileUpdate() {
+		if err := UpdateIgnoreFile(); err != nil {
+			logging.Logger.Warnf("failed to update nuclei ignore file: %s\n", err)
+		}
+	}
+
+	// we automatically check for updates unless explicitly disabled
+	// this print statement is only to inform the user that there are no updates
+	if !config.DefaultConfig.NeedsTemplateUpdate() {
+		logging.Logger.Infof("No new updates found for nuclei templates")
+	}
+	// manually trigger update of custom templates
+	if ctm != nil {
+		ctm.Update(context.TODO())
+	}
+
+	updateLock.Unlock()
 }

@@ -163,7 +163,7 @@ func RunApp() {
 }
 
 func run(c *cli.Context) error {
-	logging.New(debug, "Jie")
+	logging.New(debug, "", "Jie")
 
 	go func() {
 		for v := range output.OutChannel {

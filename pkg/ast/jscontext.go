@@ -6,6 +6,7 @@ import (
 	"github.com/thoas/go-funk"
 	"github.com/yhy0/logging"
 	"io"
+	"runtime"
 	"strings"
 )
 
@@ -45,6 +46,16 @@ func SearchInputInScript(input, script string) (Occurrences []Occurence) {
 }
 
 func (parser *Parser) jsParser(script string) {
+	// 捕获 parser.tokenizer.Insert 可能发生的异常
+	defer func() {
+		if err := recover(); err != nil {
+			logging.Logger.Errorln("parser.tokenizer.Insert recover from:", err)
+			debugStack := make([]byte, 1024)
+			runtime.Stack(debugStack, false)
+			logging.Logger.Errorf("Stack Trace:%v", string(debugStack))
+
+		}
+	}()
 	// Parse the JavaScript code into an AST.
 	l := js.NewLexer(parse.NewInputString(script))
 

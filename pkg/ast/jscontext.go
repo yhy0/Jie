@@ -56,7 +56,12 @@ func (parser *Parser) jsParser(script string) {
 
 		}
 	}()
-	// Parse the JavaScript code into an AST.
+
+	if parser.tokenizer == nil {
+		parser.tokenizer = new(Node)
+	}
+
+	// Parse the JavaScript code into an AST.xw
 	l := js.NewLexer(parse.NewInputString(script))
 
 	var i = 0

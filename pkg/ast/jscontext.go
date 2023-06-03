@@ -73,8 +73,9 @@ func (parser *Parser) jsParser(script string) {
 		switch tt {
 		case js.ErrorToken:
 			if l.Err() != io.EOF {
-				return
+				logging.Logger.Debugln("Error on line:", l.Err())
 			}
+			return
 		case js.CommentToken: // 注释
 			// 单行注释
 			if !strings.Contains(commentText, "\n") {

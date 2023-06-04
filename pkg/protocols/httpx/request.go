@@ -48,9 +48,7 @@ type Session struct {
 
 var session *Session
 
-var rateLimit = 20
-
-func NewSession() {
+func NewSession(rateLimit ...int) {
 	Transport := &http.Transport{
 		MaxIdleConns:        100,
 		MaxIdleConnsPerHost: 100,
@@ -81,8 +79,11 @@ func NewSession() {
 		Client: client,
 	}
 
+	if len(rateLimit) == 0 {
+		rateLimit = append(rateLimit, 20)
+	}
 	// Initiate rate limit instance
-	session.RateLimiter = ratelimit.New(rateLimit)
+	session.RateLimiter = ratelimit.New(rateLimit[0])
 }
 
 func RequestBasic(username string, password string, target string, method string, postdata string, isredirect bool, headers map[string]string) (*Response, error) {

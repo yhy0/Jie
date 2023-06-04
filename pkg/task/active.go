@@ -14,7 +14,6 @@ import (
 	"github.com/yhy0/logging"
 	wappalyzer "github.com/yhy0/wappalyzergo"
 	"regexp"
-	"sync"
 )
 
 /**
@@ -58,13 +57,8 @@ func Active(target string, show bool) {
 	}
 
 	if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "BBSCAN") {
-		// bbscan 进行敏感目录扫描
-		var mu sync.Mutex
-		go func() {
-			mu.Lock()
-			defer mu.Unlock()
-			technologies = bbscan.BBscan(target, "", resp.StatusCode, resp.ContentLength, resp.Body)
-		}()
+		// 先单独进行 bbscan 进行敏感目录扫描，不使用协程
+		technologies = bbscan.BBscan(target, "", resp.StatusCode, resp.ContentLength, resp.Body)
 	}
 
 	//todo 目前只进行目标的 header 探测，后期和爬虫结合

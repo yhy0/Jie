@@ -36,6 +36,7 @@ type res struct {
 // Crawler 运行 Katana 爬虫
 func (t *Task) Crawler(waf []string, show bool) {
 	t.wg = sizedwaitgroup.New(t.Parallelism)
+	t.limit = make(chan struct{}, t.Parallelism)
 
 	fingerprints := make([]string, 0)
 
@@ -175,8 +176,9 @@ func (t *Task) Crawler(waf []string, show bool) {
 
 	t.wg.Wait()
 
-	t.Fingerprints = funk.UniqString(fingerprints)
+	close(t.limit)
 
+	t.Fingerprints = funk.UniqString(fingerprints)
 }
 
 // StoreFields stores fields for a result into individual files

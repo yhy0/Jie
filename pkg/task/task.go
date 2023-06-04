@@ -28,6 +28,7 @@ type Task struct {
 	PassiveResult string // todo 被动代理模式，需要考虑到重复数据的问题，防止重复发payload
 	Parallelism   int    // 一个网站同时扫描的最大 url 个数
 	wg            sizedwaitgroup.SizedWaitGroup
+	limit         chan struct{}
 }
 
 // Distribution 对爬虫结果或者被动发现结果进行任务分发
@@ -41,38 +42,47 @@ func (t *Task) Distribution(crawlResult *input.CrawlResult) {
 		}
 
 		if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "XSS") {
+			// 防止创建过多的协程
+			t.limit <- struct{}{}
 			go t.xss(crawlResult)
 		}
 
 		// 有参数，进行 sql 注入检测
 		if crawlResult.Kv != "" {
 			if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "SQL") {
+				t.limit <- struct{}{}
 				go t.sqlInjection(crawlResult)
 			}
 
 			if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "CMD") {
+				t.limit <- struct{}{}
 				go t.cmdinject(crawlResult)
 			}
 
 			if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "XXE") {
+				t.limit <- struct{}{}
 				go t.xxe(crawlResult)
 			}
 
 			if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "SSRF") {
+				t.limit <- struct{}{}
 				go t.ssrf(crawlResult)
 			}
 
 		}
 
 		//if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "BRUTE") {
+		//	t.limit <- struct{}{}
 		//	go brute.Hydra("", 0, "")
 		//}
 
 		if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "JSONP") {
+			t.limit <- struct{}{}
 			go t.jsonp(crawlResult)
 		}
 
 		if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "CRLF") {
+			t.limit <- struct{}{}
 			go t.crlf(crawlResult)
 		}
 	}
@@ -82,6 +92,7 @@ func (t *Task) Distribution(crawlResult *input.CrawlResult) {
 func (t *Task) sqlInjection(crawlResult *input.CrawlResult) {
 	t.wg.Add()
 	sqlmap.Scan(crawlResult)
+	<-t.limit
 	t.wg.Done()
 }
 
@@ -89,6 +100,7 @@ func (t *Task) sqlInjection(crawlResult *input.CrawlResult) {
 func (t *Task) xss(crawlResult *input.CrawlResult) {
 	t.wg.Add()
 	xss.Scan(crawlResult)
+	<-t.limit
 	t.wg.Done()
 }
 
@@ -96,6 +108,7 @@ func (t *Task) xss(crawlResult *input.CrawlResult) {
 func (t *Task) jsonp(crawlResult *input.CrawlResult) {
 	t.wg.Add()
 	jsonp.Scan(crawlResult)
+	<-t.limit
 	t.wg.Done()
 }
 
@@ -103,6 +116,7 @@ func (t *Task) jsonp(crawlResult *input.CrawlResult) {
 func (t *Task) crlf(crawlResult *input.CrawlResult) {
 	t.wg.Add()
 	crlf.Scan(crawlResult)
+	<-t.limit
 	t.wg.Done()
 }
 
@@ -110,6 +124,7 @@ func (t *Task) crlf(crawlResult *input.CrawlResult) {
 func (t *Task) cmdinject(crawlResult *input.CrawlResult) {
 	t.wg.Add()
 	cmdinject.Scan(crawlResult)
+	<-t.limit
 	t.wg.Done()
 }
 
@@ -117,6 +132,7 @@ func (t *Task) cmdinject(crawlResult *input.CrawlResult) {
 func (t *Task) xxe(crawlResult *input.CrawlResult) {
 	t.wg.Add()
 	xxe.Scan(crawlResult)
+	<-t.limit
 	t.wg.Done()
 }
 
@@ -124,5 +140,6 @@ func (t *Task) xxe(crawlResult *input.CrawlResult) {
 func (t *Task) ssrf(crawlResult *input.CrawlResult) {
 	t.wg.Add()
 	ssrf.Scan(crawlResult)
+	<-t.limit
 	t.wg.Done()
 }

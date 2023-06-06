@@ -20,7 +20,12 @@ func Verification(payload, u string) bool {
 	defer page.Close()
 
 	// 绕过无头浏览器检测 https://bot.sannysoft.com
-	page.MustEvalOnNewDocument(`;(() => {` + headless.StealthJS + `})();`)
+	// 整个 dom 加载前注入 js 绕过无头浏览器检测 https://bot.sannysoft.com
+	_, err := page.EvalOnNewDocument(headless.StealthJS)
+
+	if err != nil {
+		return false
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	pageWithCancel := page.Context(ctx)

@@ -261,9 +261,6 @@ func runPage(target string, jsCode string) string {
 	timeout := 5 * time.Second
 	page = page.Timeout(timeout)
 
-	// 整个 dom 加载前注入 js 绕过无头浏览器检测 https://bot.sannysoft.com
-	page.EvalOnNewDocument(`;(() => {` + headless.StealthJS + `})();`)
-
 	// 创建一个劫持请求, 用于屏蔽某些请求, img、font
 	router := headless.RodHeadless.Browser.HijackRequests()
 	defer router.MustStop()
@@ -281,6 +278,12 @@ func runPage(target string, jsCode string) string {
 	})
 
 	go router.Run()
+
+	// 整个 dom 加载前注入 js 绕过无头浏览器检测 https://bot.sannysoft.com
+	_, err = page.EvalOnNewDocument(headless.StealthJS)
+	if err != nil {
+		return ""
+	}
 
 	// Must 开头的函数 必须在 WaitLoad 后边?
 	if err = page.WaitLoad(); err != nil {

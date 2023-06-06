@@ -21,6 +21,9 @@ import (
 var ruleFiles embed.FS
 var rules []templates.Template
 
+// 限制一下正则执行，防止执行过多导致 CPU 爆炸
+var limit chan struct{}
+
 // 预编译正则表达式, 避免每次匹配都需要编译的开销。
 var regexCompiled map[string][]*regexp.Regexp
 
@@ -77,6 +80,8 @@ func init() {
 
 	}
 
+	limit = make(chan struct{}, 800)
+
 }
 
 // Detection 页面敏感信息检测
@@ -84,6 +89,7 @@ func Detection(url, body string) {
 	for id, regexs := range regexCompiled {
 		var matchedRegexes []string
 		for _, regex := range regexs {
+			limit <- struct{}{}
 			matches := regex.FindAllString(body, -1)
 
 			for _, m := range matches {
@@ -102,6 +108,7 @@ func Detection(url, body string) {
 				matchedRegexes = append(matchedRegexes, m)
 			}
 
+			<-limit
 		}
 
 		if len(matchedRegexes) > 0 {

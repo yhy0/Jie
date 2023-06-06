@@ -32,6 +32,8 @@ var (
 	Proxy   string
 	Listen  string
 	target  string
+	host    string
+	domain  string
 	debug   bool
 	show    bool
 )
@@ -129,20 +131,13 @@ func RunApp() {
 						Name:        "host",
 						Aliases:     []string{"h"},
 						Usage:       "host (Default:https://dig.pm)",
-						Destination: &conf.GlobalConfig.Reverse.Host,
+						Destination: &host,
 					},
 					&cli.StringFlag{
 						Name:        "domain",
 						Aliases:     []string{"d"},
 						Usage:       "d",
-						Destination: &conf.GlobalConfig.Reverse.Domain,
-						Required:    true,
-					},
-					&cli.StringFlag{
-						Name:        "token",
-						Aliases:     []string{"token"},
-						Usage:       "token",
-						Destination: &conf.GlobalConfig.Reverse.Token,
+						Destination: &domain,
 					},
 				},
 				Action: func(cCtx *cli.Context) error {
@@ -189,8 +184,8 @@ func run(c *cli.Context) error {
 	conf.GlobalConfig.WebScan.Proxy = Proxy
 	conf.GlobalConfig.WebScan.Plugins = plugins
 	conf.GlobalConfig.WebScan.Poc = Poc.Value()
-	conf.GlobalConfig.Reverse.Domain = ""
-	conf.GlobalConfig.Reverse.Token = ""
+	conf.GlobalConfig.Reverse.Host = host
+	conf.GlobalConfig.Reverse.Host = domain
 
 	// 初始化 session ,todo 后续优化一下，不同网站共用一个不知道会不会出问题，应该不会
 	httpx.NewSession()

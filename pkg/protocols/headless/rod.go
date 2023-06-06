@@ -12,6 +12,7 @@ import (
 	"go.uber.org/multierr"
 	"net/url"
 	"os"
+	"time"
 )
 
 /**
@@ -69,8 +70,8 @@ func Rod() {
 	if err != nil {
 		logging.Logger.Fatalln(err)
 	}
-
-	browser := rod.New().ControlURL(launcherURL)
+	// 设置浏览器的最大运行时间为 10 分钟
+	browser := rod.New().Timeout(time.Duration(600) * time.Second).ControlURL(launcherURL)
 	if browserErr := browser.Connect(); browserErr != nil {
 		logging.Logger.Errorln(err)
 	}

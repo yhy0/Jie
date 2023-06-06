@@ -6,7 +6,6 @@ import (
 	"github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/reverse"
-	"github.com/yhy0/Jie/pkg/util"
 	"github.com/yhy0/logging"
 	"runtime"
 	"time"
@@ -39,11 +38,14 @@ func Scan(crawlResult *input.CrawlResult) {
 	}
 
 	var ssrfHost string
-	var dnslog *reverse.Reverse
+	var dnslog *reverse.Dig
 	if crawlResult.IsSensorServerEnabled {
-		flag := util.RandLowLetterNumber(8)
-		dnslog = reverse.New("", flag)
-		ssrfHost = dnslog.Url
+		dnslog = reverse.GetSubDomain()
+		if dnslog == nil {
+			ssrfHost = "https://www.baidu.com/"
+		} else {
+			ssrfHost = dnslog.Domain
+		}
 	} else {
 		ssrfHost = "https://www.baidu.com/"
 	}
@@ -60,7 +62,7 @@ func Scan(crawlResult *input.CrawlResult) {
 }
 
 // ssrf
-func ssrf(in *input.CrawlResult, payloads []string, dnslog *reverse.Reverse) bool {
+func ssrf(in *input.CrawlResult, payloads []string, dnslog *reverse.Dig) bool {
 	for _, payload := range payloads {
 		res, err := httpx.Request(in.Url, in.Method, payload, false, in.Headers)
 		if err != nil {
@@ -70,7 +72,7 @@ func ssrf(in *input.CrawlResult, payloads []string, dnslog *reverse.Reverse) boo
 
 		isVul := false
 		if in.IsSensorServerEnabled {
-			isVul = reverse.Check(dnslog, 5)
+			isVul = reverse.PullLogs(dnslog)
 		} else {
 			isVul = funk.Contains(res.Body, "www.baidu.com/img/sug_bd.png")
 		}

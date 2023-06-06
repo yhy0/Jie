@@ -454,7 +454,7 @@ func Audit(in *input.CrawlResult) {
 								if __item.Details.Value.TagName != "script" {
 									continue
 								}
-								occurence := ast.SearchInputInResponse(flag, __item.Details.Value.Content)
+								occurence := ast.SearchInputInScript(flag, __item.Details.Value.Content)
 								for _, _output := range occurence {
 									if funk.Contains(_output.Details.Value.Content, flag) && _output.Type == "ScriptIdentifier" {
 										output.OutChannel <- output.VulMessage{
@@ -488,7 +488,7 @@ func Audit(in *input.CrawlResult) {
 								if __item.Details.Value.TagName != "script" {
 									continue
 								}
-								occurence := ast.SearchInputInResponse(flag, __item.Details.Value.Content)
+								occurence := ast.SearchInputInScript(flag, __item.Details.Value.Content)
 								for _, _output := range occurence {
 									if funk.Contains(_output.Details.Value.Content, flag) && _output.Type == "ScriptIdentifier" {
 										output.OutChannel <- output.VulMessage{

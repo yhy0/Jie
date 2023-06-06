@@ -18,4 +18,4 @@ var Banner = `
 
 const Website = "https://github.com/yhy0/Jie"
 
-const Version = "0.2.2"
+const Version = "0.2.8"

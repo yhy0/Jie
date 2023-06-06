@@ -27,7 +27,6 @@ type WebScan struct {
 type Reverse struct {
 	Host   string `json:"host"`
 	Domain string `json:"domain"`
-	Token  string `json:"token"`
 }
 
 var GlobalConfig *Config

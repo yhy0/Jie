@@ -3,6 +3,7 @@ package log4j
 import (
 	JieOutput "github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
+	"github.com/yhy0/Jie/pkg/reverse"
 	"strings"
 	"time"
 )
@@ -14,7 +15,7 @@ import (
 **/
 
 func Scan(target, method, body string) {
-	dig := GetSubDomain()
+	dig := reverse.GetSubDomain()
 	if dig == nil {
 		return
 	}
@@ -34,7 +35,7 @@ func Scan(target, method, body string) {
 		}
 	}
 
-	if PullLogs(dig) {
+	if reverse.PullLogs(dig) {
 		JieOutput.OutChannel <- JieOutput.VulMessage{
 			DataType: "web_vul",
 			Plugin:   "Log4j",

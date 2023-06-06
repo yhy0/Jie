@@ -3,6 +3,7 @@ package hybrid
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
@@ -93,7 +94,8 @@ func New(options *types.CrawlerOptions) (*Crawler, error) {
 		return nil, err
 	}
 
-	browser := rod.New().ControlURL(launcherURL)
+	// 设置浏览器的最大运行时间为 10 分钟
+	browser := rod.New().Timeout(time.Duration(600) * time.Second).ControlURL(launcherURL)
 	if browserErr := browser.Connect(); browserErr != nil {
 		return nil, browserErr
 	}

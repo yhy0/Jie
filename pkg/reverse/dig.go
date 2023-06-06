@@ -1,4 +1,4 @@
-package log4j
+package reverse
 
 import (
 	"encoding/json"
@@ -27,8 +27,7 @@ type Dig struct {
 // GetSubDomain 获取子域名
 func GetSubDomain() *Dig {
 	conf.GlobalConfig.Reverse.Host = strings.TrimRight(conf.GlobalConfig.Reverse.Host, "/")
-	fmt.Println(conf.GlobalConfig.Reverse.Host)
-	resp, err := httpx.Request(conf.GlobalConfig.Reverse.Host+"/new_gen", "POST", fmt.Sprintf("domain=%s", conf.GlobalConfig.Reverse.Domain), false, nil)
+	resp, err := httpx.Request(conf.GlobalConfig.Reverse.Host+"/new_gen", "POST", fmt.Sprintf("domain=%s", conf.GlobalConfig.Reverse.Domain), true, nil)
 	if err != nil {
 		logging.Logger.Errorln(err)
 		return nil
@@ -46,6 +45,9 @@ func GetSubDomain() *Dig {
 
 // PullLogs 获取dnslog日志
 func PullLogs(dig *Dig) bool {
+	if dig == nil {
+		return false
+	}
 	resp, err := httpx.Request(conf.GlobalConfig.Reverse.Host+"/get_results", "POST", fmt.Sprintf("domain=%s&token=%s", dig.Domain, dig.Token), false, nil)
 	if err != nil {
 		logging.Logger.Errorln(err)

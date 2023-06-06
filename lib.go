@@ -22,7 +22,7 @@ import (
 
 func main() {
 
-	logging.New(true, "Jie")
+	logging.New(true, "", "Jie")
 	// 获取扫描结果
 	go func() {
 		for v := range output.OutChannel {
@@ -35,8 +35,8 @@ func main() {
 	conf.GlobalConfig.WebScan.Proxy = ""
 	conf.GlobalConfig.WebScan.Plugins = []string{"XSS", "SQL", "CMD", "XXE", "SSRF", "POC", "BRUTE", "JSONP", "CRLF", "BBSCAN"}
 	conf.GlobalConfig.WebScan.Poc = nil
+	conf.GlobalConfig.Reverse.Host = ""
 	conf.GlobalConfig.Reverse.Domain = ""
-	conf.GlobalConfig.Reverse.Token = ""
 
 	// 初始化 session
 	httpx.NewSession()

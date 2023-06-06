@@ -84,12 +84,13 @@ func (t *Task) Crawler(waf []string, show bool) {
 
 		// 对爬虫结果格式化
 		var crawlResult = &input.CrawlResult{
-			Target:      t.Target,
-			Method:      strings.ToUpper(result.Request.Method),
-			Source:      result.Request.Source,
-			Headers:     make(map[string]string),
-			RequestBody: body,
-			Waf:         waf,
+			Target:                t.Target,
+			Method:                strings.ToUpper(result.Request.Method),
+			Source:                result.Request.Source,
+			Headers:               make(map[string]string),
+			RequestBody:           body,
+			Waf:                   waf,
+			IsSensorServerEnabled: true,
 		}
 
 		fingerprints = append(fingerprints, technologies...)

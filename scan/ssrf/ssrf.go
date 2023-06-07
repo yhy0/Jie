@@ -72,7 +72,7 @@ func ssrf(in *input.CrawlResult, payloads []string, dnslog *reverse.Dig) bool {
 
 		isVul := false
 		var desc = ""
-		if in.IsSensorServerEnabled {
+		if in.IsSensorServerEnabled && dnslog != nil {
 			isVul = reverse.PullLogs(dnslog)
 			desc = dnslog.Key + " key: " + dnslog.Token
 		} else {

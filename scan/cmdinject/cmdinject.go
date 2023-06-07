@@ -13,7 +13,6 @@ import (
 	"github.com/yhy0/Jie/pkg/reverse"
 	"github.com/yhy0/logging"
 	"regexp"
-	"runtime"
 	"strings"
 	"time"
 )
@@ -51,15 +50,6 @@ func Scan(in *input.CrawlResult) {
 }
 
 func startTesting(in *input.CrawlResult) (*httpx.Response, string, bool) {
-	defer func() {
-		if err := recover(); err != nil {
-			logging.Logger.Errorln("recover from:", err)
-			debugStack := make([]byte, 1024)
-			runtime.Stack(debugStack, false)
-			logging.Logger.Errorf("Stack Trace:%v", string(debugStack))
-		}
-	}()
-
 	variations, err := httpx.ParseUri(in.Url, []byte(in.RequestBody), in.Method, in.ContentType, in.Headers)
 	if err != nil {
 		logging.Logger.Errorln(err)
@@ -68,16 +58,11 @@ func startTesting(in *input.CrawlResult) (*httpx.Response, string, bool) {
 
 	if in.IsSensorServerEnabled {
 		dnslog := reverse.GetSubDomain()
-
-		if variations != nil {
+		if dnslog != nil && variations != nil {
 			for _, p := range variations.Params {
-				//todo 奇怪这里为什么会崩溃？
 				for _, payload := range domainPayloadList {
 					s1 := strings.ReplaceAll(payload, "{domain}", dnslog.Domain)
-
 					originpayload := variations.SetPayloadByIndex(p.Index, in.Url, s1, in.Method)
-
-					logging.Logger.Debugln("payload:", originpayload)
 
 					var res *httpx.Response
 					if in.Method == "GET" {

@@ -13,6 +13,7 @@ import (
 	"github.com/yhy0/Jie/pkg/reverse"
 	"github.com/yhy0/logging"
 	"regexp"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -50,6 +51,15 @@ func Scan(in *input.CrawlResult) {
 }
 
 func startTesting(in *input.CrawlResult) (*httpx.Response, string, bool) {
+	defer func() {
+		if err := recover(); err != nil {
+			logging.Logger.Errorln("recover from:", err)
+			debugStack := make([]byte, 1024)
+			runtime.Stack(debugStack, false)
+			logging.Logger.Errorf("Stack Trace:%v", string(debugStack))
+		}
+	}()
+
 	variations, err := httpx.ParseUri(in.Url, []byte(in.RequestBody), in.Method, in.ContentType, in.Headers)
 	if err != nil {
 		logging.Logger.Errorln(err)

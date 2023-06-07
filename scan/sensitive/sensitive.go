@@ -79,8 +79,8 @@ func init() {
 		}
 
 	}
-
-	limit = make(chan struct{}, 800)
+	//todo 800 好像还是有点多，400 吧
+	limit = make(chan struct{}, 400)
 
 }
 

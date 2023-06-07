@@ -1,4 +1,4 @@
-package runner
+package crawler
 
 import (
 	errorutil "github.com/projectdiscovery/utils/errors"
@@ -11,39 +11,23 @@ import (
 	"go.uber.org/multierr"
 )
 
+/**
+  @author: yhy
+  @since: 2023/6/7
+  @desc: //TODO
+**/
+
 // Runner creates the required resources for crawling
 // and executes the crawl process.
 type Runner struct {
 	crawlerOptions *types.CrawlerOptions
 	stdin          bool
-	crawler        engine.Engine
-	options        *types.Options
+	Crawler        engine.Engine
+	Options        *types.Options
 }
 
 // New returns a new crawl runner structure
 func New(options *types.Options) (*Runner, error) {
-	// configureOutput(options)
-	// showBanner()
-
-	// if options.Version {
-	// 	gologger.Info().Msgf("Current version: %s", version)
-	// 	return nil, nil
-	// }
-
-	// if !options.DisableUpdateCheck {
-	// 	latestVersion, err := updateutils.GetVersionCheckCallback("katana")()
-	// 	if err != nil {
-	// 		if options.Verbose {
-	// 			gologger.Error().Msgf("katana version check failed: %v", err.Error())
-	// 		}
-	// 	} else {
-	// 		gologger.Info().Msgf("Current katana version %v %v", version, updateutils.GetVersionDescription(version, latestVersion))
-	// 	}
-	// }
-
-	// if err := initExampleFormFillConfig(); err != nil {
-	// 	return nil, errorutil.NewWithErr(err).Msgf("could not init default config")
-	// }
 	if err := validateOptions(options); err != nil {
 		return nil, errorutil.NewWithErr(err).Msgf("could not validate options")
 	}
@@ -70,7 +54,7 @@ func New(options *types.Options) (*Runner, error) {
 	if err != nil {
 		return nil, errorutil.NewWithErr(err).Msgf("could not create standard crawler")
 	}
-	runner := &Runner{options: options, stdin: fileutil.HasStdin(), crawlerOptions: crawlerOptions, crawler: crawler}
+	runner := &Runner{Options: options, stdin: fileutil.HasStdin(), crawlerOptions: crawlerOptions, Crawler: crawler}
 
 	return runner, nil
 }
@@ -78,7 +62,7 @@ func New(options *types.Options) (*Runner, error) {
 // Close closes the runner releasing resources
 func (r *Runner) Close() error {
 	return multierr.Combine(
-		r.crawler.Close(),
+		r.Crawler.Close(),
 		r.crawlerOptions.Close(),
 	)
 }

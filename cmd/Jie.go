@@ -6,6 +6,7 @@ import (
 	"github.com/thoas/go-funk"
 	"github.com/urfave/cli/v2"
 	"github.com/yhy0/Jie/conf"
+	"github.com/yhy0/Jie/crawler"
 	"github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/protocols/headless"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
@@ -199,7 +200,8 @@ func run(c *cli.Context) error {
 		// 被动扫描
 		task.Passive()
 	} else {
-		task.Active(target, show)
+		crawler.NewKatana(show)
+		task.Active(target)
 	}
 
 	cc := make(chan os.Signal)

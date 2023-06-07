@@ -2,9 +2,6 @@ package hybrid
 
 import (
 	"fmt"
-	"os"
-	"time"
-
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
 	"github.com/go-rod/rod/lib/launcher/flags"
@@ -16,6 +13,7 @@ import (
 	"github.com/yhy0/Jie/crawler/katana/pkg/engine/common"
 	"github.com/yhy0/Jie/crawler/katana/pkg/types"
 	"go.uber.org/multierr"
+	"os"
 )
 
 // Crawler is a standard crawler instance
@@ -94,8 +92,7 @@ func New(options *types.CrawlerOptions) (*Crawler, error) {
 		return nil, err
 	}
 
-	// 设置浏览器的最大运行时间为 10 分钟
-	browser := rod.New().Timeout(time.Duration(600) * time.Second).ControlURL(launcherURL)
+	browser := rod.New().ControlURL(launcherURL)
 	if browserErr := browser.Connect(); browserErr != nil {
 		return nil, browserErr
 	}

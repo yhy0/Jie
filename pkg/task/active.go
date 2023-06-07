@@ -23,7 +23,7 @@ import (
 **/
 
 // Active 主动扫描 调用爬虫扫描, 只会输入一个域名
-func Active(target string, show bool) {
+func Active(target string) {
 	if target == "" {
 		logging.Logger.Errorln("target must be set")
 		return
@@ -79,7 +79,7 @@ func Active(target string, show bool) {
 	wafs := waf.Scan(target, resp.Body)
 
 	// 爬虫的同时进行指纹识别
-	t.Crawler(wafs, show)
+	t.Crawler(wafs)
 
 	logging.Logger.Debugln("Fingerprints: ", t.Fingerprints)
 	// 一个网站应该只执行一次 POC 检测, poc 检测放到最后

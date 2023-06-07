@@ -4,6 +4,7 @@ import (
 	"github.com/logrusorgru/aurora"
 	"github.com/thoas/go-funk"
 	"github.com/yhy0/Jie/conf"
+	"github.com/yhy0/Jie/crawler"
 	"github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/protocols/headless"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
@@ -52,7 +53,8 @@ func main() {
 		task.Passive()
 	} else {
 		// show 是否显示无头浏览器界面
-		task.Active("http://testphp.vulnweb.com/", false)
+		crawler.NewKatana(false)
+		task.Active("http://testphp.vulnweb.com/")
 	}
 
 	cc := make(chan os.Signal)

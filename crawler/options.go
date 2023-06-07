@@ -1,4 +1,4 @@
-package runner
+package crawler
 
 import (
 	"bufio"
@@ -21,9 +21,6 @@ import (
 func validateOptions(options *types.Options) error {
 	if options.MaxDepth <= 0 && options.CrawlDuration <= 0 {
 		return errorutil.New("either max-depth or crawl-duration must be specified")
-	}
-	if len(options.URLs) == 0 && !fileutil.HasStdin() {
-		return errorutil.New("no inputs specified for crawler")
 	}
 	if (options.HeadlessOptionalArguments != nil || options.HeadlessNoSandbox || options.SystemChromePath != "") && !options.Headless {
 		return errorutil.New("headless mode (-hl) is required if -ho, -nos or -scp are set")
@@ -74,7 +71,7 @@ func readCustomFormConfig(options *types.Options) error {
 // parseInputs parses the inputs returning a slice of URLs
 func (r *Runner) parseInputs() []string {
 	values := make(map[string]struct{})
-	for _, url := range r.options.URLs {
+	for _, url := range r.Options.URLs {
 		value := normalizeInput(url)
 		if _, ok := values[value]; !ok {
 			values[value] = struct{}{}

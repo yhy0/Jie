@@ -2,6 +2,7 @@ package task
 
 import (
 	"fmt"
+	"github.com/remeh/sizedwaitgroup"
 	"github.com/thoas/go-funk"
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
@@ -78,8 +79,13 @@ func Active(target string) {
 
 	wafs := waf.Scan(target, resp.Body)
 
+	t.wg = sizedwaitgroup.New(t.Parallelism)
+	t.limit = make(chan struct{}, t.Parallelism)
+
 	// 爬虫的同时进行指纹识别
 	t.Crawler(wafs)
+
+	t.wg.Wait()
 
 	logging.Logger.Debugln("Fingerprints: ", t.Fingerprints)
 	// 一个网站应该只执行一次 POC 检测, poc 检测放到最后
@@ -91,4 +97,5 @@ func Active(target string) {
 		nuclei.Scan(target, t.Fingerprints)
 	}
 
+	close(t.limit)
 }

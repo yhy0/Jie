@@ -2,7 +2,6 @@ package task
 
 import (
 	"fmt"
-	"github.com/remeh/sizedwaitgroup"
 	"github.com/thoas/go-funk"
 	"github.com/yhy0/Jie/crawler"
 	"github.com/yhy0/Jie/crawler/katana/pkg/output"
@@ -34,9 +33,6 @@ type res struct {
 
 // Crawler 运行 Katana 爬虫
 func (t *Task) Crawler(waf []string) {
-	t.wg = sizedwaitgroup.New(t.Parallelism)
-	t.limit = make(chan struct{}, t.Parallelism)
-
 	fingerprints := make([]string, 0)
 
 	single := make(map[string][]res)
@@ -172,13 +168,7 @@ func (t *Task) Crawler(waf []string) {
 	}
 
 	task.StartCrawler()
-
-	t.wg.Wait()
-
-	close(t.limit)
-
 	t.Fingerprints = funk.UniqString(fingerprints)
-
 }
 
 // StoreFields stores fields for a result into individual files

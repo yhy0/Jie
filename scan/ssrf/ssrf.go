@@ -71,10 +71,13 @@ func ssrf(in *input.CrawlResult, payloads []string, dnslog *reverse.Dig) bool {
 		}
 
 		isVul := false
+		var desc = ""
 		if in.IsSensorServerEnabled {
 			isVul = reverse.PullLogs(dnslog)
+			desc = dnslog.Key + " key: " + dnslog.Token
 		} else {
 			isVul = funk.Contains(res.Body, "www.baidu.com/img/sug_bd.png")
+			desc = "www.baidu.com/img/sug_bd.png"
 		}
 
 		if isVul {
@@ -82,14 +85,15 @@ func ssrf(in *input.CrawlResult, payloads []string, dnslog *reverse.Dig) bool {
 				DataType: "web_vul",
 				Plugin:   "SSRF",
 				VulnData: output.VulnData{
-					CreateTime: time.Now().Format("2006-01-02 15:04:05"),
-					Target:     in.Url,
-					Method:     in.Method,
-					Ip:         in.Ip,
-					Param:      in.Kv,
-					Request:    res.RequestDump,
-					Response:   res.ResponseDump,
-					Payload:    payload,
+					CreateTime:  time.Now().Format("2006-01-02 15:04:05"),
+					Target:      in.Url,
+					Method:      in.Method,
+					Ip:          in.Ip,
+					Param:       in.Kv,
+					Request:     res.RequestDump,
+					Response:    res.ResponseDump,
+					Payload:     payload,
+					Description: desc,
 				},
 				Level: output.Critical,
 			}

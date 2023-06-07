@@ -91,7 +91,7 @@ func startTesting(in *input.CrawlResult) (*httpx.Response, string, bool) {
 					}
 
 					if reverse.PullLogs(dnslog) {
-						return res, originpayload, true
+						return res, originpayload + " key: " + dnslog.Token, true
 					}
 				}
 			}

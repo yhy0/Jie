@@ -44,6 +44,7 @@ func Scan(target, method, body string) {
 				Target:     target,
 				Ip:         "",
 				Response:   dig.Msg,
+				Payload:    dig.Key + "  " + dig.Token,
 			},
 			Level: JieOutput.Critical,
 		}

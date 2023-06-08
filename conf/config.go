@@ -16,6 +16,7 @@ type Config struct {
 	WebScan WebScan `json:"web_scan"`
 	Passive string  `json:"passive"`
 	Reverse Reverse `json:"reverse"`
+	Debug   bool    `json:"debug"`
 }
 
 type WebScan struct {

@@ -37,7 +37,10 @@ var Katana *Runner
 
 // NewKatana 初始化 katana 爬虫，全局只初始化一次，共用一个，不然创建多次，时间长了，目标多了，小水管受不了
 func NewKatana(show bool) {
-	gologger.DefaultLogger.SetMaxLevel(levels.LevelSilent)
+	if !conf.GlobalConfig.Debug {
+		gologger.DefaultLogger.SetMaxLevel(levels.LevelSilent)
+	}
+
 	options := &types.Options{
 		MaxDepth:                  10,                              // 最大页面深度限制
 		ScrapeJSResponses:         true,                            // 启用 JavaScript 文件解析 + 抓取在 JavaScript 文件中发现的端点的选项
@@ -74,8 +77,8 @@ func NewKatana(show bool) {
 		OutputFile:      "",                                                             // 输出文件
 		JSON:            false,                                                          // 输出为 json 格式
 		NoColors:        false,                                                          // 禁用颜色
-		Silent:          true,                                                           // 禁用输出
-		Verbose:         false,                                                          // 显示详细信息
+		Silent:          !conf.GlobalConfig.Debug,                                       // 禁用输出
+		Verbose:         conf.GlobalConfig.Debug,                                        // 显示详细信息
 		Version:         false,                                                          // 显示版本信息
 	}
 

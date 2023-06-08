@@ -187,6 +187,7 @@ func run(c *cli.Context) error {
 	conf.GlobalConfig.WebScan.Poc = Poc.Value()
 	conf.GlobalConfig.Reverse.Host = host
 	conf.GlobalConfig.Reverse.Host = domain
+	conf.GlobalConfig.Debug = false
 
 	// 初始化 session ,todo 后续优化一下，不同网站共用一个不知道会不会出问题，应该不会
 	httpx.NewSession()

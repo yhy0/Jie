@@ -38,6 +38,7 @@ func main() {
 	conf.GlobalConfig.WebScan.Poc = nil
 	conf.GlobalConfig.Reverse.Host = ""
 	conf.GlobalConfig.Reverse.Domain = ""
+	conf.GlobalConfig.Debug = false
 
 	// 初始化 session
 	httpx.NewSession()

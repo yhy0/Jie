@@ -12,6 +12,8 @@ import (
 	"github.com/yhy0/Jie/scan/ssrf"
 	"github.com/yhy0/Jie/scan/xss"
 	"github.com/yhy0/Jie/scan/xxe"
+	"github.com/yhy0/logging"
+	"runtime"
 )
 
 /**
@@ -33,6 +35,17 @@ type Task struct {
 
 // Distribution 对爬虫结果或者被动发现结果进行任务分发
 func (t *Task) Distribution(crawlResult *input.CrawlResult) {
+	// todo 怎么写，才能没有 panic ，现在已知 Must** 字样的都有可能导致
+	defer func() {
+		if err := recover(); err != nil {
+			logging.Logger.Errorln("Distribution recover from:", err)
+			debugStack := make([]byte, 1024)
+			runtime.Stack(debugStack, false)
+			logging.Logger.Errorf("Stack Trace:%v", string(debugStack))
+
+		}
+	}()
+
 	if crawlResult != nil {
 		if crawlResult.Headers == nil {
 			crawlResult.Headers = make(map[string]string)

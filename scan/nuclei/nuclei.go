@@ -46,8 +46,9 @@ func Scan(target string, fingerprints []string) {
 
 	// 扫描结果获取
 	outputWriter := testutils.NewMockOutputWriter()
+
 	outputWriter.WriteCallback = func(event *output.ResultEvent) {
-		JieOutput.OutChannel <- JieOutput.VulMessage{
+		out := JieOutput.VulMessage{
 			DataType: "web_vul",
 			Plugin:   "POC",
 			VulnData: JieOutput.VulnData{
@@ -63,6 +64,12 @@ func Scan(target string, fingerprints []string) {
 			},
 			Level: util.FirstToUpper(event.Info.SeverityHolder.Severity.String()),
 		}
+		// 这样写，防止阻塞
+		select {
+		case JieOutput.OutChannel <- out:
+		default:
+		}
+
 	}
 
 	nuclei(target, templates, tags, outputWriter)

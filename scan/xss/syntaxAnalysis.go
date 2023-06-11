@@ -21,6 +21,9 @@ import (
 	//TODO 使用无头浏览器进一步发送 payload 进行 弹窗 确认 漏洞存在
 **/
 
+// filter 过滤一些参数不进行处理 https://github.com/yhy0/Jie/issues/4 TODO 待增加
+var filter = []string{"submit", "reset", "button", "image", "search", "hidden", "csrf_token", "auth_token", "session_id", "nonce", "timestamp"}
+
 func Audit(in *input.CrawlResult) {
 	// katanna 爬虫中已经解析过参数了，这里应该没必要再次解析了？等把爬虫中的参数传过来就没必要了，现在爬虫不会传参数(现在传的只是从 url?xx 获取的)
 	params := ast.GetParamsFromHtml(&in.Resp.Body, in.Target)
@@ -33,7 +36,10 @@ func Audit(in *input.CrawlResult) {
 	payloads := make(map[string]string)
 
 	for _, param := range params {
-		value := util.RandString(6)
+		if funk.ContainsString(filter, param) {
+			continue
+		}
+		value := util.RandLetters(6)
 		payloads[param] = value
 		uri += fmt.Sprintf("%s=%s&", param, value)
 	}
@@ -115,7 +121,7 @@ func Audit(in *input.CrawlResult) {
 					}
 				}
 
-				flag := util.RandString(7)
+				flag := util.RandLetters(7)
 
 				// 闭合标签测试
 				payload := fmt.Sprintf("</%s><%s>", util.RandomUpper(item.Details.Value.TagName), flag)
@@ -151,7 +157,7 @@ func Audit(in *input.CrawlResult) {
 			} else if item.Type == "attibute" {
 				if item.Details.Value.Content == "key" {
 					// test html
-					flag := util.RandString(7)
+					flag := util.RandLetters(7)
 					payload := fmt.Sprintf("><%s ", flag)
 					truepayload := "><svg onload=alert`1`>"
 
@@ -181,7 +187,7 @@ func Audit(in *input.CrawlResult) {
 					}
 
 					// test attibutes
-					flag = util.RandString(5)
+					flag = util.RandLetters(5)
 					payload = flag + "="
 					resp, tpayload = request(payload, index, xssUrl, in, variations)
 
@@ -213,7 +219,7 @@ func Audit(in *input.CrawlResult) {
 
 				} else {
 					// test attibutes
-					flag := util.RandString(5)
+					flag := util.RandLetters(5)
 					for _, _payload := range []string{"'", "\"", " "} {
 						payload := _payload + flag + "=" + _payload
 						truepayload := fmt.Sprintf("%s onmouseover=prompt(1)%s", _payload, _payload)
@@ -249,7 +255,7 @@ func Audit(in *input.CrawlResult) {
 					}
 
 					// test html
-					flag = util.RandString(7)
+					flag = util.RandLetters(7)
 					for _, _payload := range []string{"'><%s>", "\"><%s>", "><%s>"} {
 						payload := fmt.Sprintf(_payload, flag)
 						resp, tpayload := request(payload, index, xssUrl, in, variations)
@@ -286,7 +292,7 @@ func Audit(in *input.CrawlResult) {
 					keyname := item.Details.Value.Attributes[0].Key
 
 					if funk.Contains(specialAttributes, keyname) {
-						flag = util.RandString(7)
+						flag = util.RandLetters(7)
 						resp, tpayload := request(flag, index, xssUrl, in, variations)
 
 						if resp != nil {
@@ -347,7 +353,7 @@ func Audit(in *input.CrawlResult) {
 						}
 					} else if funk.Contains(conf.XssEvalAttitudes, strings.ToLower(keyname)) {
 						// 在任何可执行的属性中
-						payload := util.RandString(6)
+						payload := util.RandLetters(6)
 						resp, tpayload := request(payload, index, xssUrl, in, variations)
 						if resp != nil {
 							_locations := ast.SearchInputInResponse(payload, resp.Body)
@@ -375,7 +381,7 @@ func Audit(in *input.CrawlResult) {
 				}
 
 			} else if item.Type == "comment" {
-				flag := util.RandString(7)
+				flag := util.RandLetters(7)
 
 				for _, _payload := range []string{"-->", "--!>"} {
 					payload := fmt.Sprintf("%s<%s>", _payload, flag)
@@ -408,7 +414,7 @@ func Audit(in *input.CrawlResult) {
 
 			} else if item.Type == "script" {
 				// test html
-				flag := util.RandString(7)
+				flag := util.RandLetters(7)
 				script_tag := util.RandomUpper(item.Details.Value.TagName)
 
 				payload := fmt.Sprintf("</%s><%s>%s</%s>", script_tag, script_tag, flag, script_tag)
@@ -444,7 +450,7 @@ func Audit(in *input.CrawlResult) {
 
 				for _, _item := range _locations {
 					if _item.Type == "InlineComment" {
-						flag = util.RandString(5)
+						flag = util.RandLetters(5)
 						payload = fmt.Sprintf("\n;%s;//", flag)
 						truepayload = fmt.Sprintf("\n;%s;//", "prompt(1)")
 						resp, tpayload = request(payload, index, xssUrl, in, variations)
@@ -527,7 +533,7 @@ func Audit(in *input.CrawlResult) {
 						}
 					} else if _item.Type == "ScriptLiteral" {
 						quote := string(_item.Details.Value.Content[0])
-						flag = util.RandString(6)
+						flag = util.RandLetters(6)
 						if quote == "'" || quote == "\"" {
 							payload = fmt.Sprintf("%s-%s-%s", quote, flag, quote)
 							truepayload = fmt.Sprintf("%s-%s-%s", quote, "prompt(1)", quote)

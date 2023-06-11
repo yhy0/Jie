@@ -85,7 +85,7 @@ func (sql *Sqlmap) HeuristicCheckSqlInjection() {
 			logging.Logger.Debugf(sql.Url + " 参数: " + p.Name + " 未检测到转型,尝试注入检测")
 
 			// 这里也和 sqlmap 一样 顺手检测一下xss、fi 漏洞
-			randStr1, randStr2 := util.RandString(6), util.RandString(6)
+			randStr1, randStr2 := util.RandLetters(6), util.RandLetters(6)
 			value := fmt.Sprintf("%s%s%s", randStr1, DummyNonSqliCheckAppendix, randStr2)
 
 			payload = sql.Variations.SetPayloadByIndex(p.Index, sql.Url, fmt.Sprintf("%s'%s", p.Value, value), sql.Method)

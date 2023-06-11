@@ -212,48 +212,44 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 			path = strings.ReplaceAll(path, "{sub}", t.Hostname())
 		}
 
-		ch <- struct{}{}
 		wg.Add(1)
+		ch <- struct{}{}
 		go func(path string, rule Rule) {
 			defer wg.Done()
+			defer func() { <-ch }()
+			<-time.After(time.Duration(100) * time.Millisecond)
 			if target, res, err := ReqPage(u + path); err == nil && res != nil {
 				if util.In(res.Body, conf.WafContent) {
 					logging.Logger.Infoln(22)
 					technologies = append(technologies, "Waf") // 存在 waf
-					<-ch
 					return
 				}
 
 				contentType := res.Header.Get("Content-Type")
 				// 返回是个图片
 				if util.Contains(contentType, "image/") {
-					<-ch
 					return
 				}
 
 				if strings.HasSuffix(path, ".xml") {
 					if !util.Contains(contentType, "xml") {
-						<-ch
 						return
 					}
 				} else if strings.HasSuffix(path, ".json") {
 					if !util.Contains(contentType, "json") {
-						<-ch
 						return
 					}
 				}
 
 				// 文件内容为空丢弃
 				if res.ContentLength == 0 {
-					<-ch
 					return
 				}
 
-				//// 返回包是个下载文件，但文件内容为空丢弃
-				//if res.Header.Get("Content-Type") == "application/octet-stream" && res.ContentLength == 0 {
-				//	<-ch
-				//	return
-				//}
+				// 返回包是个下载文件，但文件内容为空丢弃
+				if res.Header.Get("Content-Type") == "application/octet-stream" && res.ContentLength == 0 {
+					return
+				}
 
 				if target.is403 && (util.In(target.title, conf.Page403title) || util.In(res.Body, conf.Page403Content)) && !skip403 {
 					technologies = addFingerprints403(path, technologies) // 基于403页面文件扫描指纹添加
@@ -261,17 +257,14 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 
 				// 规则匹配
 				if (rule.Type != "" && !util.Contains(contentType, rule.Type)) || (rule.TypeNo != "" && util.Contains(contentType, rule.TypeNo)) {
-					<-ch
 					return
 				}
 
 				if rule.Status != "" && strconv.Itoa(res.StatusCode) != rule.Status {
-					<-ch
 					return
 				}
 
 				if rule.Tag != "" && !util.Contains(res.Body, rule.Tag) {
-					<-ch
 					return
 				}
 
@@ -354,7 +347,6 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 					//	}
 					//	similar = int(strsim.Compare(strings.ReplaceAll(v, u.Path, ""), strings.ReplaceAll(res.Body, path, ""))*100) >= 80
 					//	if similar { // 相似去除
-					//		<-ch
 					//		return
 					//	}
 					//}
@@ -388,16 +380,10 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 						}
 					}
 				}
-
 			}
-
-			<-time.After(time.Duration(500) * time.Millisecond)
-			<-ch
 		}(path, rule)
 	}
 
 	wg.Wait()
-	close(ch)
-
 	return technologies
 }

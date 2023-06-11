@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"github.com/corpix/uarand"
+	"github.com/projectdiscovery/fastdialer/fastdialer"
 	"github.com/thoas/go-funk"
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/logging"
@@ -48,13 +49,39 @@ type Session struct {
 
 var session *Session
 
+// DefaultResolvers contains the default list of resolvers known to be good
+var DefaultResolvers = []string{
+	"1.1.1.1",         // Cloudflare
+	"1.0.0.1",         // Cloudlfare secondary
+	"8.8.8.8",         // Google
+	"8.8.4.4",         // Google secondary
+	"223.5.5.5",       // AliDNS
+	"223.6.6.6",       // AliDNS
+	"119.29.29.29",    // DNSPod
+	"114.114.114.114", // 114DNS
+	"114.114.115.115", // 114DNS
+}
+
 func NewSession(rateLimit ...int) {
+	fastdialerOpts := fastdialer.DefaultOptions
+	fastdialerOpts.EnableFallback = true
+	fastdialerOpts.WithDialerHistory = true
+
+	fastdialerOpts.BaseResolvers = DefaultResolvers
+
+	dialer, err := fastdialer.NewDialer(fastdialerOpts)
+	if err != nil {
+		logging.Logger.Fatalf("could not create resolver cache: %s", err)
+	}
+
 	Transport := &http.Transport{
-		MaxIdleConns:        100,
-		MaxIdleConnsPerHost: 100,
+		DialContext:         dialer.Dial,
+		DialTLSContext:      dialer.DialTLS,
+		MaxIdleConnsPerHost: -1,
 		DisableKeepAlives:   true,
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
+			MinVersion:         tls.VersionTLS10,
 		},
 	}
 	// Add proxy
@@ -69,7 +96,7 @@ func NewSession(rateLimit ...int) {
 
 	client := &http.Client{
 		Transport: Transport,
-		Timeout:   time.Duration(5) * time.Second,
+		Timeout:   5 * time.Second,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
@@ -121,12 +148,12 @@ func RequestBasic(username string, password string, target string, method string
 		//防止空指针
 		return &Response{"999", 999, "", "", "", nil, 0, "", "", 0}, err
 	}
+	defer resp.Body.Close()
 
 	dump, _ := httputil.DumpResponse(resp, false)
 
 	var location string
 	var respbody string
-	defer resp.Body.Close()
 	if body, err := ioutil.ReadAll(resp.Body); err == nil {
 		respbody = string(body)
 	}
@@ -181,6 +208,7 @@ func Request(target string, method string, postdata string, isredirect bool, hea
 		//防止空指针
 		return &Response{"999", 999, "", "", "", nil, 0, "", "", 0}, err
 	}
+	defer resp.Body.Close()
 
 	//TODOs 换成其他请求方法重试
 	if funk.Contains(resp.Status, "Method Not Allowed") {
@@ -197,7 +225,6 @@ func Request(target string, method string, postdata string, isredirect bool, hea
 
 	var location string
 	var respbody string
-	defer resp.Body.Close()
 	if body, err := ioutil.ReadAll(resp.Body); err == nil {
 		respbody = string(body)
 	}

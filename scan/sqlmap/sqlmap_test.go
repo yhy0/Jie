@@ -21,7 +21,7 @@ import (
 **/
 
 func TestSqlmap(t *testing.T) {
-	logging.New(true, "")
+	logging.New(true, "", "")
 	conf.GlobalConfig = &conf.Config{}
 	conf.GlobalConfig.WebScan.Proxy = "http://127.0.0.1:8080"
 	httpx.NewSession()

@@ -131,15 +131,20 @@ func (parser *Parser) HttpParser(body *string) bool {
 		case html.ErrorToken:
 			goto processing
 		case html.TextToken:
-			//logger.Debug("html.TextToken:%s", string(z.Raw()))
-			// parser.tokenizer.Max()
 			if field, ok := Tree.Max(); ok {
-				field.Value.Content = util.BytesToString(z.Text())
+				// 使用 += 进行拼接，而不是 = 赋值,
+				// 防止这种 <div id="guestbook_comments">Name: ycPOCq<br />Message: rnSCKL<br /></div> 情况，这种Message: rnSCKL 会把Name: ycPOCq 覆盖
+				field.Value.Content += util.BytesToString(z.Text())
 			}
 		case html.StartTagToken:
 			//logger.Debug("html.StartTagToken:%s", string(z.Raw()))
 			Attributes := make([]*Attribute, 0)
 			array, _ := z.TagName()
+			cx := util.BytesToString(array)
+			if cx == "br" {
+				continue
+			}
+
 			for {
 				key, val, moreAttr := z.TagAttr()
 				if moreAttr {
@@ -160,13 +165,7 @@ func (parser *Parser) HttpParser(body *string) bool {
 					break
 				}
 			}
-			cx := util.BytesToString(array)
 
-			// if cx == "br" {
-			// 	logger.Debug(" html.StartTagToken 发现br标签,忽略")
-			// } else {
-
-			// }
 			Tree.Insert(i, cx, &parser.emptystr, &Attributes)
 			//Tree.Set(&Node{Idx: i, Tagname: cx, Content: "", Attributes: Attributes})
 
@@ -203,6 +202,12 @@ func (parser *Parser) HttpParser(body *string) bool {
 			//logger.Debug("html.SelfClosingTagToken:%s", string(z.Raw()))
 			Attributes := make([]*Attribute, 0)
 			array, _ := z.TagName()
+
+			cx := util.BytesToString(array)
+			if cx == "br" {
+				continue
+			}
+
 			for {
 				key, val, moreAttr := z.TagAttr()
 				if moreAttr {
@@ -222,10 +227,8 @@ func (parser *Parser) HttpParser(body *string) bool {
 					break
 				}
 			}
-			cx := util.BytesToString(array)
-			// emptystr := ""
-			Tree.Insert(i, cx, &parser.emptystr, &Attributes)
 
+			Tree.Insert(i, cx, &parser.emptystr, &Attributes)
 			name, _ := z.TagName()
 			for {
 				if field, ok := Tree.Max(); ok {
@@ -244,6 +247,7 @@ func (parser *Parser) HttpParser(body *string) bool {
 					break
 				}
 			}
+			//}
 
 		case html.CommentToken:
 			Attributes := make([]*Attribute, 0)

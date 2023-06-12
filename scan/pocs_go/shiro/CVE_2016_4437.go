@@ -8,7 +8,7 @@ import (
 	_ "embed"
 	"encoding/base64"
 	"fmt"
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/logging"
 	"io"
@@ -43,7 +43,7 @@ func padding(plainText []byte, blockSize int) []byte {
 func aES_CBC_Encrypt(key []byte, Content []byte) string {
 	block, _ := aes.NewCipher(key)
 	Content = padding(Content, block.BlockSize())
-	iv := uuid.NewV4().Bytes()
+	iv, _ := uuid.New().MarshalBinary()
 	blockMode := cipher.NewCBCEncrypter(block, iv)
 	cipherText := make([]byte, len(Content))
 	blockMode.CryptBlocks(cipherText, Content)

@@ -3,6 +3,7 @@ package ast
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/tdewolff/parse/v2"
 	"github.com/yhy0/Jie/pkg/util"
 	"github.com/yhy0/logging"
 
@@ -12,7 +13,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/tdewolff/parse/v2"
 	"github.com/tdewolff/parse/v2/js"
 	"github.com/thoas/go-funk"
 	"golang.org/x/net/html"
@@ -345,7 +345,7 @@ func SearchInputInResponse(input string, body string) []Occurence {
 							Position: Index,
 							Details:  detail})
 				} else if funk.Contains(attibute.Val, input) {
-					detail := Node{Value: NodeValue{TagName: tagname, Content: "key", Attributes: []*Attribute{{Key: attibute.Key, Val: attibute.Val}}}}
+					detail := Node{Value: NodeValue{TagName: tagname, Content: "val", Attributes: []*Attribute{{Key: attibute.Key, Val: attibute.Val}}}}
 					Occurences = append(
 						Occurences,
 						Occurence{

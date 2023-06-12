@@ -1,6 +1,7 @@
 package bbscan
 
 import (
+	"fmt"
 	"github.com/antlabs/strsim"
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/pkg/output"
@@ -107,14 +108,19 @@ func init() {
 		}
 	}
 
-	// TODO 暂时去除纯字典的形式，只采用 bbscan 的规则
-	//for _, path := range util.CvtLines(filedic) {
-	//	if _, ok := rules[path]; ok {
-	//		continue
-	//	}
-	//	rules[path] = Rule{}
-	//}
+	// 字典先作为一个补充, 后续看情况再整理成 bbscan 规则
+	for _, path := range util.CvtLines(filedic) {
+		if _, ok := rules[path]; ok {
+			continue
+		}
+		rules[path] = Rule{
+			Status: "200",
+		}
+	}
+}
 
+func Test() {
+	fmt.Println("---")
 }
 
 func getTitle(body string) string {

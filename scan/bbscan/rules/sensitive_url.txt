@@ -58,3 +58,8 @@
 
 # brpc
 /connections  {status=200}  {type="text/html"} {tag="server_connection_count"}
+
+# env
+/assets/env.js        {status=200}      {type="application/javascript"}     {tag="env"}
+/assets/.env          {status=200}                                          {tag="env"}
+/static/.env          {status=200}                                          {tag="env"}

@@ -60,6 +60,7 @@ func (c *Crawler) navigateRequest(s *common.CrawlSession, request *navigation.Re
 		return nil, errorutil.NewWithTag("hybrid", "could not create target").Wrap(err)
 	}
 	defer page.Close()
+	c.addHeadersToPage(page)
 
 	// todo yhy 绕过无头浏览器检测 https://bot.sannysoft.com
 	_, err = page.EvalOnNewDocument(headless.StealthJS)
@@ -154,6 +155,13 @@ func (c *Crawler) navigateRequest(s *common.CrawlSession, request *navigation.Re
 			statucCodeText = http.StatusText(statusCode)
 		}
 		httpreq, _ := http.NewRequest(e.Request.Method, URL.String(), strings.NewReader(e.Request.PostData))
+		// Note: headers are originally sent using `c.addHeadersToPage` below changes are done so that
+		// headers are reflected in request dump
+		if httpreq != nil {
+			for k, v := range c.Headers {
+				httpreq.Header.Set(k, v)
+			}
+		}
 		httpresp := &http.Response{
 			Proto:         "HTTP/1.1",
 			ProtoMajor:    1,
@@ -251,10 +259,9 @@ func (c *Crawler) navigateRequest(s *common.CrawlSession, request *navigation.Re
 	}
 
 	if response.Resp == nil {
-		response.Resp = &http.Response{Header: make(http.Header), Request: &http.Request{URL: parsed.URL}}
-	} else {
-		response.Resp.Request.URL = parsed.URL
+		return nil, errorutil.NewWithTag("hybrid", "response is nil").Wrap(err)
 	}
+	response.Resp.Request.URL = parsed.URL
 
 	// Create a copy of intrapolated shadow DOM elements and parse them separately
 	responseCopy := *response
@@ -273,6 +280,21 @@ func (c *Crawler) navigateRequest(s *common.CrawlSession, request *navigation.Re
 		return nil, errorutil.NewWithTag("hybrid", "could not parse html").Wrap(err)
 	}
 	return response, nil
+}
+
+func (c *Crawler) addHeadersToPage(page *rod.Page) {
+	if len(c.Headers) == 0 {
+		return
+	}
+	var arr []string
+	for k, v := range c.Headers {
+		arr = append(arr, k, v)
+	}
+	// ignore cleanup callback
+	_, err := page.SetExtraHeaders(arr)
+	if err != nil {
+		gologger.Error().Msgf("headless: could not set extra headers: %v", err)
+	}
 }
 
 // traverseDOMNode performs traversal of node completely building a pseudo-HTML

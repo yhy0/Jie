@@ -109,7 +109,7 @@ func queryEnum(u, quote string) bool {
 	for _, pp := range ppp {
 		full_url := u + quote + pp
 		// 首先根据 payload 检测 js 是否输出 reserved
-		res := runPage(full_url, `() => window.ppmap`)
+		res := runPage(full_url, `() => {window.ppmap}`)
 		if res == "" {
 			continue
 		}

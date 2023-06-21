@@ -55,11 +55,16 @@ func (c *Crawler) navigateRequest(s *common.CrawlSession, request *navigation.Re
 		RootHostname: s.Hostname,
 	}
 
+	// 这里好像发生了阻塞, 将 timeout 提前尝试解决
 	page, err := s.Browser.Page(proto.TargetCreateTarget{})
 	if err != nil {
 		return nil, errorutil.NewWithTag("hybrid", "could not create target").Wrap(err)
 	}
 	defer page.Close()
+
+	timeout := time.Duration(c.Options.Options.Timeout) * time.Second
+	page = page.Timeout(timeout)
+
 	c.addHeadersToPage(page)
 
 	// todo yhy 绕过无头浏览器检测 https://bot.sannysoft.com
@@ -215,8 +220,8 @@ func (c *Crawler) navigateRequest(s *common.CrawlSession, request *navigation.Re
 		}
 	}()
 
-	timeout := time.Duration(c.Options.Options.Timeout) * time.Second
-	page = page.Timeout(timeout)
+	//timeout := time.Duration(c.Options.Options.Timeout) * time.Second
+	//page = page.Timeout(timeout)
 
 	// todo 这里改一下 使用 PageLifecycleEventNameLoad ，而不是 PageLifecycleEventNameFirstMeaningfulPaint
 	// 为什么？因为 当 使用 PageLifecycleEventNameFirstMeaningfulPaint 时，有些情况下比如空白页面，啥也没有，这种就会导致该页面发生超时错误,并且无法获取当前页面的 body 等信息，发生 panic

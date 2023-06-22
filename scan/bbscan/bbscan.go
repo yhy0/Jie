@@ -41,7 +41,7 @@ type Rule struct {
 	Root   bool   // 是否为一级目录
 }
 
-var rules map[string]Rule
+var Rules map[string]*Rule
 
 type Page struct {
 	isBackUpPath bool
@@ -57,7 +57,7 @@ var (
 )
 
 func init() {
-	rules = make(map[string]Rule)
+	Rules = make(map[string]*Rule)
 	RegTag, _ = regexp.Compile(`{tag="(.*?)"}`)
 	RegStatus, _ = regexp.Compile(`{status=(\d{3})}`)
 	RegContentType, _ = regexp.Compile(`{type="(.*?)"}`)
@@ -104,19 +104,19 @@ func init() {
 				rule.Root = true
 			}
 			path := util.Trim(strings.Split(str, " ")[0])
-			rules[path] = rule
+			Rules[path] = &rule
 		}
 	}
 
-	// 字典先作为一个补充, 后续看情况再整理成 bbscan 规则
-	for _, path := range util.CvtLines(filedic) {
-		if _, ok := rules[path]; ok {
-			continue
-		}
-		rules[path] = Rule{
-			Status: "200",
-		}
-	}
+	//// 字典先作为一个补充, 后续看情况再整理成 bbscan 规则
+	//for _, path := range util.CvtLines(filedic) {
+	//	if _, ok := rules[path]; ok {
+	//		continue
+	//	}
+	//	rules[path] = Rule{
+	//		Status: "200",
+	//	}
+	//}
 }
 
 func Test() {
@@ -167,7 +167,7 @@ func ReqPage(u string) (*Page, *httpx.Response, error) {
 }
 
 // BBscan todo 还应该传进来爬虫找到的 api 目录
-func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, indexbody string) []string {
+func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, indexbody string, custom map[string]*Rule) []string {
 	if strings.HasSuffix(u, "/") {
 		u = u[:len(u)-1]
 	}
@@ -210,6 +210,11 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 	wg := sync.WaitGroup{}
 	ch := make(chan struct{}, 20)
 
+	rules := Rules
+	if custom != nil {
+		rules = custom
+	}
+
 	for path, rule := range rules {
 		var is404Page = false
 
@@ -220,7 +225,7 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 
 		wg.Add(1)
 		ch <- struct{}{}
-		go func(path string, rule Rule) {
+		go func(path string, rule *Rule) {
 			defer wg.Done()
 			defer func() { <-ch }()
 			<-time.After(time.Duration(100) * time.Millisecond)

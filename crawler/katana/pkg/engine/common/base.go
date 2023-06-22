@@ -3,9 +3,11 @@ package common
 import (
 	"bytes"
 	"context"
+	"github.com/yhy0/logging"
 	"io"
 	"net/http"
 	"net/url"
+	"runtime"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -96,6 +98,15 @@ func (s *Shared) ValidateScope(URL string, root string) bool {
 }
 
 func (s *Shared) Output(navigationRequest *navigation.Request, navigationResponse *navigation.Response, err error) {
+	defer func() {
+		if err := recover(); err != nil {
+			logging.Logger.Errorln("Output recover from:", err)
+			debugStack := make([]byte, 1024)
+			runtime.Stack(debugStack, false)
+			logging.Logger.Errorf("Output Stack Trace:%v", string(debugStack))
+
+		}
+	}()
 	var errData string
 	if err != nil {
 		errData = err.Error()

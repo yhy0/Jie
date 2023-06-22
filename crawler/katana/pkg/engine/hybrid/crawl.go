@@ -84,21 +84,9 @@ func (c *Crawler) navigateRequest(s *common.CrawlSession, request *navigation.Re
 	// yhy 创建一个劫持请求, 用于屏蔽某些请求, img、font
 	// 	router := browser.HijackRequests()  // 会更改response返回 包内容(增加的替换的 js )， page.HijackRequests() 还是原样的输出
 	router := page.HijackRequests()
-	defer router.MustStop()
+	defer router.Stop()
 
-	// 劫持 html 和 js ，用于将<script>xxx</script>进行替换
-	router.MustAdd("*", func(ctx *rod.Hijack) {
-		// *.woff2 字体
-		if ctx.Request.Type() == proto.NetworkResourceTypeFont {
-			ctx.Response.Fail(proto.NetworkErrorReasonBlockedByClient)
-			return
-		}
-		// 图片
-		if ctx.Request.Type() == proto.NetworkResourceTypeImage {
-			ctx.Response.Fail(proto.NetworkErrorReasonBlockedByClient)
-			return
-		}
-
+	err = router.Add("*", proto.NetworkResourceTypeDocument, func(ctx *rod.Hijack) {
 		err = ctx.LoadResponse(http.DefaultClient, true)
 		if err != nil {
 			return
@@ -133,7 +121,60 @@ func (c *Crawler) navigateRequest(s *common.CrawlSession, request *navigation.Re
 			}
 		}
 	})
-	go router.Run()
+
+	// 劫持 html 和 js ，用于将<script>xxx</script>进行替换
+	//router.MustAdd("*", func(ctx *rod.Hijack) {
+	//	// *.woff2 字体
+	//	if ctx.Request.Type() == proto.NetworkResourceTypeFont {
+	//		ctx.Response.Fail(proto.NetworkErrorReasonBlockedByClient)
+	//		return
+	//	}
+	//	// 图片
+	//	if ctx.Request.Type() == proto.NetworkResourceTypeImage {
+	//		ctx.Response.Fail(proto.NetworkErrorReasonBlockedByClient)
+	//		return
+	//	}
+	//
+	//	err = ctx.LoadResponse(http.DefaultClient, true)
+	//	if err != nil {
+	//		return
+	//	}
+	//
+	//	// 防止重复
+	//	if _, ok := JieConf.Visited.Load(ctx.Request.URL().String()); ok {
+	//		// URL 已经被替换过了，跳过
+	//		return
+	//	}
+	//	JieConf.Visited.Store(ctx.Request.URL().String(), true)
+	//
+	//	if ctx.Request.Type() == proto.NetworkResourceTypeDocument {
+	//		go sensitive.Detection(ctx.Request.URL().String(), ctx.Response.Body())
+	//		body := []byte(ctx.Response.Body())
+	//		ss := scriptContentRex.FindAllSubmatch(body, -1)
+	//		for i := range ss {
+	//			convedBody, err := dom.HookParse(util.BytesToString(ss[i][1]))
+	//			if err != nil {
+	//				logging.Logger.Errorf("[dom-based] hookconv %v error: %s\n", ctx.Request.URL(), err)
+	//				continue
+	//			}
+	//			body = bytes.Replace(body, ss[i][1], append(ss[i][1], util.StringToBytes("\n"+convedBody)...), 1)
+	//		}
+	//		ctx.Response.SetBody(body)
+	//	} else if ctx.Request.Type() == proto.NetworkResourceTypeScript {
+	//		body := ctx.Response.Body()
+	//		go sensitive.Detection(ctx.Request.URL().String(), body)
+	//		convedBody, err := dom.HookParse(body)
+	//		if err == nil {
+	//			ctx.Response.SetBody(body + "\n" + convedBody)
+	//		}
+	//	}
+	//})
+
+	if err != nil {
+		logging.Logger.Errorln(err)
+	} else {
+		go router.Run()
+	}
 
 	pageRouter := NewHijack(page)
 	pageRouter.SetPattern(&proto.FetchRequestPattern{

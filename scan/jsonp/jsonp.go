@@ -190,6 +190,7 @@ func Scan(in *input.CrawlResult) {
 			},
 			Level: output.Medium,
 		}
+		return
 	}
 	logging.Logger.Debugf("jsonp vulnerability not found")
 }

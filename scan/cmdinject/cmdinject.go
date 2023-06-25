@@ -44,6 +44,7 @@ func Scan(in *input.CrawlResult) {
 			},
 			Level: output.Critical,
 		}
+		return
 	}
 
 	logging.Logger.Debugf("cmd inject vulnerability not found")

@@ -80,6 +80,8 @@ func (h *Hijack) Start(handler HijackHandler) func() error {
 					Level: output.Medium,
 				}
 			}
+		default:
+			return
 		}
 	})
 

@@ -60,7 +60,11 @@ func (c *Crawler) navigateRequest(s *common.CrawlSession, request *navigation.Re
 	if err != nil {
 		return nil, errorutil.NewWithTag("hybrid", "could not create target").Wrap(err)
 	}
-	defer page.Close()
+	defer func() {
+		if page != nil {
+			page.Close()
+		}
+	}()
 
 	timeout := time.Duration(c.Options.Options.Timeout) * time.Second
 	page = page.Timeout(timeout)

@@ -97,5 +97,5 @@ func Active(target string) {
 		nuclei.Scan(target, t.Fingerprints)
 	}
 
-	close(t.limit)
+	//close(t.limit)
 }

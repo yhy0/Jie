@@ -91,6 +91,11 @@ func (c *Crawler) navigateRequest(s *common.CrawlSession, request *navigation.Re
 	defer router.Stop()
 
 	err = router.Add("*", proto.NetworkResourceTypeDocument, func(ctx *rod.Hijack) {
+		// 验证链接是否在属于该目标范围，不是则跳过
+		if !c.ValidateScope(ctx.Request.URL().String(), request.RootHostname) {
+			return
+		}
+
 		err = ctx.LoadResponse(http.DefaultClient, true)
 		if err != nil {
 			return
@@ -126,54 +131,6 @@ func (c *Crawler) navigateRequest(s *common.CrawlSession, request *navigation.Re
 		}
 	})
 
-	// 劫持 html 和 js ，用于将<script>xxx</script>进行替换
-	//router.MustAdd("*", func(ctx *rod.Hijack) {
-	//	// *.woff2 字体
-	//	if ctx.Request.Type() == proto.NetworkResourceTypeFont {
-	//		ctx.Response.Fail(proto.NetworkErrorReasonBlockedByClient)
-	//		return
-	//	}
-	//	// 图片
-	//	if ctx.Request.Type() == proto.NetworkResourceTypeImage {
-	//		ctx.Response.Fail(proto.NetworkErrorReasonBlockedByClient)
-	//		return
-	//	}
-	//
-	//	err = ctx.LoadResponse(http.DefaultClient, true)
-	//	if err != nil {
-	//		return
-	//	}
-	//
-	//	// 防止重复
-	//	if _, ok := JieConf.Visited.Load(ctx.Request.URL().String()); ok {
-	//		// URL 已经被替换过了，跳过
-	//		return
-	//	}
-	//	JieConf.Visited.Store(ctx.Request.URL().String(), true)
-	//
-	//	if ctx.Request.Type() == proto.NetworkResourceTypeDocument {
-	//		go sensitive.Detection(ctx.Request.URL().String(), ctx.Response.Body())
-	//		body := []byte(ctx.Response.Body())
-	//		ss := scriptContentRex.FindAllSubmatch(body, -1)
-	//		for i := range ss {
-	//			convedBody, err := dom.HookParse(util.BytesToString(ss[i][1]))
-	//			if err != nil {
-	//				logging.Logger.Errorf("[dom-based] hookconv %v error: %s\n", ctx.Request.URL(), err)
-	//				continue
-	//			}
-	//			body = bytes.Replace(body, ss[i][1], append(ss[i][1], util.StringToBytes("\n"+convedBody)...), 1)
-	//		}
-	//		ctx.Response.SetBody(body)
-	//	} else if ctx.Request.Type() == proto.NetworkResourceTypeScript {
-	//		body := ctx.Response.Body()
-	//		go sensitive.Detection(ctx.Request.URL().String(), body)
-	//		convedBody, err := dom.HookParse(body)
-	//		if err == nil {
-	//			ctx.Response.SetBody(body + "\n" + convedBody)
-	//		}
-	//	}
-	//})
-
 	if err != nil {
 		logging.Logger.Errorln(err)
 	} else {
@@ -185,80 +142,85 @@ func (c *Crawler) navigateRequest(s *common.CrawlSession, request *navigation.Re
 		URLPattern:   "*",
 		RequestStage: proto.FetchRequestStageResponse,
 	})
-	go pageRouter.Start(func(e *proto.FetchRequestPaused) error {
-		URL, _ := urlutil.Parse(e.Request.URL)
-		body, _ := FetchGetResponseBody(page, e)
-		headers := make(map[string][]string)
-		for _, h := range e.ResponseHeaders {
-			headers[h.Name] = []string{h.Value}
-		}
-		var (
-			statusCode     int
-			statucCodeText string
-		)
-		if e.ResponseStatusCode != nil {
-			statusCode = *e.ResponseStatusCode
-		}
-		if e.ResponseStatusText != "" {
-			statucCodeText = e.ResponseStatusText
-		} else {
-			statucCodeText = http.StatusText(statusCode)
-		}
-		httpreq, _ := http.NewRequest(e.Request.Method, URL.String(), strings.NewReader(e.Request.PostData))
-		// Note: headers are originally sent using `c.addHeadersToPage` below changes are done so that
-		// headers are reflected in request dump
-		if httpreq != nil {
-			for k, v := range c.Headers {
-				httpreq.Header.Set(k, v)
+	go func() {
+		err := pageRouter.Start(func(e *proto.FetchRequestPaused) error {
+			URL, _ := urlutil.Parse(e.Request.URL)
+			body, _ := FetchGetResponseBody(page, e)
+			headers := make(map[string][]string)
+			for _, h := range e.ResponseHeaders {
+				headers[h.Name] = []string{h.Value}
 			}
-		}
-		httpresp := &http.Response{
-			Proto:         "HTTP/1.1",
-			ProtoMajor:    1,
-			ProtoMinor:    1,
-			StatusCode:    statusCode,
-			Status:        statucCodeText,
-			Header:        headers,
-			Body:          io.NopCloser(bytes.NewReader(body)),
-			Request:       httpreq,
-			ContentLength: int64(len(body)),
-		}
+			var (
+				statusCode     int
+				statucCodeText string
+			)
+			if e.ResponseStatusCode != nil {
 
-		var rawBytesRequest, rawBytesResponse []byte
-		if r, err := retryablehttp.FromRequest(httpreq); err == nil {
-			rawBytesRequest, _ = r.Dump()
-		} else {
-			rawBytesRequest, _ = httputil.DumpRequestOut(httpreq, true)
-		}
-		rawBytesResponse, _ = httputil.DumpResponse(httpresp, true)
+				statusCode = *e.ResponseStatusCode
+			}
+			if e.ResponseStatusText != "" {
+				statucCodeText = e.ResponseStatusText
+			} else {
+				statucCodeText = http.StatusText(statusCode)
+			}
+			httpreq, _ := http.NewRequest(e.Request.Method, URL.String(), strings.NewReader(e.Request.PostData))
+			// Note: headers are originally sent using `c.addHeadersToPage` below changes are done so that
+			// headers are reflected in request dump
+			if httpreq != nil {
+				for k, v := range c.Headers {
+					httpreq.Header.Set(k, v)
+				}
+			}
+			httpresp := &http.Response{
+				Proto:         "HTTP/1.1",
+				ProtoMajor:    1,
+				ProtoMinor:    1,
+				StatusCode:    statusCode,
+				Status:        statucCodeText,
+				Header:        headers,
+				Body:          io.NopCloser(bytes.NewReader(body)),
+				Request:       httpreq,
+				ContentLength: int64(len(body)),
+			}
 
-		bodyReader, _ := goquery.NewDocumentFromReader(bytes.NewReader(body))
-		technologies := c.Options.Wappalyzer.Fingerprint(headers, body)
-		resp := &navigation.Response{
-			Resp:         httpresp,
-			Body:         string(body),
-			Reader:       bodyReader,
-			Depth:        depth,
-			RootHostname: s.Hostname,
-			Technologies: mapsutil.GetKeys(technologies),
-			StatusCode:   statusCode,
-			Headers:      utils.FlattenHeaders(headers),
-			Raw:          string(rawBytesResponse),
-		}
+			var rawBytesRequest, rawBytesResponse []byte
+			if r, err := retryablehttp.FromRequest(httpreq); err == nil {
+				rawBytesRequest, _ = r.Dump()
+			} else {
+				rawBytesRequest, _ = httputil.DumpRequestOut(httpreq, true)
+			}
+			rawBytesResponse, _ = httputil.DumpResponse(httpresp, true)
 
-		// trim trailing /
-		normalizedheadlessURL := strings.TrimSuffix(e.Request.URL, "/")
-		matchOriginalURL := stringsutil.EqualFoldAny(request.URL, e.Request.URL, normalizedheadlessURL)
-		if matchOriginalURL {
-			request.Raw = string(rawBytesRequest)
-			response = resp
-		}
+			bodyReader, _ := goquery.NewDocumentFromReader(bytes.NewReader(body))
+			technologies := c.Options.Wappalyzer.Fingerprint(headers, body)
+			resp := &navigation.Response{
+				Resp:         httpresp,
+				Body:         string(body),
+				Reader:       bodyReader,
+				Depth:        depth,
+				RootHostname: s.Hostname,
+				Technologies: mapsutil.GetKeys(technologies),
+				StatusCode:   statusCode,
+				Headers:      utils.FlattenHeaders(headers),
+				Raw:          string(rawBytesResponse),
+			}
 
-		// process the raw response
-		navigationRequests := parser.ParseResponse(resp)
-		c.Enqueue(s.Queue, navigationRequests...)
-		return FetchContinueRequest(page, e)
-	})() //nolint
+			// trim trailing /
+			normalizedheadlessURL := strings.TrimSuffix(e.Request.URL, "/")
+			matchOriginalURL := stringsutil.EqualFoldAny(request.URL, e.Request.URL, normalizedheadlessURL)
+			if matchOriginalURL {
+				request.Raw = string(rawBytesRequest)
+				response = resp
+			}
+
+			// process the raw response
+			navigationRequests := parser.ParseResponse(resp)
+			c.Enqueue(s.Queue, navigationRequests...)
+			return FetchContinueRequest(page, e)
+		})()
+		if err != nil {
+		}
+	}() //nolint
 	defer func() {
 		if err := pageRouter.Stop(); err != nil {
 			gologger.Warning().Msgf("%s\n", err)

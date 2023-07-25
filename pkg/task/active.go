@@ -58,8 +58,7 @@ func Active(target string) {
 	}
 
 	if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "BBSCAN") {
-		// 先单独进行 bbscan 进行敏感目录扫描，不使用协程
-		technologies = bbscan.BBscan(target, "", resp.StatusCode, resp.ContentLength, resp.Body, nil)
+		go bbscan.BBscan(target, "", nil)
 	}
 
 	//todo 目前只进行目标的 header 探测，后期和爬虫结合

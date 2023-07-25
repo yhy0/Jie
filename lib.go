@@ -34,7 +34,9 @@ func main() {
 	conf.GlobalConfig = &conf.Config{}
 
 	conf.GlobalConfig.WebScan.Proxy = ""
-	conf.GlobalConfig.WebScan.Plugins = []string{"XSS", "SQL", "CMD", "XXE", "SSRF", "POC", "BRUTE", "JSONP", "CRLF", "BBSCAN"}
+	//conf.GlobalConfig.WebScan.Plugins = []string{"XSS", "SQL", "CMD", "XXE", "SSRF", "POC", "BRUTE", "JSONP", "CRLF", "BBSCAN"}
+	conf.GlobalConfig.WebScan.Plugins = []string{"XSS"}
+
 	conf.GlobalConfig.WebScan.Poc = nil
 	conf.GlobalConfig.Reverse.Host = ""
 	conf.GlobalConfig.Reverse.Domain = ""
@@ -54,8 +56,8 @@ func main() {
 		task.Passive()
 	} else {
 		// show 是否显示无头浏览器界面
-		crawler.NewKatana(false)
-		task.Active("http://testphp.vulnweb.com/")
+		crawler.NewKatana(true)
+		task.Active("http://xss.tesla-space.com/")
 	}
 
 	cc := make(chan os.Signal)

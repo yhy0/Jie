@@ -54,7 +54,7 @@ func PullLogs(dig *Dig) bool {
 		return false
 	}
 
-	if !funk.Contains(resp.Body, "null") {
+	if funk.Contains(resp.Body, dig.Key) {
 		dig.Msg = resp.Body
 		return true
 	}

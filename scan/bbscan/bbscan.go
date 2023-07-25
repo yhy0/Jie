@@ -1,7 +1,6 @@
 package bbscan
 
 import (
-	"fmt"
 	"github.com/antlabs/strsim"
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/pkg/output"
@@ -107,20 +106,6 @@ func init() {
 			Rules[path] = &rule
 		}
 	}
-
-	//// 字典先作为一个补充, 后续看情况再整理成 bbscan 规则
-	//for _, path := range util.CvtLines(filedic) {
-	//	if _, ok := rules[path]; ok {
-	//		continue
-	//	}
-	//	rules[path] = Rule{
-	//		Status: "200",
-	//	}
-	//}
-}
-
-func Test() {
-	fmt.Println("---")
 }
 
 func getTitle(body string) string {
@@ -132,79 +117,16 @@ func getTitle(body string) string {
 	return ""
 }
 
-func ReqPage(u string) (*Page, *httpx.Response, error) {
-	page := &Page{}
-	var backUpSuffixList = []string{".tar", ".tar.gz", ".zip", ".rar", ".7z", ".bz2", ".gz", ".war"}
-	var method = "GET"
-
-	for _, ext := range backUpSuffixList {
-		if strings.HasSuffix(u, ext) {
-			page.isBackUpPath = true
-			method = "HEAD"
-		}
-	}
-
-	if res, err := httpx.Request(u, method, "", false, conf.DefaultHeader); err == nil {
-		if util.IntInSlice(res.StatusCode, []int{301, 302, 307, 308}) {
-			page.is302 = true
-		}
-		page.title = getTitle(res.Body)
-		page.locationUrl = res.Location
-		regs := []string{"text/plain", "application/.*download", "application/.*file", "application/.*zip", "application/.*rar", "application/.*tar", "application/.*down", "application/.*compressed", "application/stream"}
-		for _, reg := range regs {
-			matched, _ := regexp.Match(reg, []byte(res.Header.Get("Content-Type")))
-			if matched {
-				page.isBackUpPage = true
-			}
-		}
-		if (res.StatusCode == 403 && strings.HasSuffix(u, "/")) || util.In(res.Body, conf.Page403Content) {
-			page.is403 = true
-		}
-		return page, res, err
-	} else {
-		return page, nil, err
-	}
-}
-
 // BBscan todo 还应该传进来爬虫找到的 api 目录
-func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, indexbody string, custom map[string]*Rule) []string {
+func BBscan(u string, ip string, custom map[string]*Rule) {
 	if strings.HasSuffix(u, "/") {
 		u = u[:len(u)-1]
 	}
 
-	var (
-		payloadlocation404   []string
-		payload200Title      []string
-		payload200Contentlen []int
-		skip403              = false
-		skip302              = false
-		other200Contentlen   []int
-		other200Title        []string
-		technologies         []string
-		url404               *Page
-		url404res            *httpx.Response
-		err                  error
-	)
+	res404, err := httpx.Request(u+path404, "GET", "", false, conf.DefaultHeader)
 
-	other200Contentlen = append(other200Contentlen, indexContentLength)
-	other200Title = append(other200Title, getTitle(indexbody))
-	if url404, url404res, err = ReqPage(u + path404); err == nil {
-		if url404res.StatusCode == 404 {
-			technologies = addFingerprints404(technologies, url404res) //基于404页面文件扫描指纹添加
-		}
-		if url404.is302 {
-			conf.Location404 = append(conf.Location404, url404.locationUrl)
-		}
-		if url404.is302 && strings.HasSuffix(url404.locationUrl, "/file_not_support/") {
-			skip302 = true
-		}
-		if url404.is403 || indexStatusCode == 403 {
-			skip403 = true
-		}
-		if url404res.StatusCode == 200 {
-			other200Title = append(other200Title, url404.title)
-			other200Contentlen = append(other200Contentlen, url404res.ContentLength)
-		}
+	if err != nil {
+		return
 	}
 
 	wg := sync.WaitGroup{}
@@ -216,8 +138,6 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 	}
 
 	for path, rule := range rules {
-		var is404Page = false
-
 		if util.Contains(path, "{sub}") {
 			t, _ := url.Parse(u)
 			path = strings.ReplaceAll(path, "{sub}", t.Hostname())
@@ -225,176 +145,81 @@ func BBscan(u string, ip string, indexStatusCode int, indexContentLength int, in
 
 		wg.Add(1)
 		ch <- struct{}{}
-		go func(path string, rule *Rule) {
+		go func(uri string, rule *Rule) {
 			defer wg.Done()
 			defer func() { <-ch }()
-			<-time.After(time.Duration(100) * time.Millisecond)
-			if target, res, err := ReqPage(u + path); err == nil && res != nil {
-				if util.In(res.Body, conf.WafContent) {
-					logging.Logger.Infoln(22)
-					technologies = append(technologies, "Waf") // 存在 waf
-					return
-				}
+			res, err := httpx.Request(u+uri, "GET", "", false, conf.DefaultHeader)
 
-				contentType := res.Header.Get("Content-Type")
-				// 返回是个图片
-				if util.Contains(contentType, "image/") {
-					return
-				}
+			if err != nil {
+				return
+			}
 
-				if strings.HasSuffix(path, ".xml") {
-					if !util.Contains(contentType, "xml") {
-						return
-					}
-				} else if strings.HasSuffix(path, ".json") {
-					if !util.Contains(contentType, "json") {
-						return
-					}
-				}
+			if util.In(res.Body, conf.WafContent) {
+				return
+			}
 
-				// 文件内容为空丢弃
-				if res.ContentLength == 0 {
-					return
-				}
+			contentType := res.Header.Get("Content-Type")
+			// 返回是个图片
+			if util.Contains(contentType, "image/") {
+				return
+			}
 
-				// 返回包是个下载文件，但文件内容为空丢弃
-				if res.Header.Get("Content-Type") == "application/octet-stream" && res.ContentLength == 0 {
-					return
-				}
+			// 返回包是个下载文件，但文件内容为空丢弃
+			if res.Header.Get("Content-Type") == "application/octet-stream" && res.ContentLength == 0 {
+				return
+			}
 
-				if target.is403 && (util.In(target.title, conf.Page403title) || util.In(res.Body, conf.Page403Content)) && !skip403 {
-					technologies = addFingerprints403(path, technologies) // 基于403页面文件扫描指纹添加
-				}
+			title := getTitle(res.Body)
 
-				// 规则匹配
-				if (rule.Type != "" && !util.Contains(contentType, rule.Type)) || (rule.TypeNo != "" && util.Contains(contentType, rule.TypeNo)) {
-					return
-				}
+			if res.StatusCode == 404 || res.StatusCode == 403 || util.In(title, conf.Page403title) || util.In(title, conf.Page404Title) || util.In(res.Body, conf.Page404Content) || util.In(res.Body, conf.Page403Content) {
+				return
+			}
 
-				if rule.Status != "" && strconv.Itoa(res.StatusCode) != rule.Status {
-					return
-				}
+			// 比较与 page_404_test_api 页面返回值的相似度
+			similar := true
+			if len(res.Body) != 0 && res404 != nil && len(res404.Body) != 0 {
+				similar = strsim.Compare(strings.ReplaceAll(res404.Body, path404, ""), strings.ReplaceAll(res.Body, uri, "")) <= 0.9
+			}
 
-				if rule.Tag != "" && !util.Contains(res.Body, rule.Tag) {
-					return
-				}
+			// 不相似才会往下执行
+			if !similar {
+				return
+			}
 
-				if target.isBackUpPath {
-					if !target.isBackUpPage {
-						is404Page = true
-					}
-				}
-				if util.In(target.title, conf.Page404Title) {
-					is404Page = true
-				}
-				if util.In(res.Body, conf.Page404Content) {
-					is404Page = true
-				}
-				if strings.Contains(res.RequestUrl, "/.") && res.StatusCode == 200 {
-					if res.ContentLength == 0 {
-						is404Page = true
-					}
-				}
-				if target.is302 {
-					if skip302 {
-						is404Page = true
-					}
-					if util.In(res.Location, conf.Location404) && util.In(res.Location, payloadlocation404) {
-						is404Page = true
-					}
-					if !strings.HasSuffix(res.Location, path+"/") {
-						conf.Location404 = append(payloadlocation404, res.Location)
-						is404Page = true
-					}
-				}
+			// 规则匹配
+			if (rule.Type != "" && !util.Contains(contentType, rule.Type)) || (rule.TypeNo != "" && util.Contains(contentType, rule.TypeNo)) {
+				return
+			}
 
-				if !is404Page {
-					for _, title := range other200Title {
-						if len(target.title) > 2 && target.title == title {
-							is404Page = true
-						}
-					}
-					for _, title := range payload200Title {
-						if len(target.title) > 2 && target.title == title {
-							is404Page = true
-						}
-					}
-					for _, l := range other200Contentlen {
-						reqlenabs := res.ContentLength - l
-						if reqlenabs < 0 {
-							reqlenabs = -reqlenabs
-						}
-						if reqlenabs <= 5 {
-							is404Page = true
-						}
-					}
-					for _, l := range payload200Contentlen {
-						reqlenabs := res.ContentLength - l
-						if reqlenabs < 0 {
-							reqlenabs = -reqlenabs
-						}
-						if reqlenabs <= 5 {
-							is404Page = true
-						}
-					}
-					payload200Title = append(payload200Title, target.title)
-					payload200Contentlen = append(payload200Contentlen, res.ContentLength)
+			if rule.Status != "" && strconv.Itoa(res.StatusCode) != rule.Status {
+				return
+			}
 
-					// 规则匹配完后，再次比较与 file_not_support 页面返回值的相似度
-					similar := true
-					if len(res.Body) != 0 && url404res != nil && len(url404res.Body) != 0 {
-						similar = strsim.Compare(strings.ReplaceAll(url404res.Body, "/file_not_support", ""), strings.ReplaceAll(res.Body, path, "")) <= 0.9 // 不相似才会往下执行
-					}
+			if rule.Tag != "" && !util.Contains(res.Body, rule.Tag) {
+				return
+			}
 
-					// 与之前成功的对比，相似代表有误报或者是认证拦着了，只需要记下一个就行
-					//for k, v := range resAll {
-					//	u, err := url.Parse(k)
-					//	if err != nil {
-					//		continue
-					//	}
-					//
-					//	if u.Path == path { // 只对比 path 不一样的
-					//		continue
-					//	}
-					//	similar = int(strsim.Compare(strings.ReplaceAll(v, u.Path, ""), strings.ReplaceAll(res.Body, path, ""))*100) >= 80
-					//	if similar { // 相似去除
-					//		return
-					//	}
-					//}
+			// swagger 自动化测试
+			if strings.Contains(uri, "swagger") {
+				go swagger.Scan(u+uri, ip)
+			}
 
-					if similar && res.StatusCode != 404 && res.StatusCode != 403 && res.StatusCode != 301 && res.StatusCode != 302 && res.StatusCode != 304 && !target.is403 {
-						//
-						//if len(res.Body) != 0 {
-						//	other200Content = append(other200Content, res.Body)
-						//}
-
-						// swagger 自动化测试
-						if strings.Contains(path, "swagger") {
-							swagger.Scan(u+path, ip)
-						}
-
-						technologies = addFingerprintsnormal(path, technologies, res) // 基于200页面文件扫描指纹添加
-
-						output.OutChannel <- output.VulMessage{
-							DataType: "web_vul",
-							Plugin:   "BBscan",
-							VulnData: output.VulnData{
-								CreateTime: time.Now().Format("2006-01-02 15:04:05"),
-								Target:     u,
-								Ip:         ip,
-								Payload:    u + path,
-								Method:     "GET",
-								Request:    res.RequestDump,
-								Response:   res.Body,
-							},
-							Level: output.Low,
-						}
-					}
-				}
+			output.OutChannel <- output.VulMessage{
+				DataType: "web_vul",
+				Plugin:   "BBscan",
+				VulnData: output.VulnData{
+					CreateTime: time.Now().Format("2006-01-02 15:04:05"),
+					Target:     u,
+					Ip:         ip,
+					Payload:    u + uri,
+					Method:     "GET",
+					Request:    res.RequestDump,
+					Response:   res.Body,
+				},
+				Level: output.Low,
 			}
 		}(path, rule)
 	}
 
 	wg.Wait()
-	return technologies
 }

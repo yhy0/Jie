@@ -92,7 +92,7 @@ func (c *Crawler) navigateRequest(s *common.CrawlSession, request *navigation.Re
 
 	err = router.Add("*", proto.NetworkResourceTypeDocument, func(ctx *rod.Hijack) {
 		// 验证链接是否在属于该目标范围，不是则跳过
-		if !c.ValidateScope(ctx.Request.URL().String(), request.RootHostname) {
+		if !c.ValidateScope(ctx.Request.URL().String(), s.Hostname) {
 			return
 		}
 

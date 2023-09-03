@@ -1,4 +1,8 @@
 name: 🎉 Build Binary
+
+permissions:
+  contents: write
+
 on:
   create:
     tags:

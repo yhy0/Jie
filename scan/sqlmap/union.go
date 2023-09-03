@@ -47,7 +47,7 @@ func (sql *Sqlmap) guessColumnNum(pos int, closeType string) int {
 
 	condition_1, defaultRatio, _ = sql.orderByTest(1, pos, closeType, defaultRatio)
 
-	condition_2, defaultRatio, _ = sql.orderByTest(util.RandNumber(9999, 999999), pos, closeType, defaultRatio)
+	condition_2, defaultRatio, _ = sql.orderByTest(util.RandomNumber(9999, 999999), pos, closeType, defaultRatio)
 
 	if condition_1 && !condition_2 {
 		for !found {
@@ -127,7 +127,7 @@ func (sql *Sqlmap) bruteColumnNum(pos int, closeType string) int {
 		return -1
 	}
 
-	randStr := `"` + util.RandLetters(5) + `"` + ","
+	randStr := `"` + util.RandomLetters(5) + `"` + ","
 
 	ratios := make(map[int]float64, 0)
 
@@ -212,7 +212,7 @@ func (sql *Sqlmap) bruteColumnNum(pos int, closeType string) int {
 			}
 		}
 
-		md5Randstr := util.RandLetters(5)
+		md5Randstr := util.RandomLetters(5)
 		for index, param := range sql.Variations.Params {
 			if index == pos {
 

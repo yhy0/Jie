@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/buger/jsonparser"
-	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
@@ -477,7 +476,7 @@ func scan(method, target, bodyParams string, header map[string]string, ip string
 		}
 
 		// 可能是未授权, 然后对 200 的进行ssrf、注入测试
-		if req.StatusCode == 200 && !util.In(req.Body, conf.Page403Content) && !util.In(req.Body, conf.Page403Content) {
+		if req.StatusCode == 200 && !util.IsBlackHtml(req.Body) {
 			logging.Logger.Infof("Possibly unauthorized access: GET %s", target)
 
 			in := &input.CrawlResult{
@@ -554,7 +553,7 @@ func scan(method, target, bodyParams string, header map[string]string, ip string
 			return
 		}
 
-		if req.StatusCode == 200 && !util.In(req.Body, conf.Page403Content) && !util.In(req.Body, conf.Page403Content) { // 可能是未授权
+		if req.StatusCode == 200 && !util.IsBlackHtml(req.Body) { // 可能是未授权
 			payload := fmt.Sprintf("%s %s %s", method, target, bodyParams)
 			logging.Logger.Infof("Possibly unauthorized access: %s", payload)
 

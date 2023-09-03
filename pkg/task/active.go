@@ -24,10 +24,10 @@ import (
 **/
 
 // Active 主动扫描 调用爬虫扫描, 只会输入一个域名
-func Active(target string) {
+func Active(target string) []string {
 	if target == "" {
 		logging.Logger.Errorln("target must be set")
-		return
+		return nil
 	}
 
 	// 判断是否以 http https 开头
@@ -45,7 +45,7 @@ func Active(target string) {
 	resp, err := httpx.Request(target, "GET", "", false, nil)
 	if err != nil {
 		logging.Logger.Errorln("End: ", err)
-		return
+		return nil
 	}
 
 	var technologies []string
@@ -55,10 +55,6 @@ func Active(target string) {
 
 	for k, _ := range fingerprints {
 		technologies = append(technologies, k)
-	}
-
-	if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "BBSCAN") {
-		go bbscan.BBscan(target, "", nil)
 	}
 
 	//todo 目前只进行目标的 header 探测，后期和爬虫结合
@@ -82,11 +78,17 @@ func Active(target string) {
 	t.limit = make(chan struct{}, t.Parallelism)
 
 	// 爬虫的同时进行指纹识别
-	t.Crawler(wafs)
+	subdomains, dirs := t.Crawler(wafs)
 
 	t.wg.Wait()
 
 	logging.Logger.Debugln("Fingerprints: ", t.Fingerprints)
+
+	if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "BBSCAN") {
+		// 先单独进行 bbscan 进行敏感目录扫描，不使用协程
+		technologies = bbscan.BBscan(target, "", nil, dirs)
+	}
+
 	// 一个网站应该只执行一次 POC 检测, poc 检测放到最后
 	if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "POC") {
 		t.Fingerprints = funk.UniqString(append(t.Fingerprints, technologies...))
@@ -96,5 +98,6 @@ func Active(target string) {
 		nuclei.Scan(target, t.Fingerprints)
 	}
 
-	//close(t.limit)
+	close(t.limit)
+	return subdomains
 }

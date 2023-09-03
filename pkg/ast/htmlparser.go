@@ -1,8 +1,6 @@
 package ast
 
 import (
-	"github.com/thoas/go-funk"
-	"github.com/yhy0/Jie/conf"
 	"golang.org/x/net/html"
 	"strings"
 )
@@ -58,7 +56,7 @@ func GetParamsFromHtml(htmlStr *string, t string) []string {
 		}
 	}
 
-	return funk.UniqString(append(result, conf.TopRiskGetParams...))
+	return result
 }
 
 func getAttr(z *html.Tokenizer, attrName string) string {

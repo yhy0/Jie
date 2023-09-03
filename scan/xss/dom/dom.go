@@ -13,7 +13,7 @@ import (
   @author: yhy
   @since: 2023/3/14
   @desc: https://github1s.com/s0md3v/XSStrike/blob/HEAD/core/dom.py
-	// 这种不行，没有链路追踪，误报太多
+	// 这种不行，先弃用 没有链路追踪，误报太多
 **/
 
 func Dom(u, response string) {
@@ -68,7 +68,7 @@ func Dom(u, response string) {
 				matches := regexp.MustCompile(`\b`+controlledVariable+`\b`).FindAllStringIndex(line, -1)
 				if len(matches) > 0 {
 					sourceFound = true
-					line = regexp.MustCompile(`\b`+controlledVariable+`\b`).ReplaceAllString(line, "*"+controlledVariable+"*")
+					line = regexp.MustCompile(`\b`+controlledVariable+`\b`).ReplaceAllString(line, "**"+controlledVariable+"**")
 				}
 			}
 
@@ -98,7 +98,7 @@ func Dom(u, response string) {
 			VulnData: output.VulnData{
 				CreateTime: time.Now().Format("2006-01-02 15:04:05"),
 				Target:     u,
-				VulnType:   "Dom XSS",
+				VulnType:   "Dom1 XSS",
 				Payload:    strings.Join(highlighted, "\t"),
 			},
 			Level: output.Medium,

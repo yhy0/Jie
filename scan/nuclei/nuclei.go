@@ -119,7 +119,7 @@ func nuclei(target string, templates []string, tags []string, outputWriter *test
 		UpdateTemplates:            true, // 更新模板
 	}
 
-	if conf.GlobalConfig.WebScan.Proxy != "" {
+	if conf.GlobalConfig.Options.Proxy != "" {
 		defaultOpts.Proxy = []string{}
 		// 只在 option 中指定代理并不行, nuclei 会对 proxy 代理进行处理，最终使用的是 types.ProxyURL 或 types.ProxySocksURL, 这里直接将原方法执行一遍
 		if err := loadProxyServers(defaultOpts); err != nil {

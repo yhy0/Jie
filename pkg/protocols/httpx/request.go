@@ -17,6 +17,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -85,8 +86,8 @@ func NewSession(rateLimit ...int) {
 		},
 	}
 	// Add proxy
-	if conf.GlobalConfig.WebScan.Proxy != "" {
-		proxyURL, _ := url.Parse(conf.GlobalConfig.WebScan.Proxy)
+	if conf.GlobalConfig.Options.Proxy != "" {
+		proxyURL, _ := url.Parse(conf.GlobalConfig.Options.Proxy)
 		if isSupportedProtocol(proxyURL.Scheme) {
 			Transport.Proxy = http.ProxyURL(proxyURL)
 		} else {
@@ -167,6 +168,10 @@ func RequestBasic(username string, password string, target string, method string
 	return &Response{resp.Status, resp.StatusCode, respbody, string(requestDump), responseDump, resp.Header, int(resp.ContentLength), resp.Request.URL.String(), location, 0}, nil
 }
 
+func Get(target string) (*Response, error) {
+	return Request(target, "GET", "", false, nil)
+}
+
 func Request(target string, method string, postdata string, isredirect bool, headers map[string]string) (*Response, error) {
 	if isredirect {
 		jar, _ := cookiejar.New(nil)
@@ -234,7 +239,14 @@ func Request(target string, method string, postdata string, isredirect bool, hea
 		location = resplocation.String()
 	}
 
-	return &Response{resp.Status, resp.StatusCode, respbody, string(requestDump), string(responseDump), resp.Header, int(resp.ContentLength), resp.Request.URL.String(), location, float64(time.Since(start).Milliseconds())}, nil
+	if resp.StatusCode == 200 {
+		// 检查一下是否为 js 控制的跳转
+		if checkJSRedirect(respbody) {
+			resp.StatusCode = 302
+		}
+	}
+
+	return &Response{resp.Status, resp.StatusCode, respbody, string(requestDump), responseDump, resp.Header, int(resp.ContentLength), resp.Request.URL.String(), location, float64(time.Since(start).Milliseconds())}, nil
 }
 
 // UploadRequest 新建上传请求
@@ -294,4 +306,25 @@ func UploadRequest(target string, params map[string]string, name, path string) (
 	}
 
 	return &Response{resp.Status, resp.StatusCode, respbody, string(requestDump), responseDump, resp.Header, int(resp.ContentLength), resp.Request.URL.String(), location, 0}, nil
+}
+
+func checkJSRedirect(htmlStr string) bool {
+	redirectPatterns := []string{
+		`window\.location\.href\s*=\s*['"][^'"]+['"]`,
+		`window\.location\.assign\(['"][^'"]+['"]\)`,
+		`window\.location\.replace\(['"][^'"]+['"]\)`,
+		`window\.history\.(?:back|forward|go)\(`,
+		`(?:setTimeout|setInterval)\([^,]+,\s*\d+\)`,
+		`(?:onclick|onmouseover)\s*=\s*['"][^'"]+['"]`,
+		`addEventListener\([^,]+,\s*function`,
+		`(?ms)<a id="a-link"></a>\s*<script>\s*localStorage\.x5referer.*?document\.getElementById`,
+	}
+
+	for _, pattern := range redirectPatterns {
+		re := regexp.MustCompile(pattern)
+		if re.MatchString(htmlStr) {
+			return true
+		}
+	}
+	return false
 }

@@ -2,17 +2,12 @@ package main
 
 import (
 	"github.com/logrusorgru/aurora"
-	"github.com/thoas/go-funk"
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/crawler"
 	"github.com/yhy0/Jie/pkg/output"
-	"github.com/yhy0/Jie/pkg/protocols/headless"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/task"
 	"github.com/yhy0/logging"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 /**
@@ -22,8 +17,7 @@ import (
 **/
 
 func main() {
-
-	logging.New(true, "", "Jie")
+	logging.New(true, "", "Jie", true)
 	// 获取扫描结果
 	go func() {
 		for v := range output.OutChannel {
@@ -33,10 +27,9 @@ func main() {
 
 	conf.GlobalConfig = &conf.Config{}
 
-	conf.GlobalConfig.WebScan.Proxy = ""
+	conf.GlobalConfig.Options.Proxy = ""
 	//conf.GlobalConfig.WebScan.Plugins = []string{"XSS", "SQL", "CMD", "XXE", "SSRF", "POC", "BRUTE", "JSONP", "CRLF", "BBSCAN"}
-	conf.GlobalConfig.WebScan.Plugins = []string{"XSS"}
-
+	conf.GlobalConfig.WebScan.Plugins = []string{}
 	conf.GlobalConfig.WebScan.Poc = nil
 	conf.GlobalConfig.Reverse.Host = ""
 	conf.GlobalConfig.Reverse.Domain = ""
@@ -45,38 +38,14 @@ func main() {
 	// 初始化 session
 	httpx.NewSession()
 
-	// 初始化 rod
-	if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "XSS") {
-		headless.Rod()
-	}
-
 	Listen := ""
 	if Listen != "" {
 		// 被动扫描
 		task.Passive()
 	} else {
-		// show 是否显示无头浏览器界面
-		crawler.NewKatana(true)
-		task.Active("http://xss.tesla-space.com/")
-	}
-
-	cc := make(chan os.Signal)
-	// 监听信号
-	signal.Notify(cc, syscall.SIGINT)
-	go func() {
-		for s := range cc {
-			switch s {
-			case syscall.SIGINT:
-				if headless.RodHeadless != nil {
-					headless.RodHeadless.Close()
-				}
-			default:
-			}
-		}
-	}()
-
-	if headless.RodHeadless != nil {
-		headless.RodHeadless.Close()
+		// 初始化爬虫
+		crawler.NewCrawlergo(true)
+		task.Active("https://public-firing-range.appspot.com/dom/toxicdom/localStorage/function/eval")
 	}
 
 }

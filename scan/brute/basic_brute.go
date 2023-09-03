@@ -1,14 +1,18 @@
 package brute
 
-import "github.com/yhy0/Jie/pkg/protocols/httpx"
+import (
+	"github.com/yhy0/Jie/pkg/protocols/httpx"
+	"github.com/yhy0/logging"
+)
 
-func Basic_brute(url string) (username string, password string, body string) {
+func BasicBrute(url string) (username string, password string, body string) {
 	var basicusers = []string{"admin", "root"}
-	if req, err := httpx.RequestBasic("asdasdascsacacs", "adcadcadcadcadcadc", url, "HEAD", "", false, nil); err == nil {
+	if req, err := httpx.RequestBasic("asdasdascsacacs", "adcadcadcadcadcadc", url, "GET", "", false, nil); err == nil {
+		logging.Logger.Debugf("[%v] [asdasdascsacacs:adcadcadcadcadcadc] %v", req.StatusCode, url)
 		if req.StatusCode == 401 {
 			for useri := range basicusers {
 				for passi := range top100pass {
-					if req2, err2 := httpx.RequestBasic(basicusers[useri], top100pass[passi], url, "HEAD", "", false, nil); err2 == nil {
+					if req2, err2 := httpx.RequestBasic(basicusers[useri], top100pass[passi], url, "GET", "", false, nil); err2 == nil {
 						// 403 Forbidden 是HTTP协议中的一个HTTP状态码（Status Code）。403状态码意为服务器成功解析请求但是客户端没有访问该资源的权限
 						// 理论上可能存在： https://zhuanlan.zhihu.com/p/270297661
 						// 1、成功爆破后，页面跳转（3XX），
@@ -20,15 +24,18 @@ func Basic_brute(url string) (username string, password string, body string) {
 						// 407 Proxy Authentication Required（需要代理身份验证）
 						// 408 Request Timeout（请求超时）410 Gone（不存在） 409 Conflict（冲突）
 						// 400 Bad Request（错误请求）
-
+						logging.Logger.Debugf("[%v] [%v:%v] %v", req.StatusCode, basicusers[useri], top100pass[passi], url)
 						if req2.StatusCode != 403 && req2.StatusCode != 401 && req2.StatusCode != 400 && req2.StatusCode != 408 && req2.StatusCode < 405 {
-							//pkg.LogJson(rst.Result{PluginName: pkg.GetPluginName("Basic_brute"), StatusCode: req2.StatusCode, URL: url, Technologies: []string{fmt.Sprintf("Found vuln basic password|%s:%s|%s", basicusers[useri], top100pass[passi], url)}})
 							return basicusers[useri], top100pass[passi], req.Body
 						}
 					}
 				}
 			}
+		} else {
+			logging.Logger.Errorln(err)
 		}
+	} else {
+		logging.Logger.Errorln(err)
 	}
 	return "", "", ""
 }

@@ -21,8 +21,8 @@ func init() {
 	rand.Seed(time.Now().Unix())
 }
 
-// RandFromChoices 从choices里面随机获取
-func RandFromChoices(n int, choices string) string {
+// RandomFromChoices 从choices里面随机获取
+func RandomFromChoices(n int, choices string) string {
 	b := make([]byte, n)
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	// A rand.Int63() generates 63 random bits, enough for letterIdxMax characters!
@@ -41,30 +41,30 @@ func RandFromChoices(n int, choices string) string {
 	return string(b)
 }
 
-// RandNumber 随机数字
-func RandNumber(n int, m int) int {
+// RandomNumber 随机数字
+func RandomNumber(n int, m int) int {
 	rand.Intn(m)
 	return rand.Intn(m-n) + n
 }
 
-// RandLetters 随机小写字母
-func RandLetters(n int) string {
-	return RandFromChoices(n, letterBytes)
+// RandomLetters 随机小写字母
+func RandomLetters(n int) string {
+	return RandomFromChoices(n, letterBytes)
 }
 
-// RandLetterNumbers 随机大小写字母和数字
-func RandLetterNumbers(n int) string {
-	return RandFromChoices(n, letterNumberBytes)
+// RandomLetterNumbers 随机大小写字母和数字
+func RandomLetterNumbers(n int) string {
+	return RandomFromChoices(n, letterNumberBytes)
 }
 
-// RandString 随机大小写字母
-func RandString(n int) string {
-	return RandFromChoices(n, letterBytesBytes)
+// RandomString 随机大小写字母
+func RandomString(n int) string {
+	return RandomFromChoices(n, letterBytesBytes)
 }
 
-// RandLowLetterNumber 随机小写字母和数字
-func RandLowLetterNumber(n int) string {
-	return RandFromChoices(n, lowletterNumberBytes)
+// RandomLowLetterNumber 随机小写字母和数字
+func RandomLowLetterNumber(n int) string {
+	return RandomFromChoices(n, lowletterNumberBytes)
 }
 
 func RandomUpper(s string) string {

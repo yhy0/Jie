@@ -11,7 +11,7 @@ import (
   @desc: //TODO
 **/
 
-var OutChannel = make(chan VulMessage, 100)
+var OutChannel = make(chan VulMessage)
 
 // 漏洞等级
 var (

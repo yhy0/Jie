@@ -3,7 +3,6 @@ package xss
 import (
 	"fmt"
 	"github.com/thoas/go-funk"
-	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/pkg/ast"
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/output"
@@ -18,20 +17,29 @@ import (
   @author: yhy
   @since: 2023/3/14
   @desc: 语法分析	https://github.com/w-digital-scanner/w13scan/blob/HEAD/W13SCAN/scanners/PerFile/xss.py
-	//TODO 使用无头浏览器进一步发送 payload 进行 弹窗 确认 漏洞存在
 **/
 
 // filter 过滤一些参数不进行处理 https://github.com/yhy0/Jie/issues/4 TODO 待增加
-var filter = []string{"submit", "reset", "button", "image", "search", "hidden", "csrf_token", "auth_token", "session_id", "nonce", "timestamp"}
+var filter = []string{"submit", "reset", "button", "image", "hidden", "csrf_token"}
+
+// 默认检查的参数 https://github.com/s0md3v/XSStrike/blob/f29278760453996c713af908376d6dab24e61692/core/config.py#L84C1-L91C68
+var blindParams = []string{"callback", "p", "redirect", "redir", "url", "link", "goto", "debug", "_debug", "test", "get", "index", "src", "source", "file", "frame", "config", "new", "old", "var", "rurl", "return_to", "_return", "returl", "last", "text", "load", "email", "mail", "user", "username", "password", "pass", "passwd", "first_name", "last_name", "back", "href", "ref", "data", "input", "out", "net", "host", "address", "code", "auth", "userid", "auth_token", "token", "error", "keyword", "key", "q", "query", "aid", "bid", "cid", "did", "eid", "fid", "gid", "hid", "iid", "jid", "kid", "lid", "mid", "nid", "oid", "pid", "qid", "rid", "sid", "tid", "uid", "vid", "wid", "xid", "yid", "zid", "cal", "country", "x", "y", "topic", "title", "head", "higher", "lower", "width", "height", "add", "result", "log", "demo", "example", "message"}
+
+// xssEvalAttitudes xxs 可执行的属性
+var xssEvalAttitudes = []string{"onbeforeonload", "onsubmit", "ondragdrop", "oncommand", "onbeforeeditfocus", "onkeypress", "onoverflow", "ontimeupdate", "onreset", "ondragstart", "onpagehide", "onunhandledrejection", "oncopy", "onwaiting", "onselectstart", "onplay", "onpageshow", "ontoggle", "oncontextmenu", "oncanplay", "onbeforepaste", "ongesturestart", "onafterupdate", "onsearch", "onseeking", "onanimationiteration", "onbroadcast", "oncellchange", "onoffline", "ondraggesture", "onbeforeprint", "onactivate", "onbeforedeactivate", "onhelp", "ondrop", "onrowenter", "onpointercancel", "onabort", "onmouseup", "onbeforeupdate", "onchange", "ondatasetcomplete", "onanimationend", "onpointerdown", "onlostpointercapture", "onanimationcancel", "onreadystatechange", "ontouchleave", "onloadstart", "ondrag", "ontransitioncancel", "ondragleave", "onbeforecut", "onpopuphiding", "onprogress", "ongotpointercapture", "onfocusout", "ontouchend", "onresize", "ononline", "onclick", "ondataavailable", "onformchange", "onredo", "ondragend", "onfocusin", "onundo", "onrowexit", "onstalled", "oninput", "onmousewheel", "onforminput", "onselect", "onpointerleave", "onstop", "ontouchenter", "onsuspend", "onoverflowchanged", "onunload", "onmouseleave", "onanimationstart", "onstorage", "onpopstate", "onmouseout", "ontransitionrun", "onauxclick", "onpointerenter", "onkeydown", "onseeked", "onemptied", "onpointerup", "onpaste", "ongestureend", "oninvalid", "ondragenter", "onfinish", "oncut", "onhashchange", "ontouchcancel", "onbeforeactivate", "onafterprint", "oncanplaythrough", "onhaschange", "onscroll", "onended", "onloadedmetadata", "ontouchmove", "onmouseover", "onbeforeunload", "onloadend", "ondragover", "onkeyup", "onmessage", "onpopuphidden", "onbeforecopy", "onclose", "onvolumechange", "onpropertychange", "ondblclick", "onmousedown", "onrowinserted", "onpopupshowing", "oncommandupdate", "onerrorupdate", "onpopupshown", "ondurationchange", "onbounce", "onerror", "onend", "onblur", "onfilterchange", "onload", "onstart", "onunderflow", "ondragexit", "ontransitionend", "ondeactivate", "ontouchstart", "onpointerout", "onpointermove", "onwheel", "onpointerover", "onloadeddata", "onpause", "onrepeat", "onmouseenter", "ondatasetchanged", "onbegin", "onmousemove", "onratechange", "ongesturechange", "onlosecapture", "onplaying", "onfocus", "onrowsdelete"}
 
 func Audit(in *input.CrawlResult) {
-	// katanna 爬虫中已经解析过参数了，这里应该没必要再次解析了？等把爬虫中的参数传过来就没必要了，现在爬虫不会传参数(现在传的只是从 url?xx 获取的)
-	params := ast.GetParamsFromHtml(&in.Resp.Body, in.Target)
+	// 限制 xss 的content-type, 不是网页的不检查
+	if funk.Contains("html", strings.ToLower(in.Resp.Header.Get("Content-Type"))) {
+		return
+	}
 
-	logging.Logger.Debugln(in.Url, params)
+	// katanna 爬虫中已经解析过参数了，这里应该没必要再次解析了？等把爬虫中的参数传过来就没必要了，现在爬虫不会传参数(现在传的只是从 url?xx 获取的)
+	params := ast.GetParamsFromHtml(&in.Resp.Body, in.Url)
+
 	// html 解析 中发现的参数、爬虫发现的参数、自定义高危参数
 	params = funk.UniqString(append(params, in.Param...))
-
+	params = funk.UniqString(append(params, blindParams...))
 	var uri string
 	payloads := make(map[string]string)
 
@@ -39,7 +47,7 @@ func Audit(in *input.CrawlResult) {
 		if funk.ContainsString(filter, param) {
 			continue
 		}
-		value := util.RandLetters(6)
+		value := util.RandomLetters(6)
 		payloads[param] = value
 		uri += fmt.Sprintf("%s=%s&", param, value)
 	}
@@ -53,20 +61,13 @@ func Audit(in *input.CrawlResult) {
 
 	res, err := httpx.Request(xssUrl, in.Method, in.RequestBody, false, in.Headers)
 
-	// // 限制xss的content-type
-	//html_type := strings.ToLower(in.Resp.Header.Get("Content-Type"))
-	//
-	//if funk.Contains("html", html_type) {
-	//	return
-	//}
-
 	if err != nil {
 		logging.Logger.Errorln(err)
 		return
 	}
 
 	// 确定回显参数
-	var iterdatas = make(map[string]int)
+	var echoParams = make(map[string]int)
 
 	// 格式化请求
 	variations, err := httpx.ParseUri(xssUrl, []byte(in.RequestBody), in.Method, in.ContentType, in.Headers)
@@ -77,11 +78,10 @@ func Audit(in *input.CrawlResult) {
 
 	for index, param := range variations.Params {
 		if funk.Contains(res.Body, param.Value) {
-			iterdatas[param.Name] = index
+			echoParams[param.Name] = index
 		}
 	}
-
-	for param, index := range iterdatas {
+	for param, index := range echoParams {
 		// 确定回显位置
 		locations := ast.SearchInputInResponse(payloads[param], res.Body)
 
@@ -94,7 +94,7 @@ func Audit(in *input.CrawlResult) {
 			//logging.Logger.Debugln(util.StructToJsonString(item))
 			if item.Type == "html" {
 				if item.Details.Value.TagName == "style" {
-					payload := fmt.Sprintf("expression(a(%s))", util.RandLetters(6))
+					payload := fmt.Sprintf("expression(a(%s))", util.RandomLetters(6))
 					resp, tpayload := request(payload, index, xssUrl, in, variations)
 
 					if resp != nil {
@@ -121,7 +121,7 @@ func Audit(in *input.CrawlResult) {
 					}
 				}
 
-				flag := util.RandLetters(7)
+				flag := util.RandomLetters(7)
 
 				// 闭合标签测试
 				payload := fmt.Sprintf("</%s><%s>", util.RandomUpper(item.Details.Value.TagName), flag)
@@ -157,7 +157,7 @@ func Audit(in *input.CrawlResult) {
 			} else if item.Type == "attibute" {
 				if item.Details.Value.Content == "key" {
 					// test html
-					flag := util.RandLetters(7)
+					flag := util.RandomLetters(7)
 					payload := fmt.Sprintf("><%s ", flag)
 					truepayload := "><svg onload=alert`1`>"
 
@@ -187,7 +187,7 @@ func Audit(in *input.CrawlResult) {
 					}
 
 					// test attibutes
-					flag = util.RandLetters(5)
+					flag = util.RandomLetters(5)
 					payload = flag + "="
 					resp, tpayload = request(payload, index, xssUrl, in, variations)
 
@@ -219,7 +219,7 @@ func Audit(in *input.CrawlResult) {
 
 				} else {
 					// test attibutes
-					flag := util.RandLetters(5)
+					flag := util.RandomLetters(5)
 					for _, _payload := range []string{"'", "\"", " "} {
 						payload := _payload + flag + "=" + _payload
 						truepayload := fmt.Sprintf("%s onmouseover=prompt(1)%s", _payload, _payload)
@@ -248,14 +248,12 @@ func Audit(in *input.CrawlResult) {
 										break
 									}
 								}
-
 							}
 						}
-
 					}
 
 					// test html
-					flag = util.RandLetters(7)
+					flag = util.RandomLetters(7)
 					for _, _payload := range []string{"'><%s>", "\"><%s>", "><%s>"} {
 						payload := fmt.Sprintf(_payload, flag)
 						resp, tpayload := request(payload, index, xssUrl, in, variations)
@@ -292,7 +290,7 @@ func Audit(in *input.CrawlResult) {
 					keyname := item.Details.Value.Attributes[0].Key
 
 					if funk.Contains(specialAttributes, keyname) {
-						flag = util.RandLetters(7)
+						flag = util.RandomLetters(7)
 						resp, tpayload := request(flag, index, xssUrl, in, variations)
 
 						if resp != nil {
@@ -326,7 +324,7 @@ func Audit(in *input.CrawlResult) {
 						}
 
 					} else if keyname == "style" {
-						payload := fmt.Sprintf("expression(a(%s))", util.RandLetters(6))
+						payload := fmt.Sprintf("expression(a(%s))", util.RandomLetters(6))
 						resp, tpayload := request(payload, index, xssUrl, in, variations)
 
 						if resp != nil {
@@ -351,9 +349,9 @@ func Audit(in *input.CrawlResult) {
 								}
 							}
 						}
-					} else if funk.Contains(conf.XssEvalAttitudes, strings.ToLower(keyname)) {
+					} else if funk.Contains(xssEvalAttitudes, strings.ToLower(keyname)) {
 						// 在任何可执行的属性中
-						payload := util.RandLetters(6)
+						payload := util.RandomLetters(6)
 						resp, tpayload := request(payload, index, xssUrl, in, variations)
 						if resp != nil {
 							_locations := ast.SearchInputInResponse(payload, resp.Body)
@@ -381,7 +379,7 @@ func Audit(in *input.CrawlResult) {
 				}
 
 			} else if item.Type == "comment" {
-				flag := util.RandLetters(7)
+				flag := util.RandomLetters(7)
 
 				for _, _payload := range []string{"-->", "--!>"} {
 					payload := fmt.Sprintf("%s<%s>", _payload, flag)
@@ -414,7 +412,7 @@ func Audit(in *input.CrawlResult) {
 
 			} else if item.Type == "script" {
 				// test html
-				flag := util.RandLetters(7)
+				flag := util.RandomLetters(7)
 				script_tag := util.RandomUpper(item.Details.Value.TagName)
 
 				payload := fmt.Sprintf("</%s><%s>%s</%s>", script_tag, script_tag, flag, script_tag)
@@ -450,7 +448,7 @@ func Audit(in *input.CrawlResult) {
 
 				for _, _item := range _locations {
 					if _item.Type == "InlineComment" {
-						flag = util.RandLetters(5)
+						flag = util.RandomLetters(5)
 						payload = fmt.Sprintf("\n;%s;//", flag)
 						truepayload = fmt.Sprintf("\n;%s;//", "prompt(1)")
 						resp, tpayload = request(payload, index, xssUrl, in, variations)
@@ -484,7 +482,7 @@ func Audit(in *input.CrawlResult) {
 							}
 						}
 					} else if _item.Type == "BlockComment" {
-						flag = util.RandFromChoices(4, "abcdef123456")
+						flag = util.RandomFromChoices(4, "abcdef123456")
 						payload = fmt.Sprintf("*/%s;/*", flag)
 						truepayload = fmt.Sprintf("*/%s;/*", "prompt(1)")
 						resp, tpayload = request(payload, index, xssUrl, in, variations)
@@ -533,12 +531,12 @@ func Audit(in *input.CrawlResult) {
 						}
 					} else if _item.Type == "ScriptLiteral" {
 						quote := string(_item.Details.Value.Content[0])
-						flag = util.RandLetters(6)
+						flag = util.RandomLetters(6)
 						if quote == "'" || quote == "\"" {
 							payload = fmt.Sprintf("%s-%s-%s", quote, flag, quote)
 							truepayload = fmt.Sprintf("%s-%s-%s", quote, "prompt(1)", quote)
 						} else {
-							flag = util.RandFromChoices(4, "abcdef123456")
+							flag = util.RandomFromChoices(4, "abcdef123456")
 							payload = flag
 							truepayload = "prompt(1)"
 						}
@@ -578,15 +576,11 @@ func Audit(in *input.CrawlResult) {
 								break
 							}
 						}
-
 					}
 				}
-
 			}
-
 		}
 	}
-
 }
 
 // 设置对应参数的值为 payload, http 请求测试

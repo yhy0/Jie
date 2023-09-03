@@ -17,12 +17,12 @@ type Config struct {
 	Passive string  `json:"passive"`
 	Reverse Reverse `json:"reverse"`
 	Debug   bool    `json:"debug"`
+	Options Options `json:"options"`
 }
 
 type WebScan struct {
 	Poc     []string `json:"poc"`
 	Plugins []string `json:"plugins"`
-	Proxy   string   `json:"proxy"`
 }
 
 type Reverse struct {

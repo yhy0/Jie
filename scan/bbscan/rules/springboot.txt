@@ -33,8 +33,7 @@
 /sessions                       {type="application/json"}       {status=200}                {root_only}
 /shutdown                       {type="application/json"}       {status=200}                {root_only}
 /trace                          {type="application/json"}       {status=200}                {root_only}
-/threaddump                        {status=200}                {root_only}
-/druid/login.html                  {status=200}                {root_only}
+/threaddump                     {type="application/json"}       {status=200}                {root_only}
 /entity/all                        {status=200}               {root_only}
 /swagger/swagger-ui.html           {status=200}               {root_only}
 /api/swagger-ui.html               {status=200}               {root_only}
@@ -73,7 +72,7 @@
 /gateway/actuator/mappings         {status=200}                {root_only}
 /gateway/actuator/metrics          {status=200}                {root_only}
 /gateway/actuator/scheduledtasks   {status=200}                {root_only}
-/gateway/actuator/threaddump       {status=200}                {root_only}
+/gateway/actuator/threaddump       {type="application/json"}    {status=200}                {root_only}
 /gateway/actuator/swagger-ui.html  {status=200}               {root_only}
 /webpage/system/druid/index.html   {status=200}               {root_only}
 /system/druid/index.html           {status=200}               {root_only}
@@ -92,7 +91,7 @@
 /actuator/info                     {status=200}                {root_only}
 /actuator/loggers                  {status=200}                {root_only}
 /actuator/heapdump                 {status=200}                {root_only}
-/actuator/threaddump               {status=200}                {root_only}
+/actuator/threaddump               {type="application/json"}    {status=200}                {root_only}
 /actuator/metrics                  {type="application/json"}    {status=200}                {root_only}
 /actuator/scheduledtasks           {status=200}                {root_only}
 /actuator/httptrace                {type="application/json"}    {status=200}                {root_only}
@@ -108,8 +107,8 @@
 /monitor/env                       {type="application/json"}    {status=200}                {root_only}
 /monitor/info                      {type="application/json"}    {status=200}                {root_only}
 /monitor/loggers                   {type="application/json"}    {status=200}                {root_only}
-/monitor/heapdump                  {status=200}                {root_only}
-/monitor/threaddump                {status=200}                {root_only}
+/monitor/heapdump                  {status=200}                 {root_only}
+/monitor/threaddump                {type="application/json"}    {status=200}                {root_only}
 /monitor/metrics                    {type="application/json"}    {status=200}                {root_only}
 /monitor/scheduledtasks            {status=200}                {root_only}
 /monitor/httptrace                 {type="application/json"}    {status=200}                {root_only}
@@ -149,8 +148,8 @@
 /api/sessions                          {status=200}                {root_only}
 /api/shutdown                          {status=200}                {root_only}
 /api/trace                             {status=200}                {root_only}
-/api/threaddump                        {status=200}                {root_only}
-/api/druid/login.html                  {status=200}                {root_only}
+/api/threaddump                        {type="application/json"}    {status=200}                {root_only}
+/api/druid/login.html                  {status=200}               {tag="login"}              {root_only}
 /api/entity/all                        {status=200}               {root_only}
 /api/swagger/swagger-ui.html           {status=200}               {root_only}
 /api/api/swagger-ui.html               {status=200}               {root_only}
@@ -189,7 +188,7 @@
 /api/gateway/actuator/mappings         {status=200}                {root_only}
 /api/gateway/actuator/metrics          {status=200}                {root_only}
 /api/gateway/actuator/scheduledtasks   {status=200}                {root_only}
-/api/gateway/actuator/threaddump       {status=200}                {root_only}
+/api/gateway/actuator/threaddump       {type="application/json"}    {status=200}                {root_only}
 /api/gateway/actuator/swagger-ui.html  {status=200}               {root_only}
 /api/webpage/system/druid/index.html   {status=200}               {root_only}
 /api/system/druid/index.html           {status=200}               {root_only}
@@ -208,7 +207,7 @@
 /api/actuator/info                     {status=200}                {root_only}
 /api/actuator/loggers                  {status=200}                {root_only}
 /api/actuator/heapdump                 {status=200}                {root_only}
-/api/actuator/threaddump               {status=200}                {root_only}
+/api/actuator/threaddump               {type="application/json"}    {status=200}                {root_only}
 /api/actuator/metrics                  {status=200}                {root_only}
 /api/actuator/scheduledtasks           {status=200}                {root_only}
 /api/actuator/httptrace                {status=200}                {root_only}
@@ -225,7 +224,7 @@
 /api/monitor/info                      {status=200}                {root_only}
 /api/monitor/loggers                   {status=200}                {root_only}
 /api/monitor/heapdump                  {status=200}                {root_only}
-/api/monitor/threaddump                {status=200}                {root_only}
+/api/monitor/threaddump                {type="application/json"}    {status=200}                {root_only}
 /api/monitor/metrics                   {status=200}                {root_only}
 /api/monitor/scheduledtasks            {status=200}                {root_only}
 /api/monitor/httptrace                 {status=200}                {root_only}

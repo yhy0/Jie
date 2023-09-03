@@ -3,19 +3,19 @@ package ast
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/tdewolff/parse/v2"
+
 	"github.com/yhy0/Jie/pkg/util"
 	"github.com/yhy0/logging"
 
+	"github.com/tdewolff/parse/v2"
+	"github.com/tdewolff/parse/v2/js"
+	"github.com/thoas/go-funk"
+	"golang.org/x/net/html"
 	"io"
 	"os"
 	"reflect"
 	"regexp"
 	"strings"
-
-	"github.com/tdewolff/parse/v2/js"
-	"github.com/thoas/go-funk"
-	"golang.org/x/net/html"
 )
 
 /**
@@ -87,24 +87,20 @@ func AnalyseJs(script, t string) []string {
 		switch tt {
 		case js.ErrorToken:
 			if l.Err() != io.EOF {
-				logging.Logger.Errorln(t, "Error on line:", l.Err())
+				logging.Logger.Debugln(t, "Error on line:", l.Err())
 			}
 			return params
-		case js.VarToken: // var
+		case js.VarToken, js.ConstToken, js.LetToken: // var, const, let
 			varDiscover = true
-		case js.StringToken: // 变量的值
-			//if varDiscover {
-			//	str := string(text)
-			//	str = strings.ReplaceAll(str, "\"", "")
-			//	str = strings.ReplaceAll(str, "'", "")
-			//
-			//}
-			//varDiscover = false
 		case js.IdentifierToken: // 获取变量名
 			if varDiscover {
 				params = append(params, string(text))
 			}
 			varDiscover = false
+		default:
+			if varDiscover {
+				varDiscover = false
+			}
 		}
 	}
 }

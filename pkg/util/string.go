@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/json"
 	"math/rand"
+	"net/http"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -73,4 +74,27 @@ func Trim(s string) string {
 	s = strings.ReplaceAll(s, "\r", "")
 	s = strings.ReplaceAll(s, "\n", "")
 	return s
+}
+
+// RemoveDuplicateElement  数组去重
+func RemoveDuplicateElement(strs []string) []string {
+	var result []string
+	if len(strs) == 0 {
+		return result
+	}
+
+	for _, item := range strs {
+		item = strings.TrimSpace(item)
+		if item != "" && !In(item, result) {
+			item = strings.TrimSpace(item)
+			result = append(result, item)
+		}
+	}
+	return result
+}
+
+func MapToJson(param http.Header) string {
+	dataType, _ := json.Marshal(param)
+	dataString := string(dataType)
+	return dataString
 }

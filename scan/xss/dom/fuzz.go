@@ -1,20 +1,5 @@
 package dom
 
-type VulPoint struct {
-	Url    string     `json:"url"`
-	Source TrackChain `json:"source"`
-	Sink   TrackChain `json:"sink"`
-}
-
-type TrackChain struct {
-	Label      string `json:"label"`
-	Stacktrace []struct {
-		Url    string `json:"url"`
-		Line   string `json:"line"`
-		Column string `json:"column"`
-	} `json:"stacktrace"`
-}
-
 var (
 	fuzzPrefixes = []string{
 		`javascript://alert({{RAND}})//`,

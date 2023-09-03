@@ -21,9 +21,9 @@ import (
 **/
 
 func TestSqlmap(t *testing.T) {
-	logging.New(true, "", "")
+	logging.New(true, "", "", true)
 	conf.GlobalConfig = &conf.Config{}
-	conf.GlobalConfig.WebScan.Proxy = "http://127.0.0.1:8080"
+	conf.GlobalConfig.Options.Proxy = "http://127.0.0.1:8080"
 	httpx.NewSession()
 
 	// 使用 sync.WaitGroup 防止 OutChannel 中的数据没有完全被消费，导致的数据漏掉问题
@@ -127,6 +127,6 @@ func TestPayload(t *testing.T) {
 	randomTestString := getErrorBasedPreCheckPayload()
 	fmt.Println(randomTestString)
 
-	fmt.Println(randomTestString + strconv.Itoa(util.RandNumber(3, 5)))
+	fmt.Println(randomTestString + strconv.Itoa(util.RandomNumber(3, 5)))
 
 }

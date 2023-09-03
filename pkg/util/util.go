@@ -17,10 +17,8 @@ import (
 	"strings"
 )
 
-func UUID() (UUID string) {
-	uuid := uuid.New()
-	UUID = uuid.String()
-	return
+func UUID() string {
+	return uuid.New().String()
 }
 
 func Contains(stringA, stringB string) bool {
@@ -61,12 +59,21 @@ func Difference(slice1, slice2 []string) []string {
 	return nn
 }
 
+func InMap(target string, strs map[string]string) bool {
+	for k, _ := range strs {
+		k = strings.TrimSpace(k)
+		if Contains(target, k) {
+			return true
+		}
+	}
+	return false
+}
+
 // In 判断一个字符串是否在另一个字符数组里面，存在返回true
 // target 中是否包含 strs 中的某一个
 // 这个是 target 范围大， element只是一个子串
 func In(target string, strs []string) bool {
 	for _, element := range strs {
-		element = strings.TrimSpace(element)
 		if Contains(target, element) {
 			return true
 		}
@@ -78,6 +85,15 @@ func In(target string, strs []string) bool {
 func In1(target string, strs []string) bool {
 	for _, element := range strs {
 		if Contains(element, target) {
+			return true
+		}
+	}
+	return false
+}
+
+func InSlice(slice []string, word string) bool {
+	for _, element := range slice {
+		if element == word {
 			return true
 		}
 	}

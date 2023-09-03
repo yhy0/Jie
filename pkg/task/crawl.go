@@ -1,18 +1,19 @@
 package task
 
 import (
-	"fmt"
-	"github.com/thoas/go-funk"
+	"encoding/json"
+	"github.com/remeh/sizedwaitgroup"
 	"github.com/yhy0/Jie/crawler"
-	"github.com/yhy0/Jie/crawler/katana/pkg/output"
+	"github.com/yhy0/Jie/crawler/crawlergo"
+	"github.com/yhy0/Jie/crawler/crawlergo/config"
+	"github.com/yhy0/Jie/crawler/crawlergo/model"
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
+	"github.com/yhy0/Jie/scan/traversal"
 	"github.com/yhy0/logging"
-	"golang.org/x/net/publicsuffix"
-	"net/http"
-	"net/url"
-	"path"
 	"strings"
+	"sync"
+	"time"
 )
 
 /**
@@ -31,225 +32,117 @@ type res struct {
 	body   string // 请求体
 }
 
-// Crawler 运行 Katana 爬虫
-func (t *Task) Crawler(waf []string) {
-	fingerprints := make([]string, 0)
+// 默认过滤的后缀名
+var extensionFilter = []string{
+	".css", ".js", ".ico", ".ttf",
+}
 
-	single := make(map[string][]res)
+// Crawler 运行爬虫
+func (t *Task) Crawler(waf []string) ([]string, []string) {
+	t.wg = sizedwaitgroup.New(t.Parallelism)
+	t.limit = make(chan struct{}, t.Parallelism)
 
-	// 获取结果
-	onResult := func(result output.Result) {
-		var (
-			body          string
-			status        string
-			statusCode    int
-			header        http.Header
-			contentLength int
-			requestUrl    string
-			technologies  []string
-			location      string
-		)
+	var targets []*model.Request
 
-		// 判断一下 result.Response, 有的页面超时，会导致 result.Response 为 nil，这里在使用 http 访问一下确认
-		if result.Response == nil {
-			resp, err := httpx.Request(result.Request.URL, "GET", "", false, nil)
-			if err != nil {
+	var req model.Request
+	url, err := model.GetUrl(t.Target)
+	if err != nil {
+		logging.Logger.Error("parse url failed, ", err)
+		return nil, nil
+	}
+
+	req = model.GetRequest(config.GET, url, getOption())
+	req.Proxy = crawler.TaskConfig.Proxy
+	targets = append(targets, &req)
+
+	if len(targets) != 0 {
+		logging.Logger.Infof("Init crawler task, host: %s, max tab count: %d, max crawl count: %d, max runtime: %ds",
+			targets[0].URL.Host, crawler.TaskConfig.MaxTabsCount, crawler.TaskConfig.MaxCrawlCount, crawler.TaskConfig.MaxRunTime)
+		//logging.Logger.Info("filter mode: ", crawler.TaskConfig.FilterMode)
+	} else {
+		logging.Logger.Errorln("no validate target.")
+		return nil, nil
+	}
+
+	if crawler.TaskConfig.Proxy != "" {
+		logging.Logger.Info("request with proxy: ", crawler.TaskConfig.Proxy)
+	}
+
+	// 获取爬虫 url 中所有的 path
+	var dirs []string
+
+	var l sync.Mutex
+	// 实时获取结果
+	onResult := func(result *crawlergo.OutResult) {
+		if result.ReqList.URL.Path != "" && result.ReqList.URL.Path != "/" {
+			l.Lock()
+			dirs = append(dirs, result.ReqList.URL.Path)
+			l.Unlock()
+		}
+		// 不对这些进行漏扫
+		for _, suffix := range extensionFilter {
+			if strings.HasSuffix(result.ReqList.URL.String(), suffix) {
 				return
 			}
-			status = resp.Status
-			statusCode = resp.StatusCode
-			body = resp.Body
-			header = resp.Header
-			contentLength = resp.ContentLength
-			requestUrl = result.Request.URL
-			technologies = []string{""}
-			location = resp.Location
-		} else {
-			status = result.Response.Resp.Status
-			statusCode = result.Response.StatusCode
-			body = result.Response.Body
-			header = result.Response.Resp.Header
-			contentLength = int(result.Response.Resp.ContentLength)
-			requestUrl = result.Response.Resp.Request.URL.String()
-			technologies = result.Response.Technologies
-			if resplocation, err := result.Response.Resp.Location(); err == nil {
-				location = resplocation.String()
-			}
+		}
+		logging.Logger.Infof("[result]: %v ", result.ReqList.URL.String())
+
+		resp, err := httpx.Request(result.ReqList.URL.String(), result.ReqList.Method, result.ReqList.PostData, false, nil)
+		if err != nil {
+			return
 		}
 
 		// 对爬虫结果格式化
 		var crawlResult = &input.CrawlResult{
 			Target:                t.Target,
-			Method:                strings.ToUpper(result.Request.Method),
-			Source:                result.Request.Source,
+			Method:                result.ReqList.Method,
+			Source:                result.ReqList.Source,
 			Headers:               make(map[string]string),
-			RequestBody:           body,
+			RequestBody:           "",
 			Waf:                   waf,
 			IsSensorServerEnabled: true,
+			Resp:                  resp,
 		}
 
-		fingerprints = append(fingerprints, technologies...)
-		//todo  处理 POST
-		StoreFields(crawlResult, &result)
+		crawlResult.Url = strings.ReplaceAll(result.ReqList.URL.String(), "\\n", "")
+		crawlResult.Url = strings.ReplaceAll(crawlResult.Url, "\\t", "")
+		crawlResult.Url = strings.ReplaceAll(crawlResult.Url, "\\n", "")
 
-		tempUrl := strings.Split(crawlResult.Url, "?")[0]
-
-		value, ok := single[tempUrl]
-		// 去重 http://testphp.vulnweb.com/artists.php?artist=1  http://testphp.vulnweb.com/artists.php?artist=2 ，这种扫描一次就行
-		var flag = false
-		if !ok {
-			// 不存在, 直接加入
-			single[tempUrl] = []res{{
-				url:    tempUrl,
-				method: crawlResult.Method,
-				param:  strings.Join(crawlResult.Param, " "),
-				body:   crawlResult.RequestBody,
-			}}
-			flag = true
-
-		} else { // 存在，判断结构体是否相同
-			for _, v := range value {
-				if v.method == crawlResult.Method && v.param == strings.Join(crawlResult.Param, " ") && v.body == crawlResult.RequestBody {
-					flag = false
-					// 相同，不处理
-					break
-				} else {
-					// 不同，加入
-					single[tempUrl] = append(single[tempUrl], res{
-						url:    tempUrl,
-						method: crawlResult.Method,
-						param:  strings.Join(crawlResult.Param, " "),
-						body:   crawlResult.RequestBody,
-					})
-					flag = true
-					break
-				}
-			}
-		}
-
-		if flag {
-			crawlResult.Resp = &httpx.Response{
-				Status:           status,
-				StatusCode:       statusCode,
-				Body:             body,
-				RequestDump:      result.Request.URL,
-				ResponseDump:     body,
-				Header:           header,
-				ContentLength:    contentLength,
-				RequestUrl:       requestUrl,
-				Location:         location,
-				ServerDurationMs: 0,
-			}
-
-			logging.Logger.Infof("[Processing] %s %s %s", crawlResult.Method, crawlResult.Url, crawlResult.Source)
-			t.Distribution(crawlResult)
-
-			//resp, err := httpx.Request(result.Request.URL, result.Request.Method, body, false, crawlResult.Headers)
-			//if err != nil {
-			//	logging.Logger.Errorf("[Crawler] %s", err)
-			//} else {
-			// 响应为 200 的才会进行扫描
-			//if resp.StatusCode == 200 {
-			//	crawlResult.Resp = resp
-			//	//logging.Logger.Infof("[*Crawler] URL: %s, Method: %s, Body: %s, Source: %s, Headers: %s, Path: %s, Hostname: %s, Rdn: %s, Rurl: %s, Dir: %s", crawlResult.Url, crawlResult.Method, crawlResult.RequestBody, crawlResult.Source, crawlResult.Headers, crawlResult.Path, crawlResult.Hostname, crawlResult.Rdn, crawlResult.RUrl, crawlResult.Dir)
-			//	logging.Logger.Infof("[Processing] %s %s %s", crawlResult.Method, crawlResult.Url, crawlResult.Param)
-			//	t.Distribution(crawlResult)
-			//} else {
-			//	logging.Logger.Debugf("[Crawler] URL: %s Status: %d", crawlResult.Url, resp.StatusCode)
-			//}
-
-			//}
-		}
+		//logging.Logger.Infof("[Processing] %s [%s] %s", crawlResult.Method, crawlResult.Url, crawlResult.Source)
+		t.Distribution(crawlResult)
 	}
 
-	task := crawler.KatanaTask{
-		Target:   t.Target,
-		OnResult: onResult,
-	}
-
-	task.StartCrawler()
-	t.Fingerprints = funk.UniqString(fingerprints)
-}
-
-// StoreFields stores fields for a result into individual files
-// based on name.
-func StoreFields(c *input.CrawlResult, output *output.Result) {
-	parsed, err := url.Parse(output.Request.URL)
+	// 开始爬虫任务
+	task, err := crawlergo.NewCrawlerTask(targets, crawler.TaskConfig, onResult)
 	if err != nil {
-		return
+		logging.Logger.Error("create crawler task failed.")
+		return nil, nil
 	}
 
-	hostname := parsed.Hostname()
-	etld, _ := publicsuffix.EffectiveTLDPlusOne(hostname)
-	rootURL := fmt.Sprintf("%s://%s", parsed.Scheme, parsed.Host)
-	for _, field := range storeFields {
-		getValueForField(c, output, parsed, hostname, etld, rootURL, field)
-	}
+	task.Browser = crawler.Browser
+
+	task.Run()
+
+	logging.Logger.Infof("Task finished, %d results, %d subdomains found, runtime: %d",
+		len(task.Result.ReqList), len(task.Result.SubDomainList), time.Now().Unix()-task.Start.Unix())
+
+	t.wg.Wait()
+
+	traversal.NginxAlias(t.Target, "", dirs)
+
+	return task.Result.SubDomainList, dirs
 }
 
-// getValueForField returns value for a field
-func getValueForField(c *input.CrawlResult, output *output.Result, parsed *url.URL, hostname, rdn, rurl, field string) string {
-	switch field {
-	case "url":
-		c.Url = output.Request.URL
-		return output.Request.URL
-	case "path":
-		c.Path = parsed.Path
-		return parsed.Path
-	case "fqdn":
-		c.Hostname = hostname
-		return hostname
-	case "rdn":
-		c.Rdn = rdn
-		return rdn
-	case "rurl":
-		c.RUrl = rurl
-		return rurl
-	case "file":
-		basePath := path.Base(parsed.Path)
-		if parsed.Path != "" && parsed.Path != "/" && strings.Contains(basePath, ".") {
-			c.File = basePath
-			return basePath
+func getOption() model.Options {
+	var option model.Options
+
+	if crawler.TaskConfig.ExtraHeadersString != "" {
+		err := json.Unmarshal([]byte(crawler.TaskConfig.ExtraHeadersString), &crawler.TaskConfig.ExtraHeaders)
+		if err != nil {
+			logging.Logger.Fatal("custom headers can't be Unmarshal.")
+			panic(err)
 		}
-	case "dir":
-		if parsed.Path != "" && parsed.Path != "/" && strings.Contains(parsed.Path[1:], "/") {
-			c.Dir = path.Dir(parsed.Path)
-			return parsed.Path[:strings.LastIndex(parsed.Path[1:], "/")+2]
-		}
-	case "udir":
-		if parsed.Path != "" && parsed.Path != "/" && strings.Contains(parsed.Path[1:], "/") {
-			return fmt.Sprintf("%s%s", rurl, parsed.Path[:strings.LastIndex(parsed.Path[1:], "/")+2])
-		}
-	case "qpath":
-		if len(parsed.Query()) > 0 {
-			return fmt.Sprintf("%s?%s", parsed.Path, parsed.Query().Encode())
-		}
-	case "qurl":
-		if len(parsed.Query()) > 0 {
-			return parsed.String()
-		}
-	case "key":
-		values := make([]string, 0, len(parsed.Query()))
-		for k := range parsed.Query() {
-			values = append(values, k)
-		}
-		c.Param = values
-		return strings.Join(values, "\n")
-	case "value":
-		values := make([]string, 0, len(parsed.Query()))
-		for _, v := range parsed.Query() {
-			values = append(values, v...)
-		}
-		return strings.Join(values, "\n")
-	case "kv":
-		values := make([]string, 0, len(parsed.Query()))
-		for k, v := range parsed.Query() {
-			for _, value := range v {
-				values = append(values, strings.Join([]string{k, value}, "="))
-			}
-		}
-		c.Kv = strings.Join(values, "\n")
-		return strings.Join(values, "\n")
+		option.Headers = crawler.TaskConfig.ExtraHeaders
 	}
-	return ""
+	return option
 }

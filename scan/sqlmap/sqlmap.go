@@ -183,7 +183,7 @@ func (sql *Sqlmap) check() bool {
 
 	// 动态参数检测
 	for _, p := range sql.Variations.Params {
-		payload := sql.Variations.SetPayloadByIndex(p.Index, sql.Url, strconv.Itoa(util.RandNumber(0, 9999)), sql.Method)
+		payload := sql.Variations.SetPayloadByIndex(p.Index, sql.Url, strconv.Itoa(util.RandomNumber(0, 9999)), sql.Method)
 
 		logging.Logger.Debugln(payload)
 

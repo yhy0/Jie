@@ -21,7 +21,7 @@ func (sql *Sqlmap) checkBoolBased(pos int, closeType string) bool {
 
 	for index, param := range sql.Variations.Params {
 		if index == pos {
-			payload = fmt.Sprintf(`%v/**/And/**/%v%v%v=%v%v`, closeType, closeType, util.RandNumber(1, 9999), closeType, closeType, util.RandNumber(1, 9999))
+			payload = fmt.Sprintf(`%v/**/And/**/%v%v%v=%v%v`, closeType, closeType, util.RandomNumber(1, 9999), closeType, closeType, util.RandomNumber(1, 9999))
 
 			Payload := payload
 
@@ -48,7 +48,7 @@ func (sql *Sqlmap) checkBoolBased(pos int, closeType string) bool {
 			}
 
 			// 2. 发送逻辑真请求
-			randnum := util.RandNumber(1, 9999)
+			randnum := util.RandomNumber(1, 9999)
 
 			payload = fmt.Sprintf(`%v/**/And/**/%v%v%v=%v%v`, closeType, closeType, randnum, closeType, closeType, randnum)
 
@@ -73,7 +73,7 @@ func (sql *Sqlmap) checkBoolBased(pos int, closeType string) bool {
 			}
 
 			// 3. 第三次发送逻辑假请求
-			payload = fmt.Sprintf(`%v/**/And/**/%v%v%v=%v%v`, closeType, closeType, util.RandNumber(1, 9999), closeType, closeType, util.RandNumber(1, 9999))
+			payload = fmt.Sprintf(`%v/**/And/**/%v%v%v=%v%v`, closeType, closeType, util.RandomNumber(1, 9999), closeType, closeType, util.RandomNumber(1, 9999))
 
 			payload = sql.Variations.SetPayloadByIndex(param.Index, sql.Url, param.Value+payload, sql.Method)
 
@@ -98,9 +98,9 @@ func (sql *Sqlmap) checkBoolBased(pos int, closeType string) bool {
 			// 不相似，认为存在布尔注入, 下面进行误报检测
 
 			// 4. 误报检测，随机生成三个数字，将这三个数字组成不同逻辑，反复确认页面相似度
-			randnum1 := util.RandNumber(1, 9999)
-			randnum2 := util.RandNumber(1, 9999)
-			randnum3 := util.RandNumber(1, 9999)
+			randnum1 := util.RandomNumber(1, 9999)
+			randnum2 := util.RandomNumber(1, 9999)
+			randnum3 := util.RandomNumber(1, 9999)
 
 			// 4.1 逻辑真
 

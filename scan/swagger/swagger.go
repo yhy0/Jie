@@ -22,7 +22,7 @@ import (
   @author: yhy
   @since: 2022/9/14
   @desc: 对 swagger api 进行未授权、ssrf、注入等测试
-	参考 https://github.com/lijiejie/swagger-exp
+	参考了 https://github.com/lijiejie/swagger-exp ，不过更加强大，会自动对参数进行识别赋值
 **/
 
 var Keys = []string{"location", "url", "path"}

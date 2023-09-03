@@ -1,4 +1,26 @@
 ## 劫(开发中)
+## 漏洞利用
+因大部分漏洞的利用工具使用 java 编写，并且支持的java 版本不同，搞环境太费劲，恶心坏了，所以重新定义了Jie。
+
+Jie: 一款全面而强大的漏洞`扫描`和`利用`工具。
+
+目前版本(0.3.1)支持以下漏洞的利用
+
+```shell
+Available Commands:
+  apollo      apollo scan && exp 
+  log4j       log4j scan && exp
+  other       other scan && exp bb:BasicBrute、swagger:Swagger、nat:NginxAliasTraversal、bbscan:bbscan)
+  s2          Struts2 scan && exp
+  shiro       Shiro scan && exp
+  weblogic    WebLogic scan && exp
+  webscan     Run a webscan task
+```
+
+其中借鉴缝合了很多师傅的工具，对应的漏洞扫描和利用中有写，如有遗漏，可以联系我，添加上
+后续会缝合支持更多的漏洞利用。
+
+
 
 https://jie.fireline.fun/
 
@@ -23,19 +45,6 @@ https://jie.fireline.fun/
 
 防止对 php 的网站调用 java 的扫描插件
 
-## 插件调用(后期看看有没有必要吧)
-
-插件如何调用？ 这里直接放弃，只要代码逻辑写好就行了，后期或者有重构的想法
-
-~~仿照awvs设计了插件类别~~
-
-~~PerFile 对每个文件处理,包括文件后面的参数~~
-
-~~PerFolder 对每个目录处理~~
-
-~~PerScheme 对每个域名处理~~
-
-~~PostScan 对Post请求的处理~~
 
 ## 参考
 

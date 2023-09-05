@@ -1,4 +1,4 @@
-package main
+package test
 
 import (
 	"github.com/logrusorgru/aurora"
@@ -16,7 +16,7 @@ import (
   @desc: 作为第三方库引用
 **/
 
-func main() {
+func lib() {
 	logging.New(true, "", "Jie", true)
 	// 获取扫描结果
 	go func() {

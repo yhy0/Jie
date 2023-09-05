@@ -5,7 +5,7 @@ DIR=data/v${VERSION}
 $(shell mkdir -p ${DIR})
 
 # Go build flags
-LDFLAGS=-ldflags "-s -w"
+LDFLAGS=-ldflags '--extldflags "-static"'
 
 default:
 	go build ${LDFLAGS} -o ${DIR}/Jie main.go

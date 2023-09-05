@@ -2,56 +2,43 @@ name: 🎉 Build Binary
 
 permissions:
   contents: write
+  packages: write
 
 on:
   create:
     tags:
       - v*
   workflow_dispatch:
-jobs:
 
-  build:
-    name: Build
-    runs-on: ${{ matrix.os }}
+jobs:
+  build-go-binary:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
-          - windows-latest
+        goos: [linux, windows, darwin]
+        goarch: [amd64, arm64]
+        exclude:
+          - goarch: arm64
+            goos: windows
     steps:
-      - name: Set up Go 1.20
-        uses: actions/setup-go@v2
+      - name: Get Release Info
+        run: |
+          {
+            echo "RELEASE_TAG=${GITHUB_REF/refs\/tags\//}"
+            echo "REPOSITORY_NAME=${GITHUB_REPOSITORY#*/}"
+            echo "OS_NAME=${{ matrix.goos }}"
+          } >> "$GITHUB_ENV"
+      - name: OS darwin
+        if: matrix.goos == 'darwin'
+        run: echo "OS_NAME=macOS" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v3
+      - uses: wangyoucao577/go-release-action@v1.40
         with:
-          go-version: 1.20.x
-        id: go
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
-
-      - name: Get dependencies
-        run: go mod download
-
-      - name: Build On Linux
-        run: |
-          go build -ldflags "-s -w" -o Jie-Linux-x64 main.go
-          chmod +x Jie-Linux-x64
-        if: matrix.os == 'ubuntu-latest'
-      - name: Build On Darwin
-        run: |
-          go build -ldflags "-s -w" -o Jie-Darwin-x64 main.go
-          chmod +x Jie-Darwin-x64
-        if: matrix.os == 'macos-latest'
-      - name: Build On Windows
-        run: |
-          go build -ldflags "-s -w" -o Jie-Windows-x64.exe main.go
-        if: matrix.os == 'windows-latest'
-        env:
-          GOOS: windows
-          GOENABLE: 1
-      - name: Release
-        uses: softprops/action-gh-release@master
-        with:
-          files: Jie-*
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          github_token: ${{ secrets.TOKEN }}
+          goos: ${{ matrix.goos }}
+          goarch: ${{ matrix.goarch }}
+          goversion: 1.21
+          binary_name: "Jie"
+          project_path: "./"
+          ldflags: "-X main.Version=${{ env.RELEASE_TAG }}"
+          asset_name: '${{ env.REPOSITORY_NAME }}-${{ env.RELEASE_TAG }}-${{ env.OS_NAME }}-${{ matrix.goarch }}'

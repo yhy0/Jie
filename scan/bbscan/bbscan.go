@@ -187,7 +187,7 @@ func BBscan(u string, ip string, custom map[string]*Rule, dirs []string) []strin
 		if url404res.StatusCode == 404 {
 			technologies = addFingerprints404(technologies, url404res) //基于404页面文件扫描指纹添加
 		}
-		resContents = append(resContents, url404res.Body)
+		resContents = append(resContents, strings.ReplaceAll(url404res.Body, path404, ""))
 	}
 
 	wg := sync.WaitGroup{}
@@ -198,6 +198,7 @@ func BBscan(u string, ip string, custom map[string]*Rule, dirs []string) []strin
 		rules = custom
 	}
 
+	count := 0
 	for path, rule := range rules {
 		if util.Contains(path, "{sub}") {
 			t, _ := url.Parse(u)
@@ -222,6 +223,10 @@ func BBscan(u string, ip string, custom map[string]*Rule, dirs []string) []strin
 
 			for _, t := range targets {
 				if target, res, err := ReqPage(t); err == nil && res != nil {
+					if count > 30 {
+						return
+					}
+
 					// 黑名单，跳过
 					if util.IsBlackHtml(res.Body) {
 						continue
@@ -256,7 +261,7 @@ func BBscan(u string, ip string, custom map[string]*Rule, dirs []string) []strin
 						}
 					} else {
 						//压缩包的单独搞，规则不太对
-						if res.StatusCode == 404 {
+						if res.StatusCode >= 200 && res.StatusCode <= 300 {
 							continue
 						}
 					}
@@ -286,7 +291,8 @@ func BBscan(u string, ip string, custom map[string]*Rule, dirs []string) []strin
 						}
 						l.Lock()
 						technologies = append(addFingerprintsnormal(path, technologies, res)) // 基于200页面文件扫描指纹添加
-						resContents = append(resContents, res.Body)
+						resContents = append(resContents, strings.ReplaceAll(res.Body, path, ""))
+						count += 1
 						l.Unlock()
 
 						output.OutChannel <- output.VulMessage{

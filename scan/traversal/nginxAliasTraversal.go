@@ -63,7 +63,6 @@ func CheckFolderForTraversal(url string, folder string) bool {
 		return false
 	}
 
-	logging.Logger.Debugf("[%v] %v", resp.StatusCode, url+folder+".")
 	if resp.StatusCode == 404 {
 		return false
 	}

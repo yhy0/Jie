@@ -37,7 +37,7 @@ jobs:
           github_token: ${{ secrets.TOKEN }}
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
-          goversion: 1.21
+          goversion: 1.21.0
           binary_name: "Jie"
           project_path: "./"
           ldflags: "-X main.Version=${{ env.RELEASE_TAG }}"

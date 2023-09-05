@@ -5,10 +5,9 @@ permissions:
   packages: write
 
 on:
-  create:
+  push:
     tags:
       - v*
-  workflow_dispatch:
 
 jobs:
   build-go-binary:

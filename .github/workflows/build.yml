@@ -5,9 +5,8 @@ permissions:
   packages: write
 
 on:
-  push:
-    tags:
-      - v*
+  release:
+    types: [created]
 
 jobs:
   build-go-binary:
@@ -41,3 +40,4 @@ jobs:
           project_path: "./"
           ldflags: "-X main.Version=${{ env.RELEASE_TAG }}"
           asset_name: '${{ env.REPOSITORY_NAME }}-${{ env.RELEASE_TAG }}-${{ env.OS_NAME }}-${{ matrix.goarch }}'
+          extra_files: LICENSE README.md

@@ -5,8 +5,9 @@ permissions:
   packages: write
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - v*
 
 jobs:
   build-go-binary:
@@ -38,6 +39,5 @@ jobs:
           goversion: 1.21.0
           binary_name: "Jie"
           project_path: "./"
-          ldflags: "-X main.Version=${{ env.RELEASE_TAG }}"
           asset_name: '${{ env.REPOSITORY_NAME }}-${{ env.RELEASE_TAG }}-${{ env.OS_NAME }}-${{ matrix.goarch }}'
           extra_files: LICENSE README.md

@@ -3,7 +3,7 @@
 /v/api-docs                        {type="application/json"}        {status=200}                {root_only}
 /v1/api-docs                        {type="application/json"}   {status=200}                {root_only}
 /v2/api-docs                        {type="application/json"}       {status=200}                {root_only}
-/swagger-ui.html                   {status=200}                 {root_only}
+/swagger-ui.html                   {status=200}            {tag="swagger"}     {root_only}
 /actuator                       {type="application/json"}       {status=200}                {root_only}
 /auditevents                    {type="application/json"}       {status=200}                {root_only}
 /autoconfig                     {type="application/json"}       {status=200}                {root_only}
@@ -34,90 +34,90 @@
 /shutdown                       {type="application/json"}       {status=200}                {root_only}
 /trace                          {type="application/json"}       {status=200}                {root_only}
 /threaddump                     {type="application/json"}       {status=200}                {root_only}
-/entity/all                        {status=200}               {root_only}
-/swagger/swagger-ui.html           {status=200}               {root_only}
-/api/swagger-ui.html               {status=200}               {root_only}
-/swagger/index.html                {status=200}               {root_only}
-/v1.1/swagger-ui.html              {status=200}               {root_only}
-/v1.2/swagger-ui.html              {status=200}               {root_only}
-/v1.3/swagger-ui.html              {status=200}               {root_only}
-/v1.4/swagger-ui.html              {status=200}               {root_only}
-/v1.5/swagger-ui.html              {status=200}               {root_only}
-/v1.6/swagger-ui.html              {status=200}               {root_only}
-/v1.7/swagger-ui.html              {status=200}               {root_only}
-/v1.8/swagger-ui.html              {status=200}               {root_only}
-/v1.9/swagger-ui.html              {status=200}               {root_only}
-/v2/swagger-ui.html              {status=200}               {root_only}
-/v2.0/swagger-ui.html              {status=200}               {root_only}
-/v2.1/swagger-ui.html              {status=200}               {root_only}
-/v2.2/swagger-ui.html              {status=200}               {root_only}
-/v2.3/swagger-ui.html              {status=200}               {root_only}
-/%20/swagger-ui.html               {status=200}               {root_only}
-/jolokia/list                      {status=200}                {root_only}
-/gateway/actuator                  {status=200}                {root_only}
-/gateway/actuator/auditevents      {status=200}                {root_only}
-/gateway/actuator/beans            {status=200}                {root_only}
-/gateway/actuator/conditions       {status=200}                {root_only}
-/gateway/actuator/configprops      {status=200}                {root_only}
-/gateway/actuator/env              {status=200}                {root_only}
-/gateway/actuator/trace            {status=200}                {root_only}
-/gateway/actuator/health           {status=200}                {root_only}
-/gateway/actuator/logfile          {status=200}                {root_only}
-/gateway/actuator/heapdump         {status=200}                {root_only}
-/gateway/actuator/httptrace        {status=200}                {root_only}
-/gateway/actuator/hystrix.stream   {status=200}                {root_only}
-/gateway/actuator/info             {status=200}                {root_only}
-/gateway/actuator/jolokia          {status=200}                {root_only}
-/gateway/actuator/loggers          {status=200}                {root_only}
-/gateway/actuator/mappings         {status=200}                {root_only}
-/gateway/actuator/metrics          {status=200}                {root_only}
-/gateway/actuator/scheduledtasks   {status=200}                {root_only}
-/gateway/actuator/threaddump       {type="application/json"}    {status=200}                {root_only}
-/gateway/actuator/swagger-ui.html  {status=200}               {root_only}
-/webpage/system/druid/index.html   {status=200}               {root_only}
-/system/druid/index.html           {status=200}               {root_only}
-/druid/index.html                  {status=200}               {root_only}
-/druid/websession.html             {status=200}               {root_only}
-/hystrix/monitor                   {status=200}                {root_only}
-/actuator/auditevents              {status=200}                {root_only}
-/actuator/beans                    {status=200}                {root_only}
-/actuator/health                   {status=200}                {root_only}
-/actuator/logfile                  {status=200}                {root_only}
-/actuator/trace                    {status=200}                {root_only}
-/actuator/swagger-ui.html          {status=200}               {root_only}
-/actuator/conditions               {status=200}                {root_only}
-/actuator/configprops              {status=200}                {root_only}
-/actuator/env                      {status=200}                {root_only}
-/actuator/info                     {status=200}                {root_only}
-/actuator/loggers                  {status=200}                {root_only}
-/actuator/heapdump                 {status=200}                {root_only}
-/actuator/threaddump               {type="application/json"}    {status=200}                {root_only}
-/actuator/metrics                  {type="application/json"}    {status=200}                {root_only}
-/actuator/scheduledtasks           {status=200}                {root_only}
-/actuator/httptrace                {type="application/json"}    {status=200}                {root_only}
-/actuator/mappings                {type="application/json"}  {status=200}                {root_only}
-/actuator/jolokia                  {type="application/json"}    {status=200}                {root_only}
-/actuator/hystrix.stream           {status=200}                {root_only}
-/monitor                           {type="application/json"}    {status=200}                {root_only}
-/monitor/auditevents               {type="application/json"}    {status=200}                {root_only}
-/monitor/beans                     {type="application/json"}    {status=200}                {root_only}
-/monitor/health                    {type="application/json"}    {status=200}                {root_only}
-/monitor/conditions                {type="application/json"}    {status=200}                {root_only}
-/monitor/configprops               {type="application/json"}    {status=200}                {root_only}
-/monitor/env                       {type="application/json"}    {status=200}                {root_only}
-/monitor/info                      {type="application/json"}    {status=200}                {root_only}
-/monitor/loggers                   {type="application/json"}    {status=200}                {root_only}
-/monitor/heapdump                  {status=200}                 {root_only}
-/monitor/threaddump                {type="application/json"}    {status=200}                {root_only}
-/monitor/metrics                    {type="application/json"}    {status=200}                {root_only}
-/monitor/scheduledtasks            {status=200}                {root_only}
-/monitor/httptrace                 {type="application/json"}    {status=200}                {root_only}
-/monitor/mappings                  {type="application/json"}    {status=200}                {root_only}
-/monitor/jolokia                   {type="application/json"}      {status=200}                {root_only}
-/monitor/hystrix.stream            {type="application/json"}    {status=200}                {root_only}
+/entity/all                         {status=200}               {root_only}
+/swagger/swagger-ui.html            {status=200}        {tag="swagger"}         {root_only}
+/api/swagger-ui.html                {status=200}        {tag="swagger"}         {root_only}
+/swagger/index.html                 {status=200}        {tag="swagger"}         {root_only}
+/v1.1/swagger-ui.html               {status=200}        {tag="swagger"}         {root_only}
+/v1.2/swagger-ui.html               {status=200}        {tag="swagger"}         {root_only}
+/v1.3/swagger-ui.html               {status=200}        {tag="swagger"}         {root_only}
+/v1.4/swagger-ui.html               {status=200}        {tag="swagger"}         {root_only}
+/v1.5/swagger-ui.html               {status=200}        {tag="swagger"}         {root_only}
+/v1.6/swagger-ui.html               {status=200}        {tag="swagger"}         {root_only}
+/v1.7/swagger-ui.html               {status=200}        {tag="swagger"}         {root_only}
+/v1.8/swagger-ui.html               {status=200}        {tag="swagger"}         {root_only}
+/v1.9/swagger-ui.html               {status=200}        {tag="swagger"}         {root_only}
+/v2/swagger-ui.html                 {status=200}        {tag="swagger"}         {root_only}
+/v2.0/swagger-ui.html               {status=200}        {tag="swagger"}         {root_only}
+/v2.1/swagger-ui.html               {status=200}        {tag="swagger"}         {root_only}
+/v2.2/swagger-ui.html               {status=200}        {tag="swagger"}         {root_only}
+/v2.3/swagger-ui.html               {status=200}        {tag="swagger"}         {root_only}
+/%20/swagger-ui.html                {status=200}        {tag="swagger"}         {root_only}
+/jolokia/list                       {status=200}                                {root_only}
+/gateway/actuator                   {status=200}                                {root_only}
+/gateway/actuator/auditevents       {status=200}                                {root_only}
+/gateway/actuator/beans             {status=200}                                {root_only}
+/gateway/actuator/conditions        {status=200}                                {root_only}
+/gateway/actuator/configprops       {status=200}                                {root_only}
+/gateway/actuator/env               {status=200}                                {root_only}
+/gateway/actuator/trace             {status=200}                                {root_only}
+/gateway/actuator/health            {status=200}                                {root_only}
+/gateway/actuator/logfile           {status=200}                                {root_only}
+/gateway/actuator/heapdump          {status=200}                                {root_only}
+/gateway/actuator/httptrace         {status=200}                                {root_only}
+/gateway/actuator/hystrix.stream    {status=200}                                {root_only}
+/gateway/actuator/info              {status=200}                                {root_only}
+/gateway/actuator/jolokia           {status=200}                                {root_only}
+/gateway/actuator/loggers           {status=200}                                {root_only}
+/gateway/actuator/mappings          {status=200}                                {root_only}
+/gateway/actuator/metrics           {status=200}                                {root_only}
+/gateway/actuator/scheduledtasks    {status=200}                                {root_only}
+/gateway/actuator/threaddump        {status=200}            {type="application/json"}                       {root_only}
+/gateway/actuator/swagger-ui.html   {status=200}               {tag="swagger"}                  {root_only}
+/webpage/system/druid/index.html    {status=200}               {root_only}
+/system/druid/index.html            {status=200}               {root_only}
+/druid/index.html                   {status=200}               {root_only}
+/druid/websession.html              {status=200}               {root_only}
+/hystrix/monitor                    {status=200}                {root_only}
+/actuator/auditevents               {status=200}                {root_only}
+/actuator/beans                     {status=200}                {root_only}
+/actuator/health                    {status=200}                {root_only}
+/actuator/logfile                   {status=200}                {root_only}
+/actuator/trace                     {status=200}                {root_only}
+/actuator/swagger-ui.html           {status=200}              {tag="swagger"}        {root_only}
+/actuator/conditions                {status=200}                {root_only}
+/actuator/configprops               {status=200}                {root_only}
+/actuator/env                       {status=200}                {root_only}
+/actuator/info                      {status=200}                {root_only}
+/actuator/loggers                   {status=200}                {root_only}
+/actuator/heapdump                  {status=200}                {root_only}
+/actuator/threaddump                {type="application/json"}    {status=200}                {root_only}
+/actuator/metrics                   {type="application/json"}    {status=200}                {root_only}
+/actuator/scheduledtasks            {status=200}                {root_only}
+/actuator/httptrace                 {type="application/json"}    {status=200}                {root_only}
+/actuator/mappings                  {type="application/json"}  {status=200}                {root_only}
+/actuator/jolokia                   {type="application/json"}    {status=200}                {root_only}
+/actuator/hystrix.stream            {status=200}                {root_only}
+/monitor                            {type="application/json"}    {status=200}                {root_only}
+/monitor/auditevents                {type="application/json"}    {status=200}                {root_only}
+/monitor/beans                      {type="application/json"}    {status=200}                {root_only}
+/monitor/health                     {type="application/json"}    {status=200}                {root_only}
+/monitor/conditions                 {type="application/json"}    {status=200}                {root_only}
+/monitor/configprops                {type="application/json"}    {status=200}                {root_only}
+/monitor/env                        {type="application/json"}    {status=200}                {root_only}
+/monitor/info                       {type="application/json"}    {status=200}                {root_only}
+/monitor/loggers                    {type="application/json"}    {status=200}                {root_only}
+/monitor/heapdump                   {status=200}                 {root_only}
+/monitor/threaddump                 {type="application/json"}    {status=200}                {root_only}
+/monitor/metrics                     {type="application/json"}    {status=200}                {root_only}
+/monitor/scheduledtasks             {status=200}                {root_only}
+/monitor/httptrace                  {type="application/json"}    {status=200}                {root_only}
+/monitor/mappings                   {type="application/json"}    {status=200}                {root_only}
+/monitor/jolokia                    {type="application/json"}      {status=200}                {root_only}
+/monitor/hystrix.stream             {type="application/json"}    {status=200}                {root_only}
 /api/api-docs                          {status=200}                {root_only}
-/api/v/api-docs                        {status=200}                {root_only} 
-/api/v1/api-docs                        {status=200}                {root_only} 
+/api/v/api-docs                        {status=200}                {root_only}
+/api/v1/api-docs                        {status=200}                {root_only}
 /api/v2/api-docs                        {status=200}                {root_only}
 /api/actuator                          {status=200}                {root_only}
 /api/auditevents                       {status=200}                {root_only}
@@ -151,24 +151,24 @@
 /api/threaddump                        {type="application/json"}    {status=200}                {root_only}
 /api/druid/login.html                  {status=200}               {tag="login"}              {root_only}
 /api/entity/all                        {status=200}               {root_only}
-/api/swagger/swagger-ui.html           {status=200}               {root_only}
-/api/api/swagger-ui.html               {status=200}               {root_only}
-/api/swagger/index.html                {status=200}               {root_only}
-/api/v1.1/swagger-ui.html              {status=200}               {root_only}
-/api/v1.2/swagger-ui.html              {status=200}               {root_only}
-/api/v1.3/swagger-ui.html              {status=200}               {root_only}
-/api/v1.4/swagger-ui.html              {status=200}               {root_only}
-/api/v1.5/swagger-ui.html              {status=200}               {root_only}
-/api/v1.6/swagger-ui.html              {status=200}               {root_only}
-/api/v1.7/swagger-ui.html              {status=200}               {root_only}
-/api/v1.8/swagger-ui.html              {status=200}               {root_only}
-/api/v1.9/swagger-ui.html              {status=200}               {root_only}
-/api/v2/swagger-ui.html              {status=200}               {root_only}
-/api/v2.0/swagger-ui.html              {status=200}               {root_only}
-/api/v2.1/swagger-ui.html              {status=200}               {root_only}
-/api/v2.2/swagger-ui.html              {status=200}               {root_only}
-/api/v2.3/swagger-ui.html              {status=200}               {root_only}
-/api/%20/swagger-ui.html               {status=200}               {root_only}
+/api/swagger/swagger-ui.html           {status=200}      {tag="swagger"}        {root_only}
+/api/api/swagger-ui.html               {status=200}      {tag="swagger"}        {root_only}
+/api/swagger/index.html                {status=200}      {tag="swagger"}        {root_only}
+/api/v1.1/swagger-ui.html              {status=200}      {tag="swagger"}        {root_only}
+/api/v1.2/swagger-ui.html              {status=200}      {tag="swagger"}        {root_only}
+/api/v1.3/swagger-ui.html              {status=200}      {tag="swagger"}        {root_only}
+/api/v1.4/swagger-ui.html              {status=200}      {tag="swagger"}        {root_only}
+/api/v1.5/swagger-ui.html              {status=200}      {tag="swagger"}        {root_only}
+/api/v1.6/swagger-ui.html              {status=200}      {tag="swagger"}        {root_only}
+/api/v1.7/swagger-ui.html              {status=200}      {tag="swagger"}        {root_only}
+/api/v1.8/swagger-ui.html              {status=200}      {tag="swagger"}        {root_only}
+/api/v1.9/swagger-ui.html              {status=200}      {tag="swagger"}        {root_only}
+/api/v2/swagger-ui.html                {status=200}      {tag="swagger"}        {root_only}
+/api/v2.0/swagger-ui.html              {status=200}      {tag="swagger"}        {root_only}
+/api/v2.1/swagger-ui.html              {status=200}      {tag="swagger"}        {root_only}
+/api/v2.2/swagger-ui.html              {status=200}      {tag="swagger"}        {root_only}
+/api/v2.3/swagger-ui.html              {status=200}      {tag="swagger"}        {root_only}
+/api/%20/swagger-ui.html               {status=200}      {tag="swagger"}        {root_only}
 /api/jolokia/list                      {status=200}                {root_only}
 /api/gateway/actuator                  {status=200}                {root_only}
 /api/gateway/actuator/auditevents      {status=200}                {root_only}
@@ -189,7 +189,7 @@
 /api/gateway/actuator/metrics          {status=200}                {root_only}
 /api/gateway/actuator/scheduledtasks   {status=200}                {root_only}
 /api/gateway/actuator/threaddump       {type="application/json"}    {status=200}                {root_only}
-/api/gateway/actuator/swagger-ui.html  {status=200}               {root_only}
+/api/gateway/actuator/swagger-ui.html  {status=200}               {tag="swagger"}       {root_only}
 /api/webpage/system/druid/index.html   {status=200}               {root_only}
 /api/system/druid/index.html           {status=200}               {root_only}
 /api/druid/index.html                  {status=200}               {root_only}
@@ -200,7 +200,7 @@
 /api/actuator/health                   {status=200}                {root_only}
 /api/actuator/logfile                  {status=200}                {root_only}
 /api/actuator/trace                    {status=200}                {root_only}
-/api/actuator/swagger-ui.html          {status=200}               {root_only}
+/api/actuator/swagger-ui.html          {status=200}               {tag="swagger"}   {root_only}
 /api/actuator/conditions               {status=200}                {root_only}
 /api/actuator/configprops              {status=200}                {root_only}
 /api/actuator/env                      {status=200}                {root_only}

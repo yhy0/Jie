@@ -8,8 +8,11 @@ package conf
 
 type Options struct {
 	// target URLs/hosts to scan
-	Target string
-	Debug  bool
+	Target     string
+	TargetFile string
+	Targets    []string
+	Output     string
+	Debug      bool
 	// http/socks5 proxy to use
 	Proxy string
 	// Timeout is the seconds to wait for a response from the server.

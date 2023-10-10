@@ -3,6 +3,7 @@ package util
 import (
 	"github.com/yhy0/Jie/conf"
 	"regexp"
+	"strings"
 )
 
 /**
@@ -20,6 +21,10 @@ func IsBlackHtml(str string) bool {
 		} else if rule.Type == "regexText" {
 			reg, _ := regexp.Compile(rule.Rule)
 			if len(reg.FindStringSubmatch(str)) > 0 {
+				return true
+			}
+		} else {
+			if strings.ToLower(str) == strings.ToLower(rule.Rule) {
 				return true
 			}
 		}

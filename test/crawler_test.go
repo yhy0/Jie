@@ -1,6 +1,8 @@
 package test
 
-import "testing"
+import (
+	"testing"
+)
 
 /**
    @author yhy
@@ -9,5 +11,4 @@ import "testing"
 **/
 
 func TestCrawler(t *testing.T) {
-
 }

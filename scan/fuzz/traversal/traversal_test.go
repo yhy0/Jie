@@ -18,7 +18,7 @@ import (
 func TestTraversal(t *testing.T) {
 	logging.New(true, "", "agent", false)
 	conf.GlobalConfig = &conf.Config{}
-	conf.GlobalConfig.Options.Proxy = "http://127.0.0.1:8080"
+	conf.GlobalConfig.Options.Proxy = ""
 	// 初始化 session
 	httpx.NewSession(100)
 	// 获取扫描结果
@@ -28,5 +28,5 @@ func TestTraversal(t *testing.T) {
 		}
 	}()
 
-	NginxAlias("http://127.0.0.1:8081/", "", nil)
+	NginxAlias("https://md.huodong.baidu.com/", "", []string{"filez"})
 }

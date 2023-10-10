@@ -5,12 +5,10 @@ import (
 	"github.com/logrusorgru/aurora"
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/crawler"
-	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/output"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/task"
 	"github.com/yhy0/Jie/pkg/util"
-	"github.com/yhy0/Jie/scan/xss"
 	"github.com/yhy0/Jie/scan/xss/dom"
 	"github.com/yhy0/logging"
 	"sync"
@@ -23,48 +21,15 @@ import (
    @desc //TODO
 **/
 
-func TestReflectionXss(t *testing.T) {
-	logging.New(true, "", "reflectionXss", true)
-	conf.GlobalConfig = &conf.Config{}
-	conf.GlobalConfig.Options.Proxy = "http://127.0.0.1:8080"
-	// 初始化 session
-	httpx.NewSession(100)
-
-	// 获取扫描结果
-	go func() {
-		for v := range output.OutChannel {
-			logging.Logger.Infoln(aurora.Red(v.PrintScreen()).String())
-		}
-	}()
-
-	target := ""
-	response, err := httpx.Get(target)
-	if err != nil {
-		return
-	}
-
-	crawlResult := &input.CrawlResult{
-		Url:                   target,
-		Target:                target,
-		Method:                "GET",
-		Source:                "",
-		Headers:               make(map[string]string),
-		RequestBody:           "",
-		Waf:                   nil,
-		IsSensorServerEnabled: true,
-		Resp:                  response,
-	}
-	xss.Audit(crawlResult)
-
-}
-
 func TestDomXss(t *testing.T) {
 	logging.New(true, "", "Jie", true)
 	// 获取扫描结果
 	var l sync.Mutex
 	var count = 0
+	go output.GenerateVulnReport("vulnerability_report.html")
 	go func() {
 		for v := range output.OutChannel {
+			output.VulMessageChan <- v
 			l.Lock()
 			count += 1
 			l.Unlock()

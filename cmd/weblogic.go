@@ -3,9 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 	"github.com/yhy0/Jie/conf"
-	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/scan/java/weblogic"
-	"github.com/yhy0/logging"
 )
 
 /**
@@ -24,44 +22,44 @@ var webLogicCmd = &cobra.Command{
 	Use:   "weblogic",
 	Short: "WebLogic scan && exp",
 	Run: func(cmd *cobra.Command, args []string) {
-		logging.New(conf.GlobalConfig.Options.Debug, "", "Jie", false)
-		// 初始化 session ,todo 后续优化一下，不同网站共用一个不知道会不会出问题，应该不会
-		httpx.NewSession()
-		if mode == "scan" {
-			switch name {
-			case 1:
-				weblogic.CVE_2014_4210(conf.GlobalConfig.Options.Target)
-			case 2:
-				weblogic.CVE_2017_3506(conf.GlobalConfig.Options.Target)
-			case 3:
-				weblogic.CVE_2017_10271(conf.GlobalConfig.Options.Target)
-			case 4:
-				weblogic.CVE_2018_2894(conf.GlobalConfig.Options.Target)
-			case 5:
-				weblogic.CVE_2019_2725(conf.GlobalConfig.Options.Target)
-			case 6:
-				weblogic.CVE_2019_2729(conf.GlobalConfig.Options.Target)
-			case 7:
-				weblogic.CVE_2020_2883(conf.GlobalConfig.Options.Target)
-			case 8:
-				weblogic.CVE_2020_14882(conf.GlobalConfig.Options.Target)
-			case 9:
-				weblogic.CVE_2020_14883(conf.GlobalConfig.Options.Target)
-			case 10:
-				weblogic.CVE_2021_2109(conf.GlobalConfig.Options.Target)
-			case 0:
-				weblogic.CVE_2014_4210(conf.GlobalConfig.Options.Target)
-				weblogic.CVE_2017_3506(conf.GlobalConfig.Options.Target)
-				weblogic.CVE_2017_10271(conf.GlobalConfig.Options.Target)
-				weblogic.CVE_2018_2894(conf.GlobalConfig.Options.Target)
-				weblogic.CVE_2019_2725(conf.GlobalConfig.Options.Target)
-				weblogic.CVE_2019_2729(conf.GlobalConfig.Options.Target)
-				weblogic.CVE_2020_2883(conf.GlobalConfig.Options.Target)
-				weblogic.CVE_2020_14882(conf.GlobalConfig.Options.Target)
-				weblogic.CVE_2020_14883(conf.GlobalConfig.Options.Target)
-				weblogic.CVE_2021_2109(conf.GlobalConfig.Options.Target)
+		for _, target := range conf.GlobalConfig.Options.Targets {
+			if mode == "scan" {
+				switch name {
+				case 1:
+					weblogic.CVE_2014_4210(target)
+				case 2:
+					weblogic.CVE_2017_3506(target)
+				case 3:
+					weblogic.CVE_2017_10271(target)
+				case 4:
+					weblogic.CVE_2018_2894(target)
+				case 5:
+					weblogic.CVE_2019_2725(target)
+				case 6:
+					weblogic.CVE_2019_2729(target)
+				case 7:
+					weblogic.CVE_2020_2883(target)
+				case 8:
+					weblogic.CVE_2020_14882(target)
+				case 9:
+					weblogic.CVE_2020_14883(target)
+				case 10:
+					weblogic.CVE_2021_2109(target)
+				case 0:
+					weblogic.CVE_2014_4210(target)
+					weblogic.CVE_2017_3506(target)
+					weblogic.CVE_2017_10271(target)
+					weblogic.CVE_2018_2894(target)
+					weblogic.CVE_2019_2725(target)
+					weblogic.CVE_2019_2729(target)
+					weblogic.CVE_2020_2883(target)
+					weblogic.CVE_2020_14882(target)
+					weblogic.CVE_2020_14883(target)
+					weblogic.CVE_2021_2109(target)
+				}
 			}
 		}
+
 	},
 }
 

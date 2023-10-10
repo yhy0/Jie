@@ -2,18 +2,18 @@ package task
 
 import (
 	"fmt"
+	wappalyzer "github.com/projectdiscovery/wappalyzergo"
 	"github.com/remeh/sizedwaitgroup"
 	"github.com/thoas/go-funk"
 	"github.com/yhy0/Jie/conf"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
 	"github.com/yhy0/Jie/pkg/util"
-	"github.com/yhy0/Jie/scan/bbscan"
+	"github.com/yhy0/Jie/scan/fuzz/bbscan"
 	"github.com/yhy0/Jie/scan/nuclei"
 	"github.com/yhy0/Jie/scan/pocs_go"
 	"github.com/yhy0/Jie/scan/pocs_go/log4j"
 	"github.com/yhy0/Jie/scan/waf"
 	"github.com/yhy0/logging"
-	wappalyzer "github.com/yhy0/wappalyzergo"
 	"regexp"
 )
 
@@ -89,12 +89,16 @@ func Active(target string) []string {
 		technologies = bbscan.BBscan(target, "", nil, dirs)
 	}
 
+	t.Fingerprints = funk.UniqString(append(t.Fingerprints, technologies...))
+
 	// 一个网站应该只执行一次 POC 检测, poc 检测放到最后
 	if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "POC") {
-		t.Fingerprints = funk.UniqString(append(t.Fingerprints, technologies...))
-
 		// 这里根据指纹进行对应的检测
 		pocs_go.PocCheck(t.Fingerprints, target, resp.RequestUrl, "")
+	}
+
+	if funk.Contains(conf.GlobalConfig.WebScan.Plugins, "NUCLEI") {
+		// 这里根据指纹进行对应的检测
 		nuclei.Scan(target, t.Fingerprints)
 	}
 

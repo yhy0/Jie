@@ -9,7 +9,7 @@ import (
 	"github.com/yhy0/Jie/crawler/crawlergo/model"
 	"github.com/yhy0/Jie/pkg/input"
 	"github.com/yhy0/Jie/pkg/protocols/httpx"
-	"github.com/yhy0/Jie/scan/traversal"
+	"github.com/yhy0/Jie/scan/fuzz/traversal"
 	"github.com/yhy0/logging"
 	"strings"
 	"sync"

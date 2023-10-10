@@ -13,11 +13,13 @@ import (
 
 var OutChannel = make(chan VulMessage)
 
+var VulMessageChan = make(chan VulMessage)
+
 // 漏洞等级
 var (
 	Low      = "Low"
-	High     = "High"
 	Medium   = "Medium"
+	High     = "High"
 	Critical = "Critical"
 )
 
@@ -39,6 +41,7 @@ type VulnData struct {
 	CURLCommand string `json:"curl_command"`
 	Description string `json:"description"`
 	Request     string `json:"request"`
+	Header      string `json:"header"`
 	Response    string `json:"response"`
 }
 

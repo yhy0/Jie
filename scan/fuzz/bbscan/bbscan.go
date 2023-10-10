@@ -30,6 +30,7 @@ var (
 
 	BlackText      *regexp.Regexp
 	BlackRegexText *regexp.Regexp
+	BlackAllText   *regexp.Regexp
 )
 
 type Rule struct {
@@ -61,6 +62,7 @@ func init() {
 
 	BlackText, _ = regexp.Compile(`{text="(.*)"}`)
 	BlackRegexText, _ = regexp.Compile(`{regex_text="(.*)"}`)
+	BlackAllText, _ = regexp.Compile(`{all_text="(.*)"}`)
 
 	// 返回[]fs.DirEntry
 	entries, err := rulesFiles.ReadDir("rules")
@@ -91,6 +93,11 @@ func init() {
 					if len(regexText) > 0 {
 						black.Type = "regexText"
 						black.Rule = regexText[1]
+						conf.BlackLists = append(conf.BlackLists, black)
+					} else {
+						allText := BlackAllText.FindStringSubmatch(str)
+						black.Type = "allText"
+						black.Rule = allText[1]
 						conf.BlackLists = append(conf.BlackLists, black)
 					}
 				}
@@ -155,7 +162,7 @@ func ReqPage(u string) (*Page, *httpx.Response, error) {
 		page.title = getTitle(res.Body)
 		page.locationUrl = res.Location
 		if res.StatusCode != 302 && res.Location == "" {
-			regs := []string{"text/plain", "application/.*download", "application/.*file", "application/.*zip", "application/.*rar", "application/.*tar", "application/.*down", "application/.*compressed", "application/stream"}
+			regs := []string{"application/.*download", "application/.*file", "application/.*zip", "application/.*rar", "application/.*tar", "application/.*down", "application/.*compressed", "application/.*stream"}
 			for _, reg := range regs {
 				matched, _ := regexp.Match(reg, []byte(res.Header.Get("Content-Type")))
 				if matched {
@@ -232,6 +239,11 @@ func BBscan(u string, ip string, custom map[string]*Rule, dirs []string) []strin
 						continue
 					}
 
+					// ContentLength 为 0 的，都丢弃
+					if res.ContentLength == 0 {
+						continue
+					}
+
 					contentType := res.Header.Get("Content-Type")
 					// 返回是个图片
 					if util.Contains(contentType, "image/") {
@@ -250,7 +262,7 @@ func BBscan(u string, ip string, custom map[string]*Rule, dirs []string) []strin
 
 					// 规则匹配
 					if !target.isBackUpPage {
-						if res.ContentLength == 0 {
+						if len(strings.TrimSpace(res.Body)) == 0 {
 							continue
 						}
 						if (rule.Type != "" && !util.Contains(contentType, rule.Type)) || (rule.TypeNo != "" && util.Contains(contentType, rule.TypeNo)) {
@@ -261,9 +273,10 @@ func BBscan(u string, ip string, custom map[string]*Rule, dirs []string) []strin
 						}
 					} else {
 						//压缩包的单独搞，规则不太对
-						if res.StatusCode >= 200 && res.StatusCode <= 300 {
+						if res.StatusCode < 200 || res.StatusCode > 300 {
 							continue
 						}
+
 					}
 
 					if rule.Tag != "" && !util.Contains(res.Body, rule.Tag) {
@@ -305,7 +318,7 @@ func BBscan(u string, ip string, custom map[string]*Rule, dirs []string) []strin
 								Payload:    t,
 								Method:     "GET",
 								Request:    res.RequestDump,
-								Response:   res.Body,
+								Response:   res.ResponseDump,
 							},
 							Level: output.Low,
 						}
@@ -363,9 +376,9 @@ func SingleScan(targets []string, path string) {
 			}
 
 			// 返回包是个下载文件，但文件内容为空丢弃
-			if res.Header.Get("Content-Type") == "application/octet-stream" && res.ContentLength == 0 {
-				return
-			}
+			//if res.Header.Get("Content-Type") == "application/octet-stream" && res.ContentLength == 0 {
+			//	return
+			//}
 
 			// 规则匹配
 			if (rule.Type != "" && !util.Contains(contentType, rule.Type)) || (rule.TypeNo != "" && util.Contains(contentType, rule.TypeNo)) {
@@ -393,7 +406,7 @@ func SingleScan(targets []string, path string) {
 					Payload:    u + path,
 					Method:     "GET",
 					Request:    res.RequestDump,
-					Response:   res.Body,
+					Response:   res.ResponseDump,
 				},
 				Level: output.Low,
 			}

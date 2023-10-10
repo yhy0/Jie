@@ -36,9 +36,15 @@
 {text="No direct script access allowed"}
 
 {text="<title>由于安全原因JSP功能默认关闭</title>"}
+{text="<h1>An error occurred.</h1>"}
 {text="<title>Site Not Found Exception</title>"}
 {text="<title>云防护</title>"}
 {text="<title>请求含有不合法的参数</title>"}
+
+{all_text="Gateway Timeout"}
+{all_text="Not Found"}
+{all_text="404 page not found"}
+{all_text="This request URL was not found on this server."}
 
 # waf
 {text="https://imgcache.qq.com/qcloud/security/static/404style.css"}

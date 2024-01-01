@@ -6,17 +6,50 @@ package conf
   @desc: //TODO
 **/
 
-var DefaultHeader = map[string]string{
-	"Accept-Language": "zh,zh-TW;q=0.9,en-US;q=0.8,en;q=0.7,zh-CN;q=0.6",
-	"User-Agent":      "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1468.0 Safari/537.36",
-	"Cookie":          "rememberMe=3",
-	"Accept":          "text/html,*/*;",
+var (
+    // Plugin 插件单独从配置文件中读取出来，方便使用
+    Plugin = map[string]bool{
+        "xss":       false,
+        "sql":       false,
+        "sqlmap":    false,
+        "cmd":       false,
+        "xxe":       false,
+        "ssrf":      false,
+        "brute":     false, // web 类登录爆破
+        "hydra":     false, // mysql、redis类服务爆破
+        "bypass403": false,
+        "jsonp":     false,
+        "crlf":      false,
+        "log4j":     false,
+        "fastjson":  false,
+        "portScan":  false,
+        "poc":       false,
+        "nuclei":    false,
+        "bbscan":    false,
+        "archive":   false,
+    }
+)
+
+// DangerHeaders 一些危险的请求头, 用来测试 sql 注入、ssrf，有的谜一样的业务逻辑可能会被命中
+var DangerHeaders = []string{
+    "X-Client-IP",
+    "X-Remote-IP",
+    "X-Remote-Addr",
+    "X-Forwarded-For",
+    "X-Originating-IP",
+    "Referer",
+    "CF-Connecting_IP",
+    "True-Client-IP",
+    "X-Forwarded-For",
+    "Originating-IP",
+    "X-Real-IP",
+    "X-Client-IP",
+    "Forwarded",
+    "Client-IP",
+    "Contact",
+    "X-Wap-Profile",
+    "X-Api-Version",
 }
 
-type BlackRule struct {
-	Type string
-	Rule string
-}
-
-// BlackLists 命中的页面直接丢弃
-var BlackLists []BlackRule
+// Parallelism 同时 10 插件运行
+var Parallelism = 10

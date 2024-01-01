@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Copilot Report - Jie</title>
+    <!-- Include Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .list-group-item {
+            padding: 0.5rem 1rem;
+        }
+        .vuln-card h4 {
+            font-size: 1.2rem;
+        }
+        p {
+            margin-bottom: 0.3rem;
+        }
+
+        .form-check-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            max-width: calc(100% - 20px); /* 减去每个项目的外边距 */
+        }
+
+        .form-check {
+            flex-basis: calc(20% - 20px); /* 计算每个项目的基础宽度，减去外边距 */
+            margin-right: 20px; /* 设置每个项目的外边距 */
+        }
+    </style>
+</head>
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+    <symbol id="yi" viewBox="0 0 496 512">
+        <path d="M248 8C111.03 8 0 119.03 0 256s111.03 248 248 248 248-111.03 248-248S384.97 8 248 8zm0 376c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32zm0-128c-53.02 0-96 42.98-96 96s42.98 96 96 96c-106.04 0-192-85.96-192-192S141.96 64 248 64c53.02 0 96 42.98 96 96s-42.98 96-96 96zm0-128c-17.67 0-32 14.33-32 32s14.33 32 32 32 32-14.33 32-32-14.33-32-32-32z"/>
+    </symbol>
+    <symbol id="github" viewBox="0 0 496 512">
+        <path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/>
+    </symbol>
+</svg>
+
+<main>
+    <div class="container">
+        <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom">
+            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
+                <svg class="bi me-2" width="40" height="32"><use xlink:href="#yi"/></svg>
+                <h3 class="fs-4">Security Copilot Report - Jie</h3>
+            </a>
+            <ul class="nav nav-pills">
+                <li class="nav-item"><a href="/index" class="nav-link" aria-current="page">首页</a></li>
+                <li class="nav-item"><a href="/config" class="nav-link active" aria-current="page">配置</a></li>
+                <li class="nav-item"><a href="/about" class="nav-link">关于</a></li>
+            </ul>
+        </header>
+    </div>
+</main>
+
+<body class="d-flex flex-column min-vh-100">
+    <div class="container mt-3 overflow-auto">
+        <div class="card" id="config">
+            <div class="card-body">
+                <div class="card-title d-flex justify-content-center">
+                    <h3>配置</h3>
+                </div>
+                <div id="message" class="alert alert-success" style="display: none;"></div>
+                <form method="POST" action="/config" id="myForm">
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr>
+                                <th scope="row">Plugin</th>
+                                <td colspan="3" class="form-check-wrapper">
+                                    {{ range $plugin, $on := .plugins }}
+                                    {{ if ne $plugin "sqlmap" }}
+                                    <div class="form-check form-check-inline form-switch">
+                                        {{ if $on }}
+                                        <input class="form-check-input" type="checkbox" name="plugin" id="{{ $plugin }}" value="{{ $plugin }}" checked/>
+                                        {{ else }}
+                                        <input class="form-check-input" type="checkbox" name="plugin" id="{{ $plugin }}" value="{{ $plugin }}"/>
+                                        {{ end }}
+                                        <label class="form-check-label" for="{{ $plugin }}">{{ $plugin }}</label>
+                                    </div>
+                                    {{ end }}
+                                    {{ end }}
+                                </td>
+                            </tr>
+                            <tr>
+                              <th scope="row" data-bs-toggle="tooltip" data-bs-placement="top" title="空格分割">Include</th>
+                              <td colspan="3"><textarea class="form-control" aria-label="With textarea" name="include">{{ .include }}</textarea></td>
+                            </tr>
+                            <tr>
+                                <th scope="row" data-bs-toggle="tooltip" data-bs-placement="top" title="空格分割">Exclude</th>
+                                <td colspan="3"><textarea class="form-control" aria-label="With textarea" name="exclude">{{ .exclude }}</textarea></td>
+                            </tr>
+                            <tr>
+                                <th scope="row" data-bs-toggle="tooltip" data-bs-placement="top" title="空格分割">FilterSuffix</th>
+                                <td colspan="3">
+                                    <textarea class="form-control" aria-label="With textarea" name="filterSuffix">{{ .filterSuffix }}</textarea>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Sqlmap Api</th>
+                                <td colspan="3">
+                                    <div class="form-check form-switch">
+                                        {{ if .sqlmap.Enabled }}
+                                        <input class="form-check-input" type="checkbox" role="switch" name="sqlmap-switch" id="sqlmap-switch" checked>
+                                        {{ else }}
+                                        <input class="form-check-input" type="checkbox" role="switch" name="sqlmap-switch" id="sqlmap-switch">
+                                        {{ end }}
+                                        <label class="form-check-label" for="sqlmap-switch">sqlmap</label>
+                                    </div>
+                                    <div class="mb-3 row">
+                                        <label for="sqlmap_api" class="col-sm-6 col-form-label">SqlmapAPi</label>
+                                        <div class="col-sm-10">
+                                            <input type="text" class="form-control" name="sqlmap_api" id="sqlmap_api" placeholder="SqlmapAPi" value="{{ .sqlmap.Url }}">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 row">
+                                        <label for="username" class="col-sm-8 col-form-label">Username</label>
+                                        <div class="col-sm-10">
+                                            <input type="text" class="form-control" name="username" id="username" placeholder="用户名" value="{{ .sqlmap.Username }}">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 row">
+                                        <label for="password" class="col-sm-8 col-form-label">Password</label>
+                                        <div class="col-sm-10">
+                                            <input type="password" class="form-control" name="password" id="password" placeholder="密码" value="{{ .sqlmap.Password }}">
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                          </tbody>
+                    </table>
+
+                    <div class="d-flex justify-content-center">
+                        <button type="submit" class="btn btn-primary">更新配置</button>
+                    </div>
+                  </form>
+            </div>
+        </div>
+    </div>
+    <footer class="bg-black bg-body-tertiary text-center mt-auto">
+        <div class="container">
+            © {{ .year}} Copyright:
+            <a class="text-dark" href="https://github.com/yhy0/Jie" target="_blank">yhy - Jie</a>
+        </div>
+    </footer>
+    <!-- Include Bootstrap 5 JS (Optional, if needed) -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+    <script>
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            var toggleSwitches = document.querySelectorAll(".toggle-switch");
+            toggleSwitches.forEach(function (toggleSwitch) {
+                toggleSwitch.addEventListener("click", function () {
+                    var vulnDetails = this.closest(".vuln-card").querySelector(".vuln-details");
+                    vulnDetails.classList.toggle("show");
+                });
+            });
+        });
+    </script>
+
+    <script>
+        document.getElementById('myForm').addEventListener('submit', function (event) {
+            event.preventDefault(); // 阻止默认的表单提交
+            processForm(event.target);
+        });
+
+        function showMessage(text, duration) {
+            const message = document.getElementById('message');
+            message.textContent = text;
+            message.style.display = 'block';
+
+            setTimeout(() => {
+                message.style.display = 'none';
+            }, duration);
+        }
+        function processForm(form) {
+            const formData = new FormData(form);
+            const pluginValues = formData.getAll('plugin');
+            formData.delete('plugin');
+            formData.append('plugin', pluginValues);
+
+            // 发送处理后的表单数据
+            fetch(form.action, {
+                method: form.method,
+                body: formData,
+            }).then((response) => {
+                    if (response.ok) {
+                        showMessage('更新成功', 3000); // 显示 3 秒的消息
+                    } else {
+                        throw new Error('提交失败');
+                    }
+                }).catch((error) => {
+                    console.error('提交错误:', error);
+                });
+        }
+    </script>
+
+</body>
+</html>

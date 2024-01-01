@@ -1,330 +1,396 @@
 package httpx
 
 import (
-	"bytes"
-	"crypto/tls"
-	"github.com/corpix/uarand"
-	"github.com/projectdiscovery/fastdialer/fastdialer"
-	"github.com/thoas/go-funk"
-	"github.com/yhy0/Jie/conf"
-	"github.com/yhy0/logging"
-	"go.uber.org/ratelimit"
-	"io/ioutil"
-	"mime/multipart"
-	"net/http"
-	"net/http/cookiejar"
-	"net/http/httptrace"
-	"net/http/httputil"
-	"net/url"
-	"path/filepath"
-	"regexp"
-	"strings"
-	"time"
+    "bufio"
+    "bytes"
+    "errors"
+    "fmt"
+    "github.com/imroc/req/v3"
+    "github.com/yhy0/Jie/conf"
+    "github.com/yhy0/Jie/scan/gadget/sensitive"
+    "github.com/yhy0/logging"
+    "go.uber.org/ratelimit"
+    "io/ioutil"
+    "net"
+    "net/http"
+    "net/http/httputil"
+    "net/url"
+    "regexp"
+    "runtime"
+    "strings"
+    "time"
 )
 
 /**
-  @author: yhy
-  @since: 2022/6/1
-  @desc: //TODO
+   @author yhy
+   @since 2023/11/22
+   @desc //TODO
 **/
 
 type Response struct {
-	Status           string
-	StatusCode       int
-	Body             string
-	RequestDump      string
-	ResponseDump     string
-	Header           http.Header
-	ContentLength    int
-	RequestUrl       string
-	Location         string
-	ServerDurationMs float64 // 服务器响应时间
+    Status           string
+    StatusCode       int
+    Body             string
+    RequestDump      string
+    ResponseDump     string
+    Header           http.Header
+    ContentLength    int
+    RequestUrl       string
+    Location         string
+    ServerDurationMs float64 // 服务器响应时间
 }
 
-type Session struct {
-	// Client is the current http client
-	Client *http.Client
-	// Rate limit instance
-	RateLimiter ratelimit.Limiter // 每秒请求速率限制
+type Options struct {
+    Timeout         int
+    RetryTimes      int    // 重定向次数 0 为不重试
+    VerifySSL       bool   // default false
+    AllowRedirect   int    // default false
+    Proxy           string // proxy settings, support http/https proxy only, e.g. http://127.0.0.1:8080
+    QPS             int    // 每秒最大请求数
+    MaxConnsPerHost int    // 每个 host 最大连接数
+    Headers         map[string]string
 }
 
-var session *Session
-
-// DefaultResolvers contains the default list of resolvers known to be good
-var DefaultResolvers = []string{
-	"1.1.1.1",         // Cloudflare
-	"1.0.0.1",         // Cloudlfare secondary
-	"8.8.8.8",         // Google
-	"8.8.4.4",         // Google secondary
-	"223.5.5.5",       // AliDNS
-	"223.6.6.6",       // AliDNS
-	"119.29.29.29",    // DNSPod
-	"114.114.114.114", // 114DNS
-	"114.114.115.115", // 114DNS
+type Client struct {
+    Client      *req.Client
+    Options     *Options
+    RateLimiter ratelimit.Limiter // 每秒请求速率限制
 }
 
-func NewSession(rateLimit ...int) {
-	fastdialerOpts := fastdialer.DefaultOptions
-	fastdialerOpts.EnableFallback = true
-	fastdialerOpts.WithDialerHistory = true
+func NewClient(o *Options) *Client {
+    if o == nil {
+        o = &Options{
+            Timeout:         conf.GlobalConfig.Http.Timeout,
+            VerifySSL:       conf.GlobalConfig.Http.VerifySSL,
+            RetryTimes:      conf.GlobalConfig.Http.RetryTimes,
+            AllowRedirect:   conf.GlobalConfig.Http.AllowRedirect,
+            Proxy:           conf.GlobalConfig.Http.Proxy,
+            QPS:             conf.GlobalConfig.Http.MaxQps,
+            MaxConnsPerHost: conf.GlobalConfig.Http.MaxConnsPerHost,
+            Headers:         conf.GlobalConfig.Http.Headers,
+        }
+    }
 
-	fastdialerOpts.BaseResolvers = DefaultResolvers
+    client := &Client{}
+    /*
+       Req 同时支持 HTTP/1.1，HTTP/2 和 HTTP/3，如果服务端支持，默认情况下首选 HTTP/2，其次 HTTP/1.1，这是由 TLS 握手协商的。
+       如果启用了 HTTP3 (EnableHTTP3)，当探测到服务端支持 HTTP3，会使用 HTTP3 协议进行请求。
+    */
+    c := req.C().
+        SetUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36").
+        // SetCommonContentType("application/x-www-form-urlencoded; charset=utf-8").
+        SetTimeout(time.Duration(o.Timeout) * time.Second)
 
-	dialer, err := fastdialer.NewDialer(fastdialerOpts)
-	if err != nil {
-		logging.Logger.Fatalf("could not create resolver cache: %s", err)
-	}
+    // https://github.com/imroc/req/issues/272
+    if conf.GlobalConfig.Http.ForceHTTP1 {
+        c.EnableForceHTTP1()
+    } else {
+        c.ImpersonateChrome() // 模拟Chrome浏览器, 不能和 EnableForceXXXX() 同时使用
+    }
 
-	Transport := &http.Transport{
-		DialContext:         dialer.Dial,
-		DialTLSContext:      dialer.DialTLS,
-		MaxIdleConnsPerHost: -1,
-		DisableKeepAlives:   true,
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-			MinVersion:         tls.VersionTLS10,
-		},
-	}
-	// Add proxy
-	if conf.GlobalConfig.Options.Proxy != "" {
-		proxyURL, _ := url.Parse(conf.GlobalConfig.Options.Proxy)
-		if isSupportedProtocol(proxyURL.Scheme) {
-			Transport.Proxy = http.ProxyURL(proxyURL)
-		} else {
-			logging.Logger.Warnln("Unsupported proxy protocol: %s", proxyURL.Scheme)
-		}
-	}
+    c.SetMaxConnsPerHost(o.MaxConnsPerHost)
+    c.SetMaxIdleConns(o.MaxConnsPerHost)
 
-	client := &http.Client{
-		Transport: Transport,
-		Timeout:   5 * time.Second,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
+    // Add proxy
+    if o.Proxy != "" {
+        logging.Logger.Infoln("use proxy:", o.Proxy)
+        proxyURL, _ := url.Parse(o.Proxy)
+        if isSupportedProtocol(proxyURL.Scheme) {
+            c.SetProxy(http.ProxyURL(proxyURL))
+        } else {
+            logging.Logger.Warnln("Unsupported proxy protocol: %s", proxyURL.Scheme)
+        }
+    }
 
-	session = &Session{
-		Client: client,
-	}
+    if !o.VerifySSL {
+        c.EnableInsecureSkipVerify()
+    }
 
-	if len(rateLimit) == 0 {
-		rateLimit = append(rateLimit, 20)
-	}
-	// Initiate rate limit instance
-	session.RateLimiter = ratelimit.New(rateLimit[0])
+    if o.RetryTimes > 0 {
+        c.SetCommonRetryCount(o.RetryTimes).
+            SetCommonRetryBackoffInterval(1*time.Second, 5*time.Second)
+    }
+
+    if o.QPS == 0 {
+        o.QPS = conf.GlobalConfig.Http.MaxQps
+    }
+    // Initiate rate limit instance
+    client.RateLimiter = ratelimit.New(o.QPS)
+
+    client.Client = c
+    client.Options = o
+    return client
 }
 
-func RequestBasic(username string, password string, target string, method string, postdata string, isredirect bool, headers map[string]string) (*Response, error) {
-	if isredirect {
-		jar, _ := cookiejar.New(nil)
-		session.Client.Jar = jar
-	}
-
-	req, err := http.NewRequest(strings.ToUpper(method), target, strings.NewReader(postdata))
-	if err != nil {
-		return nil, err
-	}
-	req.SetBasicAuth(username, password)
-	req.Header.Set("User-Agent", uarand.GetRandom())
-	req.Header.Set("Accept-Encoding", "identity")
-	req.Header.Set("Connection", "close")
-	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-	flag := true
-	for v, k := range headers {
-		if k == "Content-Type" {
-			flag = false
-		}
-		req.Header[v] = []string{k}
-	}
-
-	if flag {
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-	}
-
-	requestDump, _ := httputil.DumpRequestOut(req, true)
-
-	session.RateLimiter.Take()
-	resp, err := session.Client.Do(req)
-	if err != nil {
-		//防止空指针
-		return &Response{"999", 999, "", "", "", nil, 0, "", "", 0}, err
-	}
-	defer resp.Body.Close()
-
-	dump, _ := httputil.DumpResponse(resp, false)
-
-	var location string
-	var respbody string
-	if body, err := ioutil.ReadAll(resp.Body); err == nil {
-		respbody = string(body)
-	}
-
-	responseDump := string(dump) + respbody
-
-	if resplocation, err := resp.Location(); err == nil {
-		location = resplocation.String()
-	}
-
-	return &Response{resp.Status, resp.StatusCode, respbody, string(requestDump), responseDump, resp.Header, int(resp.ContentLength), resp.Request.URL.String(), location, 0}, nil
+func (c *Client) Basic(target string, method string, body string, header map[string]string, username, password string) (*Response, error) {
+    c.Client.SetCommonBasicAuth(username, password)
+    return c.Request(target, method, body, header)
 }
 
-func Get(target string) (*Response, error) {
-	return Request(target, "GET", "", false, nil)
+func (c *Client) Request(target string, method string, body string, header map[string]string) (*Response, error) {
+    method = strings.ToUpper(method)
+
+    // https://req.cool/docs/tutorial/debugging/
+    var requestDumpBuf, responseDumpBuf bytes.Buffer
+
+    // Enable dump with fully customized settings at client level.
+    opt := &req.DumpOptions{
+        RequestOutput:  &requestDumpBuf,
+        ResponseOutput: &responseDumpBuf,
+        RequestHeader:  true,
+        RequestBody:    true,
+        ResponseHeader: true,
+        ResponseBody:   true,
+        Async:          false,
+    }
+
+    // 重定向
+    if c.Options.AllowRedirect == 0 {
+        c.Client.SetRedirectPolicy(req.NoRedirectPolicy())
+    } else {
+        c.Client.SetRedirectPolicy(
+            // Only allow up to 5 redirects
+            req.MaxRedirectPolicy(c.Options.AllowRedirect),
+            // Only allow redirect to same domain.
+            // e.g. redirect "www.imroc.cc" to "imroc.cc" is allowed, but "google.com" is not
+            req.SameDomainRedirectPolicy(),
+        )
+    }
+    // 防止出现一些错误，这次重定向后，修改回去
+    c.Options.AllowRedirect = 0
+
+    request := c.Client.R().SetDumpOptions(opt).EnableDump().EnableTrace() // 启用 trace，获取响应的时间
+
+    if c.Options.Headers != nil {
+        if c.Options.Headers["Accept-Encoding"] == "gzip, deflate" {
+            delete(c.Options.Headers, "Accept-Encoding")
+        }
+        request.SetHeaders(c.Options.Headers)
+    }
+    if header != nil {
+        // https://github.com/imroc/req/issues/178#issuecomment-1282086128
+        if header["Accept-Encoding"] == "gzip, deflate" {
+            delete(header, "Accept-Encoding")
+        }
+        request.SetHeaders(header)
+    }
+
+    c.RateLimiter.Take()
+    var resp *req.Response
+    var err error
+    if method == "GET" {
+        resp, err = request.Get(target)
+    } else if method == "HEAD" {
+        resp, err = request.Head(target)
+    } else if method == "OPTIONS" {
+        resp, err = request.Options(target)
+    } else if method == "POST" {
+        resp, err = request.
+            SetBody(body).
+            Post(target)
+    } else if method == "PUT" {
+        resp, err = request.
+            SetBody(body).
+            Put(target)
+    } else {
+        logging.Logger.Warningf("Unsupported method: %s", method)
+        return nil, errors.New(fmt.Sprintf("Unsupported method: %s", method))
+    }
+
+    if err != nil {
+        return nil, err
+    }
+
+    var (
+        location string
+        respBody string
+    )
+
+    if respLocation, err := resp.Location(); err == nil {
+        location = respLocation.String()
+    }
+
+    if respBodyByte, err := ioutil.ReadAll(resp.Body); err == nil {
+        respBody = string(respBodyByte)
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode == 200 {
+        // 检查一下是否为 js 控制的跳转
+        if checkJSRedirect(respBody) {
+            resp.StatusCode = 302
+        }
+    }
+
+    // 检测所有的返回包，可能有某个插件导致报错，存在报错信息
+    sensitive.PageErrorMessageCheck(target, requestDumpBuf.String(), respBody)
+
+    return &Response{
+        Status:           resp.Status,
+        StatusCode:       resp.StatusCode,
+        Body:             respBody,
+        RequestDump:      requestDumpBuf.String(),
+        ResponseDump:     responseDumpBuf.String(),
+        Header:           resp.Header,
+        ContentLength:    int(resp.ContentLength),
+        RequestUrl:       resp.Request.URL.String(),
+        Location:         location,
+        ServerDurationMs: float64(request.TraceInfo().FirstResponseTime.Milliseconds()),
+    }, nil
 }
 
-func Request(target string, method string, postdata string, isredirect bool, headers map[string]string) (*Response, error) {
-	if isredirect {
-		jar, _ := cookiejar.New(nil)
-		session.Client.Jar = jar
-	}
+func (c *Client) Upload(target string, params map[string]string, name, fileName string) (*Response, error) {
+    // https://req.cool/docs/tutorial/debugging/
+    var requestDumpBuf, responseDumpBuf bytes.Buffer
+    // Enable dump with fully customized settings at client level.
+    opt := &req.DumpOptions{
+        RequestOutput:  &requestDumpBuf,
+        ResponseOutput: &responseDumpBuf,
+        RequestHeader:  true,
+        RequestBody:    true,
+        ResponseHeader: true,
+        ResponseBody:   true,
+        Async:          false,
+    }
 
-	req, err := http.NewRequest(strings.ToUpper(method), target, strings.NewReader(postdata))
-	if err != nil {
-		return nil, err
-	}
+    request := c.Client.R().SetDumpOptions(opt).EnableDump().
+        SetHeaders(c.Options.Headers).
+        EnableTrace() // 启用 trace，获取响应的时间
 
-	req.Header.Set("User-Agent", uarand.GetRandom())
-	req.Header.Set("Accept-Encoding", "identity")
-	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-	req.Header.Set("Connection", "close")
-	flag := true
-	for k, v := range headers {
-		if k == "Content-Type" {
-			flag = false
-		}
-		req.Header[k] = []string{v}
-	}
+    var resp *req.Response
+    var err error
 
-	if flag {
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-	}
+    request.
+        SetFileBytes(name, fileName, []byte("test")). // 文件名，文件内容
+        SetFormData(params) // 写入body中额外参数
 
-	var start = time.Now()
-	trace := &httptrace.ClientTrace{
-		GotFirstResponseByte: func() {},
-	}
+    if c.Options.Headers != nil {
+        if c.Options.Headers["Accept-Encoding"] == "gzip, deflate" {
+            delete(c.Options.Headers, "Accept-Encoding")
+        }
+        request.SetHeaders(c.Options.Headers)
+    }
 
-	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
+    resp, err = request.Post(target)
 
-	requestDump, _ := httputil.DumpRequestOut(req, true)
-	session.RateLimiter.Take()
-	resp, err := session.Client.Do(req)
-	if err != nil {
-		//防止空指针
-		return &Response{"999", 999, "", "", "", nil, 0, "", "", 0}, err
-	}
-	defer resp.Body.Close()
+    if err != nil {
+        return nil, err
+    }
 
-	//TODOs 换成其他请求方法重试
-	if funk.Contains(resp.Status, "Method Not Allowed") {
-		if strings.ToUpper(method) == "GET" {
-			response, err := Request(target, "POST", postdata, isredirect, headers)
-			if err != nil {
-				return nil, err
-			}
-			return response, nil
-		}
-	}
+    var (
+        location string
+        respBody string
+    )
 
-	dump, _ := httputil.DumpResponse(resp, false)
+    if respLocation, err := resp.Location(); err == nil {
+        location = respLocation.String()
+    }
 
-	var location string
-	var respbody string
-	if body, err := ioutil.ReadAll(resp.Body); err == nil {
-		respbody = string(body)
-	}
+    if respBodyByte, err := ioutil.ReadAll(resp.Body); err == nil {
+        respBody = string(respBodyByte)
+    }
+    defer resp.Body.Close()
 
-	responseDump := string(dump) + respbody
-	if resplocation, err := resp.Location(); err == nil {
-		location = resplocation.String()
-	}
+    c.RateLimiter.Take()
 
-	if resp.StatusCode == 200 {
-		// 检查一下是否为 js 控制的跳转
-		if checkJSRedirect(respbody) {
-			resp.StatusCode = 302
-		}
-	}
-
-	return &Response{resp.Status, resp.StatusCode, respbody, string(requestDump), responseDump, resp.Header, int(resp.ContentLength), resp.Request.URL.String(), location, float64(time.Since(start).Milliseconds())}, nil
-}
-
-// UploadRequest 新建上传请求
-func UploadRequest(target string, params map[string]string, name, path string) (*Response, error) {
-	body := &bytes.Buffer{}                                       // 初始化body参数
-	writer := multipart.NewWriter(body)                           // 实例化multipart
-	part, err := writer.CreateFormFile(name, filepath.Base(path)) // 创建multipart 文件字段
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = part.Write([]byte("test")) // 写入文件数据到multipart
-	if err != nil {
-		return nil, err
-	}
-
-	for key, val := range params {
-		_ = writer.WriteField(key, val) // 写入body中额外参数
-	}
-	err = writer.Close()
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", target, body) // 新建请求
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-	req.Header.Set("Content-Type", writer.FormDataContentType()) // 设置请求头,!!!非常重要，否则远端无法识别请求
-	req.Header.Set("User-Agent", uarand.GetRandom())
-	req.Header.Set("Accept-Encoding", "identity")
-	req.Header.Set("Connection", "close")
-
-	requestDump, _ := httputil.DumpRequestOut(req, true)
-
-	session.RateLimiter.Take()
-
-	resp, err := session.Client.Do(req)
-	if err != nil {
-		//防止空指针
-		return &Response{"999", 999, "", "", "", nil, 0, "", "", 0}, err
-	}
-
-	dump, _ := httputil.DumpResponse(resp, false)
-
-	var location string
-	var respbody string
-	defer resp.Body.Close()
-	if rbody, err := ioutil.ReadAll(resp.Body); err == nil {
-		respbody = string(rbody)
-	}
-
-	responseDump := string(dump) + respbody
-	if resplocation, err := resp.Location(); err == nil {
-		location = resplocation.String()
-	}
-
-	return &Response{resp.Status, resp.StatusCode, respbody, string(requestDump), responseDump, resp.Header, int(resp.ContentLength), resp.Request.URL.String(), location, 0}, nil
+    return &Response{
+        Status:           resp.Status,
+        StatusCode:       resp.StatusCode,
+        Body:             respBody,
+        RequestDump:      requestDumpBuf.String(),
+        ResponseDump:     responseDumpBuf.String(),
+        Header:           resp.Header,
+        ContentLength:    int(resp.ContentLength),
+        RequestUrl:       resp.Request.URL.String(),
+        Location:         location,
+        ServerDurationMs: float64(request.TraceInfo().FirstResponseTime.Milliseconds()),
+    }, nil
 }
 
 func checkJSRedirect(htmlStr string) bool {
-	redirectPatterns := []string{
-		`window\.location\.href\s*=\s*['"][^'"]+['"]`,
-		`window\.location\.assign\(['"][^'"]+['"]\)`,
-		`window\.location\.replace\(['"][^'"]+['"]\)`,
-		`window\.history\.(?:back|forward|go)\(`,
-		`(?:setTimeout|setInterval)\([^,]+,\s*\d+\)`,
-		`(?:onclick|onmouseover)\s*=\s*['"][^'"]+['"]`,
-		`addEventListener\([^,]+,\s*function`,
-		`(?ms)<a id="a-link"></a>\s*<script>\s*localStorage\.x5referer.*?document\.getElementById`,
-	}
+    redirectPatterns := []string{
+        `window\.location\.href\s*=\s*['"][^'"]+['"]`,
+        `window\.location\.assign\(['"][^'"]+['"]\)`,
+        `window\.location\.replace\(['"][^'"]+['"]\)`,
+        `window\.history\.(?:back|forward|go)\(`,
+        `(?:setTimeout|setInterval)\([^,]+,\s*\d+\)`,
+        `(?:onclick|onmouseover)\s*=\s*['"][^'"]+['"]`,
+        `addEventListener\([^,]+,\s*function`,
+        `(?ms)<a id="a-link"></a>\s*<script>\s*localStorage\.x5referer.*?document\.getElementById`,
+    }
 
-	for _, pattern := range redirectPatterns {
-		re := regexp.MustCompile(pattern)
-		if re.MatchString(htmlStr) {
-			return true
-		}
-	}
-	return false
+    for _, pattern := range redirectPatterns {
+        re := regexp.MustCompile(pattern)
+        if re.MatchString(htmlStr) {
+            return true
+        }
+    }
+    return false
+}
+
+// Request10 发送 http/1.0
+func Request10(host, raw string) (*Response, error) {
+    defer func() {
+        if err := recover(); err != nil {
+            logging.Logger.Errorln("Request10 err:", err)
+            debugStack := make([]byte, 1024)
+            runtime.Stack(debugStack, false)
+            logging.Logger.Errorf("Request10 Stack Trace:%v", string(debugStack))
+        }
+    }()
+    conn, err := net.Dial("tcp", host)
+    if err != nil {
+        logging.Logger.Errorln("Error connecting:", err)
+        return nil, err
+    }
+    defer conn.Close()
+    // 发送请求
+    _, err = fmt.Fprint(conn, raw)
+    if err != nil {
+        logging.Logger.Errorln("Error sending request:", err)
+        return nil, err
+    }
+
+    // 读取响应
+    reader := bufio.NewReader(conn)
+    resp, err := http.ReadResponse(reader, nil)
+    if err != nil {
+        logging.Logger.Errorln("Error reading response:", err)
+        return nil, err
+    }
+    defer resp.Body.Close()
+
+    // 读取响应内容
+    responseDump, _ := httputil.DumpResponse(resp, true)
+    var location string
+    var respBody string
+    defer resp.Body.Close()
+
+    if bodyTmp, err := ioutil.ReadAll(resp.Body); err == nil {
+        respBody = string(bodyTmp)
+    }
+    if respLocation, err := resp.Location(); err == nil {
+        location = respLocation.String()
+    }
+
+    return &Response{
+        resp.Status,
+        resp.StatusCode,
+        respBody,
+        raw,
+        string(responseDump),
+        resp.Header,
+        int(resp.ContentLength),
+        resp.Request.URL.String(),
+        location,
+        0,
+    }, nil
+}
+
+func Request(target string, method string, body string, header map[string]string) (*Response, error) {
+    return NewClient(nil).Request(target, method, body, header)
+}
+
+func Get(target string) (*Response, error) {
+    return NewClient(nil).Request(target, "GET", "", nil)
 }

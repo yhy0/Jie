@@ -1,6 +1,9 @@
 package conf
 
-import "sync"
+import (
+    folderutil "github.com/projectdiscovery/utils/folder"
+    "path/filepath"
+)
 
 /**
   @author: yhy
@@ -8,29 +11,17 @@ import "sync"
   @desc: //TODO
 **/
 
-var (
-	DefaultPlugins = []string{"XSS", "SQL", "CMD", "XXE", "SSRF", "BRUTE", "JSONP", "CRLF", "BBSCAN"}
-)
+var GlobalConfig = &Config{}
 
-type Config struct {
-	WebScan WebScan `json:"web_scan"`
-	Passive string  `json:"passive"`
-	Reverse Reverse `json:"reverse"`
-	Debug   bool    `json:"debug"`
-	Options Options `json:"options"`
+var ConfigFile string
+
+// FilePath 一些配置文件的默认位置
+var FilePath string
+
+func init() {
+    homedir := folderutil.HomeDirOrDefault("")
+
+    userCfgDir := filepath.Join(homedir, ".config")
+
+    FilePath = filepath.Join(userCfgDir, "Jie")
 }
-
-type WebScan struct {
-	Poc     []string `json:"poc"`
-	Plugins []string `json:"plugins"`
-}
-
-type Reverse struct {
-	Host   string `json:"host"`
-	Domain string `json:"domain"`
-}
-
-var GlobalConfig *Config
-
-// Visited 防止重复爬取的, 保证并发安全
-var Visited = &sync.Map{}

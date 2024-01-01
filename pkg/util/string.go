@@ -1,13 +1,13 @@
 package util
 
 import (
-	"encoding/json"
-	"math/rand"
-	"net/http"
-	"strings"
-	"time"
-	"unicode/utf8"
-	"unsafe"
+    "encoding/json"
+    "math/rand"
+    "net/http"
+    "strings"
+    "time"
+    "unicode/utf8"
+    "unsafe"
 )
 
 /**
@@ -17,16 +17,16 @@ import (
 **/
 
 func init() {
-	rand.Seed(time.Now().Unix())
+    rand.Seed(time.Now().Unix())
 }
 
 func StringToBytes(s string) []byte {
-	return *(*[]byte)(unsafe.Pointer(
-		&struct {
-			string
-			Cap int
-		}{s, len(s)},
-	))
+    return *(*[]byte)(unsafe.Pointer(
+        &struct {
+            string
+            Cap int
+        }{s, len(s)},
+    ))
 }
 
 /*
@@ -42,59 +42,65 @@ func StringToBytes(s string) []byte {
 */
 
 func BytesToString(b []byte) string {
-	if !utf8.Valid(b) {
-		return ""
-	}
-	return string(b[:])
-	//return *(*string)(unsafe.Pointer(&b))
+    if !utf8.Valid(b) {
+        return ""
+    }
+    return string(b[:])
+    // return *(*string)(unsafe.Pointer(&b))
 }
 
 // StructToJsonString 将结构体输出位 json 字符
 func StructToJsonString(item interface{}) string {
-	jsonBytes, err := json.MarshalIndent(item, "", "  ")
-	if err != nil {
-		panic(err)
-	}
+    jsonBytes, err := json.MarshalIndent(item, "", "  ")
+    if err != nil {
+        panic(err)
+    }
 
-	return string(jsonBytes)
+    return string(jsonBytes)
 }
 
 // ReverseString 反转字符串 style --> elyts
 func ReverseString(s string) string {
-	runes := []rune(s)
-	for from, to := 0, len(runes)-1; from < to; from, to = from+1, to-1 {
-		runes[from], runes[to] = runes[to], runes[from]
-	}
-	return string(runes)
+    runes := []rune(s)
+    for from, to := 0, len(runes)-1; from < to; from, to = from+1, to-1 {
+        runes[from], runes[to] = runes[to], runes[from]
+    }
+    return string(runes)
 }
 
 func Trim(s string) string {
-	s = strings.ReplaceAll(s, " ", "")
-	s = strings.ReplaceAll(s, "\t", "")
-	s = strings.ReplaceAll(s, "\r", "")
-	s = strings.ReplaceAll(s, "\n", "")
-	return s
+    s = strings.ReplaceAll(s, " ", "")
+    s = strings.ReplaceAll(s, "\t", "")
+    s = strings.ReplaceAll(s, "\r", "")
+    s = strings.ReplaceAll(s, "\n", "")
+    return s
 }
 
 // RemoveDuplicateElement  数组去重
 func RemoveDuplicateElement(strs []string) []string {
-	var result []string
-	if len(strs) == 0 {
-		return result
-	}
+    var result []string
+    if len(strs) == 0 {
+        return result
+    }
 
-	for _, item := range strs {
-		item = strings.TrimSpace(item)
-		if item != "" && !In(item, result) {
-			item = strings.TrimSpace(item)
-			result = append(result, item)
-		}
-	}
-	return result
+    for _, item := range strs {
+        item = strings.TrimSpace(item)
+        if item != "" && !SliceInCaseFold(item, result) {
+            item = strings.TrimSpace(item)
+            result = append(result, item)
+        }
+    }
+    return result
 }
 
 func MapToJson(param http.Header) string {
-	dataType, _ := json.Marshal(param)
-	dataString := string(dataType)
-	return dataString
+    dataType, _ := json.Marshal(param)
+    dataString := string(dataType)
+    return dataString
+}
+
+func RemoveQuotationMarks(str string) string {
+    str = strings.ReplaceAll(str, "\"", "")
+    str = strings.ReplaceAll(str, "'", "")
+    return str
 }

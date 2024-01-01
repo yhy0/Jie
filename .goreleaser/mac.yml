@@ -1,0 +1,23 @@
+before:
+  hooks:
+    - go mod tidy
+project_name: Jie
+builds:
+  - id: Jie-darwin
+    ldflags:
+      - -s -w
+    binary: Jie
+    env:
+      - CGO_ENABLED=1
+    main: ./main.go
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+archives:
+- format: zip
+  name_template: '{{ .ProjectName }}_{{ .Version }}_{{ if eq .Os "darwin" }}macOS{{ else }}{{ .Os }}{{ end }}_{{ .Arch }}'
+
+checksum:
+  name_template: "{{ .ProjectName }}-mac-checksums.txt"

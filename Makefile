@@ -3,25 +3,15 @@ VERSION=$(shell cat conf/banner.go |grep "const Version ="|cut -d"\"" -f2)
 # Output File Location
 DIR=data/v${VERSION}
 $(shell mkdir -p ${DIR})
-
+# go build flags 删除符号表和调试信息，减小生成文件的大小
+LDFLAGS=-ldflags "-s -w"
 
 default:
-	go build -o ${DIR}/Jie main.go
+	export CGO_ENABLED=1;go build ${LDFLAGS} -o ${DIR}/Jie main.go
 
+# 会在程序奔溃时生成 coredump 文件，可以使用 https://github.com/go-delve/delve 工具调试
 debug:
-	go build -o ${DIR}/Jie main.go
-
-# Compile Server - Windows x64
-windows:
-	export GOOS=windows;export GOARCH=amd64;go build -o ${DIR}/Jie-Windows-x64.exe main.go
-
-# Compile Server - Linux x64
-linux:
-	export GOOS=linux;export GOARCH=amd64;go build -o ${DIR}/Jie-Linux-x64 main.go
-
-# Compile Server - Darwin x64
-darwin:
-	export GOOS=darwin;export GOARCH=amd64;go build -o ${DIR}/Jie-Darwin-x64 main.go
+	export CGO_ENABLED=1;go build -o ${DIR}/Jie main.go; ulimit -c unlimited; export GOTRACEBACK=crash
 
 # clean
 clean:

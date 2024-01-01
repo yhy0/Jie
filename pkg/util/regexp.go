@@ -1,7 +1,7 @@
 package util
 
 import (
-	"regexp"
+    "regexp"
 )
 
 /**
@@ -11,12 +11,26 @@ import (
 **/
 
 func MatchAnyOfRegexp(regexps []string, match string) (bool, string) {
-	for _, value := range regexps {
-		regex := regexp.MustCompile(value)
-		if regex.MatchString(match) {
-			return true, value
-		}
-	}
+    for _, value := range regexps {
+        regex := regexp.MustCompile(value)
+        if regex.MatchString(match) {
+            return true, value
+        }
+    }
 
-	return false, ""
+    return false, ""
+}
+
+func RegexpStr(patterns []string, str string) bool {
+    for _, pattern := range patterns {
+        match, err := regexp.MatchString(pattern, str)
+        if err != nil {
+            continue
+        }
+        if match {
+            return true
+        }
+    }
+
+    return false
 }

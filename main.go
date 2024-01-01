@@ -9,5 +9,5 @@ import "github.com/yhy0/Jie/cmd"
 **/
 
 func main() {
-	cmd.Execute()
+    cmd.Execute()
 }

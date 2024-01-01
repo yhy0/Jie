@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Copilot Report - Jie</title>
+    <!-- Include Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .list-group-item {
+            padding: 0.5rem 1rem;
+        }
+        .vuln-card h4 {
+            font-size: 1.2rem;
+        }
+        p {
+            margin-bottom: 0.3rem;
+        }
+
+        .badge-container .badge {
+            margin-right: 15px;
+        }
+        .badge-container .badge:last-child {
+            margin-right: 0;
+        }
+    </style>
+</head>
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+    <symbol id="yi" viewBox="0 0 496 512">
+        <path d="M248 8C111.03 8 0 119.03 0 256s111.03 248 248 248 248-111.03 248-248S384.97 8 248 8zm0 376c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32zm0-128c-53.02 0-96 42.98-96 96s42.98 96 96 96c-106.04 0-192-85.96-192-192S141.96 64 248 64c53.02 0 96 42.98 96 96s-42.98 96-96 96zm0-128c-17.67 0-32 14.33-32 32s14.33 32 32 32 32-14.33 32-32-14.33-32-32-32z"/>
+    </symbol>
+    <symbol id="github" viewBox="0 0 496 512">
+        <path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/>
+    </symbol>
+</svg>
+
+<main>
+    <div class="container">
+        <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom">
+            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
+                <svg class="bi me-2" width="40" height="32"><use xlink:href="#yi"/></svg>
+                <h3 class="fs-4">Security Copilot Report - Jie</h3>
+            </a>
+            <ul class="nav nav-pills">
+                <li class="nav-item"><a href="/index" class="nav-link active" aria-current="page">首页</a></li>
+                <li class="nav-item"><a href="/config" class="nav-link">配置</a></li>
+                <li class="nav-item"><a href="/about" class="nav-link">关于</a></li>
+            </ul>
+        </header>
+    </div>
+</main>
+
+<body class="d-flex flex-column min-vh-100">
+    {{if .list }}
+    <div class="container row">
+        <div class="col col-md-8 offset-md-3 row align-items-start">
+            <div class="input-group">
+                <span class="input-group-text" id="basic-addon1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"></path>
+                  </svg>
+                </span>
+                <input class="form-control me-2" type="search" placeholder="Search" id="search-input" >
+            </div>
+        </div>
+        <div class="col">
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                Clear
+            </button>
+        </div>
+    </div>
+    {{ end }}
+
+    <div class="container mt-3 overflow-auto">
+        <div class="list-group" id="targetList">
+            {{range $i, $l := .list}}
+                <div class="list-item">
+                    <a href="/SCopilot?host={{ $l.Host }}" class="page-link list-group-item list-group-item-action d-flex justify-content-between align-items-center" target="_blank">
+                        {{ $l.Host }}
+                        <div class="badge-container">
+                            <span class="badge rounded-pill bg-primary">
+                                {{ $l.InfoCount }}
+                            </span>
+                                <span class="badge rounded-pill bg-info">
+                                {{ $l.ApiCount }}
+                            </span>
+                                <span class="badge rounded-pill bg-danger">
+                                {{ $l.VulnCount }}
+                            </span>
+                        </div>
+                    </a>
+                </div>
+            {{end}}
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h1 class="modal-title fs-5" id="exampleModalLabel">清空所有数据</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="/clear">
+                <div class="modal-body">
+                    清空所有数据
+                </div>
+                    <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-danger">Clear</button>
+                    </div>
+            </form>
+
+        </div>
+        </div>
+    </div>
+    
+    <footer class="bg-black bg-body-tertiary text-center mt-auto">
+        <div class="container">
+            © {{ .year}} Copyright:
+            <a class="text-dark" href="https://github.com/yhy0/Jie" target="_blank">yhy - Jie</a>
+        </div>
+    </footer>
+
+    <!-- Include Bootstrap 5 JS (Optional, if needed) -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+
+    <script>
+        const targetListDiv = document.getElementById('targetList');
+        const host = window.location.hostname;
+        const socket = new WebSocket(`ws://${host}:9088/ws`);
+
+        socket.addEventListener('message', (event) => {
+            const data = JSON.parse(event.data);
+            // 更新 targetList 循环
+            targetListDiv.innerHTML = '';
+
+            if(data !== null) {
+                console.log(data);
+                data.forEach(l => {
+                    const a = document.createElement('a');
+                    a.href = `/SCopilot?host=${l.host}`;
+                    a.className = 'page-link list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+                    a.target = '_blank';
+                    a.textContent = l.host;
+
+                    const div = document.createElement('div');
+                    div.className = 'badge-container';
+
+                    const s1 = document.createElement('span');
+                    s1.className = 'badge rounded-pill bg-primary';
+                    s1.innerHTML = l.info_count;
+
+                    const s2 = document.createElement('span');
+                    s2.className = 'badge rounded-pill bg-info';
+                    s2.innerHTML = l.api_count;
+
+                    const s3 = document.createElement('span');
+                    s3.className = 'badge rounded-pill bg-danger';
+                    s3.innerHTML = l.vuln_count;
+
+                    div.appendChild(s1);
+                    div.appendChild(s2);
+                    div.appendChild(s3);
+
+                    a.appendChild(div);
+                    targetListDiv.appendChild(a);
+                });
+            }
+        });
+
+        socket.addEventListener('close', () => {
+            console.log('WebSocket closed');
+        });
+
+        socket.addEventListener('error', (error) => {
+            console.error('WebSocket error:', error);
+        });
+    </script>
+
+    <script>
+        document.getElementById('search-input').addEventListener('input', function (event) {
+            const searchTerm = event.target.value.trim(); // 获取并清除输入框两边的空格
+            const listItems = document.querySelectorAll('.list-item');
+
+            if (searchTerm.length > 0) {
+                console.log("11")
+                listItems.forEach(function (item) {
+                    const itemText = item.textContent || item.innerText;
+                    console.log(itemText.toLowerCase(searchTerm.toLowerCase()))
+                    if (itemText.toLowerCase().indexOf(searchTerm.toLowerCase()) !== -1) {
+                        item.style.display = ''; // 显示匹配的项
+                    } else {
+                        item.style.display = 'none'; // 隐藏不匹配的项
+                    }
+                });
+            } else {
+                listItems.forEach(function (item) {
+                    item.style.display = ''; // 如果搜索框为空，显示所有项
+                });
+            }
+        });
+    </script>
+</body>
+</html>

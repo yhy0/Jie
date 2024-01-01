@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Copilot Report - Jie</title>
+    <!-- Include Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .vuln-card.Low {
+            border-color: #6c757d;
+        }
+        .vuln-card.Medium {
+            border-color: #ffc107;
+        }
+        .vuln-card.High {
+            border-color: #fd7e14;
+        }
+        .vuln-card.Critical {
+            border-color: #dc3545;
+        }
+        .vuln-card.Low .level, .vuln-card.Low .plugin {
+            color: #6c757d;
+        }
+        .vuln-card.Medium .level, .vuln-card.Medium .plugin {
+            color: #ffc107;
+        }
+        .vuln-card.High .level, .vuln-card.High .plugin {
+            color: #fd7e14;
+        }
+        .vuln-card.Critical .level, .vuln-card.Critical .plugin {
+            color: #dc3545;
+        }
+        .list-group-item {
+            padding: 0.5rem 1rem;
+        }
+        .vuln-card h4 {
+            font-size: 1.2rem;
+        }
+        p {
+            margin-bottom: 0.3rem;
+        }
+    </style>
+</head>
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+    <symbol id="yi" viewBox="0 0 496 512">
+        <path d="M248 8C111.03 8 0 119.03 0 256s111.03 248 248 248 248-111.03 248-248S384.97 8 248 8zm0 376c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32zm0-128c-53.02 0-96 42.98-96 96s42.98 96 96 96c-106.04 0-192-85.96-192-192S141.96 64 248 64c53.02 0 96 42.98 96 96s-42.98 96-96 96zm0-128c-17.67 0-32 14.33-32 32s14.33 32 32 32 32-14.33 32-32-14.33-32-32-32z"/>
+    </symbol>
+    <symbol id="github" viewBox="0 0 496 512">
+        <path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/>
+    </symbol>
+    <symbol id="clipboard-icon" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+        <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2Zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6ZM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2Z"/>
+    </symbol>
+    <symbol id="checkmark-icon" viewBox="0 0 16 16">
+        <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z"/>
+    </symbol>
+</svg>
+<main>
+    <div class="container">
+        <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom">
+            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
+                <svg class="bi me-2" width="40" height="32"><use xlink:href="#yi"/></svg>
+                <h3 class="fs-4">Security Copilot Report - Jie</h3>
+            </a>
+            <ul class="nav nav-pills">
+                <li class="nav-item"><a href="/index" class="nav-link active" aria-current="page">首页</a></li>
+                <li class="nav-item"><a href="/config" class="nav-link">配置</a></li>
+                <li class="nav-item"><a href="/about" class="nav-link">关于</a></li>
+            </ul>
+        </header>
+    </div>
+</main>
+
+<body class="d-flex flex-column min-vh-100">
+    <div class="container">
+        <div class="container px-4">
+            <div class="row">
+                <div class="mx-2 p-3 card col">
+                    <h4 class="card-title">基本信息</h4>
+                    <div class="card-body" >
+                        <p>{{ .data.Target }} </p>
+                        {{ if .ipInfo.Cdn }}
+                        <span class="badge rounded-pill text-bg-primary">cdn</span>
+                        {{ end }}
+
+                        {{ if .ipInfo.Value }}
+                        <span class="badge rounded-pill text-bg-primary">{{ .ipInfo.Value }} </span>
+                        <span class="badge rounded-pill text-bg-primary">{{ .ipInfo.Type }} </span>
+                        {{ end }}
+                        <p></p>
+                        {{ if .ipInfo.AllRecords }}
+                        <div class="p-3 col overflow-auto" style="max-height: 80px;">
+                            <ul class="list-group">
+                                {{ range $i, $records := .ipInfo.AllRecords }}
+                                    <li class="list-group-item">{{ $records }}</li>
+                                {{ end }}
+                            </ul>
+                        </div>
+                        {{ end }}
+                    </div>
+                </div>
+                <div class="mx-2 p-3 card col">
+                    <h4 class="card-title">指纹</h4>
+                    <div class="card-body" id="fingerprints">
+                        {{ range $i, $fingerprint := .data.Fingerprints }}
+                        <span class="mx-1 fs-7 badge rounded-pill bg-primary">{{ $fingerprint }}</span>
+                        {{ end }}
+                    </div>
+                </div>
+
+                <div class="mx-2 p-3 card col">
+                    <h4 class="card-title">端口信息</h4>
+                    <div class="card-body" id="portInfo">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                            <tr>
+                                <th scope="col">Port</th>
+                                <th scope="col">Service</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {{ range $port, $service := .ipInfo.PortService }}
+                                <tr>
+                                    <th scope="row">{{ $port }}</th>
+                                    <td>{{ $service }}</td>
+                                </tr>
+                            {{ end }}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container mt-3">
+            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                <li class="nav-item position-relative" role="presentation">
+                    <button class="nav-link active" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact-tab-pane" type="button" role="tab" aria-controls="contact-tab-pane" aria-selected="true">Info</button>
+                    <span id="InfoMsgTotal" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
+                        {{ len .data.InfoMsg }}
+                    </span>
+                </li>
+                <li class="nav-item position-relative" role="presentation">
+                    <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#siteMap-tab-pane" type="button" role="tab" aria-controls="siteMap-tab-pane" aria-selected="false">Site Map</button>
+<!--                    {{ $sl := len .data.SiteMap }}-->
+<!--                    {{ if gt $sl 0 }}-->
+                    <span id="SiteMapTotal" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info">
+                        {{ len .data.SiteMap }}
+                    </span>
+<!--                    {{ end }}-->
+                </li>
+                <li class="nav-item position-relative" role="presentation">
+                    <button class="nav-link" id="vuln-tab" data-bs-toggle="tab" data-bs-target="#vuln-tab-pane" type="button" role="tab" aria-controls="vuln-tab-pane" aria-selected="false">Vuln</button>
+                    <span id="VulMessageTotal" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {{ len .data.VulMessage }}
+                    </span>
+                </li>
+                <li class="nav-item position-relative" role="presentation">
+                    <button class="nav-link" id="collection-tab" data-bs-toggle="tab" data-bs-target="#collection-tab-pane" type="button" role="tab" aria-controls="collection-tab-pane" aria-selected="false">Collection</button>
+                </li>
+            </ul>
+            <div class="p-3 tab-content" id="myTabContent">
+                <div class="tab-pane fade show active" id="contact-tab-pane" role="tabpanel" aria-labelledby="contact-tab" tabindex="0">
+                    <ul class="list-group position-relative">
+                        {{ range $index, $info := .data.InfoMsg }}
+                            <li class="list-group-item ">
+                                {{ $info.Url }}
+                                <span class="badge rounded-pill bg-primary"> {{ $info.Plugin }}</span>
+                                {{ if $info.Result }}<p><span class="badge bg-warning">{{ $info.Result }}</span></p>{{ end }}
+                                <ul class="nav nav-tabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <a class="nav-link active" data-bs-toggle="tab" href="#request{{$index}}" role="tab" aria-controls="request{{$index}}" aria-selected="true" >Request</a>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <a class="nav-link" data-bs-toggle="tab" href="#response{{$index}}" role="tab" aria-controls="response{{$index}}" aria-selected="false" >Response</a>
+                                    </li>
+                                </ul>
+                                <!-- Tab panes for Request and Response -->
+                                <div class="tab-content">
+                                    <div class="tab-pane fade show active" id="request{{$index}}" role="tabpanel" aria-labelledby="request-tab{{$index}}">
+                                        <pre class="card-text">{{ $info.Request }}</pre>
+                                    </div>
+                                    <div class="tab-pane fade" id="response{{$index}}" role="tabpanel" aria-labelledby="response-tab{{$index}}">
+                                        <pre class="card-text">{{ $info.Response }}</pre>
+                                    </div>
+                                </div>
+                            </li>
+                        {{ end }}
+                    </ul>
+                </div>
+
+                <div class="tab-pane fade list-group" id="siteMap-tab-pane" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
+                    {{ range $i, $url := .data.SiteMap }}
+                        <a href="{{ $url }}" class="page-link list-group-item list-group-item-action position-relative" target="_blank">
+                            {{ $url }}
+                        </a>
+                    {{ end }}
+                </div>
+
+                <div class="tab-pane fade" id="vuln-tab-pane" role="tabpanel" aria-labelledby="vuln-tab" tabindex="0">
+                    <ul class="list-group">
+                        {{range $index, $message := .data.VulMessage }}
+                        <li class="list-group-item">
+                            <div class="vuln-card mb-3 {{ $message.Level }}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h4 class="level mb-0">
+                                        {{ if $message.VulnData.VulnType }} {{ $message.VulnData.VulnType }} - {{ end }}{{ $message.VulnData.Target }}
+                                    </h4>
+                                    <span class="toggle-switch btn btn-primary">Toggle Details</span>
+                                </div>
+                                <p class="level">{{ $message.Level }} <span class="badge rounded-pill bg-danger"> {{ $message.Plugin }}</span></p>
+                                {{ if $message.VulnData.Ip }}<p>IP: {{ $message.VulnData.Ip }}</p>{{ end }}
+                                {{ if $message.VulnData.CreateTime }}<p>Create Time: {{ $message.VulnData.CreateTime }}</p>{{ end }}
+                                {{ if $message.VulnData.Payload }}<p class="level">Payload: {{ $message.VulnData.Payload }}</p>{{ end }}
+                                <div class="vuln-details collapse">
+                                    {{ if $message.VulnData.Method }}<p>Method: {{ $message.VulnData.Method }}</p>{{ end }}
+                                    {{ if $message.VulnData.Param }}<p>Parameter: {{ $message.VulnData.Param }}</p>{{ end }}
+                                    {{ if $message.VulnData.CURLCommand }}<p>CURL Command: {{ $message.VulnData.CURLCommand }}</p>{{ end }}
+                                    {{ if $message.VulnData.Description }}<p>Description: {{ $message.VulnData.Description }}</p>{{ end }}
+                                    <!-- Nav tabs for Request and Response -->
+                                    <ul class="nav nav-tabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <a class="nav-link active" data-bs-toggle="tab" href="#vuln-request{{$index}}" role="tab" aria-controls="vuln-request{{$index}}" aria-selected="true" >Request</a>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <a class="nav-link" data-bs-toggle="tab" href="#vuln-response{{$index}}" role="tab" aria-controls="vuln-response{{$index}}" aria-selected="false" >Response</a>
+                                        </li>
+                                    </ul>
+                                    <!-- Tab panes for Request and Response -->
+                                    <div class="tab-content">
+                                        <div class="tab-pane fade show active" id="vuln-request{{$index}}" role="tabpanel" aria-labelledby="vuln-request-tab{{$index}}">
+                                            {{ if $message.VulnData.Request}}<pre class="card-text">{{ $message.VulnData.Request}}</pre>{{ end }}
+                                        </div>
+                                        <div class="tab-pane fade" id="vuln-response{{$index}}" role="tabpanel" aria-labelledby="vuln-response-tab{{$index}}">
+                                            {{ if $message.VulnData.Response }}<pre class="card-text">{{ $message.VulnData.Response }}</pre>{{ end }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        {{end}}
+                    </ul>
+                </div>
+
+                <div class="tab-pane fade list-group container-fluid mt-3 d-grid gap-3" id="collection-tab-pane" role="tabpanel" aria-labelledby="collection-tab" tabindex="0">
+                    <div class="row">
+                        <div class="col mx-2 p-3 card" style="width: 18rem;">
+                            <div class="card-header d-flex justify-content-between">
+                                Subdomain
+                                <button class="copy_btn btn btn-sm btn-outline-secondary" data-clipboard-action="copy" data-clipboard-target="#subdomain-list">
+                                    <svg width="16" height="16" fill="currentColor" class="bi bi-clipboard">
+                                        <use xlink:href="#clipboard-icon"></use>
+                                    </svg>
+                                </button>
+                            </div>
+                            <ul id="subdomain-list" class="list-group list-group-flush overflow-auto" style="max-height: 24rem;">
+                                {{range $index, $message := .data.CollectionMsg.Subdomain }}
+                                    <li class="list-group-item">{{ $message }}</li>
+                                {{ end }}
+                            </ul>
+                        </div>
+                        <div class="col mx-2 p-3 card" style="width: 18rem;">
+                            <div class="card-header d-flex justify-content-between">
+                                InnerIp
+                                <button class="copy_btn btn btn-sm btn-outline-secondary" data-clipboard-target="#innerIp-list">
+                                    <svg width="16" height="16" fill="currentColor" class="bi bi-clipboard">
+                                        <use xlink:href="#clipboard-icon"></use>
+                                    </svg>
+                                </button>
+                            </div>
+                            <ul id="innerIp-list" class="list-group list-group-flush overflow-auto" style="max-height: 24rem;">
+                                {{range $index, $message := .data.CollectionMsg.InnerIp }}
+                                    <li class="list-group-item">{{ $message }}</li>
+                                {{ end }}
+                            </ul>
+                        </div>
+                        <div class="col mx-2 p-3 card" style="width: 18rem;">
+                            <div class="card-header d-flex justify-content-between">
+                                PublicIp
+                                <button class="copy_btn btn btn-sm btn-outline-secondary" data-clipboard-target="#publicIp-list">
+                                    <svg width="16" height="16" fill="currentColor" class="bi bi-clipboard">
+                                        <use xlink:href="#clipboard-icon"></use>
+                                    </svg>
+                                </button>
+                            </div>
+                            <ul id="publicIp-list" class="list-group list-group-flush overflow-auto" style="max-height: 24rem;">
+                                {{range $index, $message := .data.CollectionMsg.PublicIp }}
+                                    <li class="list-group-item">{{ $message }}</li>
+                                {{ end }}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col mx-2 p-3 card" style="width: 18rem;">
+                            <div class="card-header d-flex justify-content-between">
+                                OtherDomain
+                                <button class="copy_btn btn btn-sm btn-outline-secondary" data-clipboard-target="#other-domain-list">
+                                    <svg width="16" height="16" fill="currentColor" class="bi bi-clipboard">
+                                        <use xlink:href="#clipboard-icon"></use>
+                                    </svg>
+                                </button>
+                            </div>
+                            <ul id="other-domain-list" class="list-group list-group-flush overflow-auto" style="max-height: 24rem;">
+                                {{range $index, $message := .data.CollectionMsg.OtherDomain }}
+                                <li class="list-group-item">{{ $message }}</li>
+                                {{ end }}
+                            </ul>
+                        </div>
+                        <div class="col mx-2 p-3 card" style="width: 18rem;">
+                            <div class="card-header d-flex justify-content-between">
+                                Phone & Email & IdCard
+                                <button class="copy_btn btn btn-sm btn-outline-secondary" data-clipboard-target="#pei-list">
+                                    <svg width="16" height="16" fill="currentColor" class="bi bi-clipboard">
+                                        <use xlink:href="#clipboard-icon"></use>
+                                    </svg>
+                                </button>
+                            </div>
+                            <ul id="pei-list" class="list-group list-group-flush overflow-auto" style="max-height: 24rem;">
+                                {{range $index, $message := .data.CollectionMsg.Phone }}
+                                <li class="list-group-item">{{ $message }}</li>
+                                {{ end }}
+                                {{range $index, $message := .data.CollectionMsg.Email }}
+                                <li class="list-group-item">{{ $message }}</li>
+                                {{ end }}
+                                {{range $index, $message := .data.CollectionMsg.IdCard }}
+                                <li class="list-group-item">{{ $message }}</li>
+                                {{ end }}
+                            </ul>
+                        </div>
+                        <div class="col mx-2 p-3 card" style="width: 18rem;">
+                            <div class="card-header d-flex justify-content-between">
+                                Others
+                                <button class="copy_btn btn btn-sm btn-outline-secondary" data-clipboard-target="#other-list">
+                                    <svg width="16" height="16" fill="currentColor" class="bi bi-clipboard">
+                                        <use xlink:href="#clipboard-icon"></use>
+                                    </svg>
+                                </button>
+                            </div>
+                            <ul id="other-list" class="list-group list-group-flush overflow-auto" style="max-height: 24rem;">
+                                {{range $index, $message := .data.CollectionMsg.Others }}
+                                <li class="list-group-item">{{ $message }}</li>
+                                {{ end }}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col mx-2 p-3 card" style="width: 18rem;">
+                            <div class="card-header d-flex justify-content-between">
+                                API
+                                <button class="copy_btn btn btn-sm btn-outline-secondary" data-clipboard-target="#api-list">
+                                    <svg width="16" height="16" fill="currentColor" class="bi bi-clipboard">
+                                        <use xlink:href="#clipboard-icon"></use>
+                                    </svg>
+                                </button>
+                            </div>
+                            <ul id="api-list" class="list-group list-group-flush overflow-auto" style="max-height: 30rem;">
+                                {{range $index, $message := .data.CollectionMsg.Api }}
+                                <li class="list-group-item">{{ $message }}</li>
+                                {{ end }}
+                            </ul>
+                        </div>
+                        <div class="col mx-2 p-3 card bd-clipboard" style="width: 18rem;">
+                            <div class="card-header d-flex justify-content-between">
+                                Urls
+                                <button class="copy_btn btn btn-sm btn-outline-secondary" data-clipboard-target="#url-list">
+                                    <svg width="16" height="16" fill="currentColor" class="bi bi-clipboard">
+                                        <use xlink:href="#clipboard-icon"></use>
+                                    </svg>
+                                </button>
+                            </div>
+                            <ul id="url-list" class="list-group list-group-flush overflow-auto" style="max-height: 30rem;">
+                                {{range $index, $message := .data.CollectionMsg.Urls }}
+                                <li class="list-group-item">{{ $message }}</li>
+                                {{ end }}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右侧通知 -->
+    <div class="toast-container position-fixed end-0 p-2 align-items-center fade show">
+        <div class="toast text-bg-primary" aria-live="assertive" aria-atomic="true">
+            <div class="toast-body">数据更新了, 刷新页面即可</div>
+        </div>
+    </div>
+
+    <footer class="bg-black bg-body-tertiary text-center mt-auto">
+        <div class="container">
+            © {{ .year}} Copyright:
+            <a class="text-dark" href="https://github.com/yhy0/Jie" target="_blank">yhy - Jie</a>
+        </div>
+    </footer>
+
+    <!-- Include Bootstrap 5 JS (Optional, if needed) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script>
+    <script>
+        // Initialize clipboard.js
+        const clipboard = new ClipboardJS('.btn');
+
+        // Display a message when copying is successful
+        clipboard.on('success', function(e) {
+            console.log('Copied:', e.text);
+            e.clearSelection();
+
+            // Change the SVG icon to the checkmark
+            const svgIcon = e.trigger.querySelector('svg use');
+            svgIcon.setAttribute('xlink:href', '#checkmark-icon');
+
+            // Restore the original SVG icon after 3 seconds
+            setTimeout(() => {
+                svgIcon.setAttribute('xlink:href', '#clipboard-icon');
+            }, 3000);
+        });
+
+        // Display an error message when copying fails
+        clipboard.on('error', function(e) {
+            console.error('Error copying:', e.text);
+        });
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var toggleSwitches = document.querySelectorAll(".toggle-switch");
+            toggleSwitches.forEach(function (toggleSwitch) {
+                toggleSwitch.addEventListener("click", function () {
+                    var vulnDetails = this.closest(".vuln-card").querySelector(".vuln-details");
+                    vulnDetails.classList.toggle("show");
+                });
+            });
+        });
+    </script>
+
+    <!-- 使用 WebSocket 通知前端数据据更改 -->
+    <script>
+        const fingerprintsDiv = document.getElementById('fingerprints');
+        const siteMapDiv = document.getElementById('siteMap-tab-pane');
+        const infoDiv = document.getElementById('contact-tab-pane');
+        const iTotal = document.getElementById('InfoMsgTotal');
+        const sTotal = document.getElementById('SiteMapTotal');
+        const vTotal = document.getElementById('VulMessageTotal');
+
+
+        const host = window.location.hostname;
+        const t = new URLSearchParams(window.location.search).get('host');
+        const socket = new WebSocket(`ws://${host}:9088/ws?host=${t}`);
+
+        socket.addEventListener('message', (event) => {
+            var toastElList = [].slice.call(document.querySelectorAll('.toast'))
+            var toastList = toastElList.map(function (toastEl) {
+                return new bootstrap.Toast(toastEl)
+            })
+            toastList[0].show()
+
+            // 1.5  秒后自动删除 Toast 组件
+            setTimeout(function() {
+                toastList[0].hide()
+            }, 1500);
+            const data = JSON.parse(event.data);
+            console.log(data);
+
+            if(data.fingerprints != null) {
+                // 更新 fingerprints 循环
+                fingerprintsDiv.innerHTML = '';
+                data.fingerprints.forEach(fingerprint => {
+                    const span = document.createElement('span');
+                    span.className = 'mx-2 fs-7 badge rounded-pill bg-primary';
+                    span.textContent = fingerprint;
+                    fingerprintsDiv.appendChild(span);
+                });
+                if(sTotal.textContent != null) {
+                    sTotal.textContent = data.fingerprints.length;
+                }
+            }
+            if(data.site_map != null) {
+                // 更新 site-map 循环
+                siteMapDiv.innerHTML = '';
+                data.site_map.forEach(url => {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.className = 'page-link list-group-item list-group-item-action position-relative';
+                    a.target = '_blank';
+                    a.textContent = url;
+                    siteMapDiv.appendChild(a);
+                });
+            }
+
+            if(data.info_msg != null && iTotal.textContent != null) {
+                iTotal.textContent = data.info_msg.length;
+            }
+
+            if(data.vul_message != null && vTotal.textContent != null) {
+                vTotal.textContent = data.vul_message.length;
+            }
+        });
+
+        socket.addEventListener('close', () => {
+            console.log('WebSocket closed');
+        });
+
+        socket.addEventListener('error', (error) => {
+            console.error('WebSocket error:', error);
+        });
+    </script>
+</body>
+</html>

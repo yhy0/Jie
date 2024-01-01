@@ -1,0 +1,24 @@
+before:
+  hooks:
+    - go mod tidy
+project_name: Jie
+builds:
+  - id: Jie-windows
+    ldflags:
+      - -s -w
+    binary: Jie
+    env:
+      - CGO_ENABLED=1 # necessary only with winpcap
+    main: ./main.go
+    goos:
+      - windows
+    goarch:
+      - amd64
+      # - arm64
+      - 386
+archives:
+- format: zip
+  name_template: '{{ .ProjectName }}_{{ .Version }}_{{ if eq .Os "darwin" }}macOS{{ else }}{{ .Os }}{{ end }}_{{ .Arch }}'
+
+checksum:
+  name_template: "{{ .ProjectName }}-windows-checksums.txt"

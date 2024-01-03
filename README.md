@@ -24,10 +24,11 @@
 
 
 
-通过[主动爬虫模式](./crawler)或[被动代理](https://github.com/lqqyt2423/go-mitmproxy)获取流量，对流量进行分析、扫描
+通过[主动爬虫模式](https://github.com/Qianlitp/crawlergo)或[被动代理](https://github.com/lqqyt2423/go-mitmproxy)获取流量，对流量进行分析、扫描
 
 ## 主动模式
 
+使用 [crawlergo](https://github.com/Qianlitp/crawlergo) 爬虫实现
 主动模式下可以通过指定 `--copilot` 来进入 **Security Copilot** 模式，扫描完不退出，方便查看 web 结果页面
 
 ```bash
@@ -40,7 +41,7 @@
 
 ## 被动模式(Security Copilot)
 
-被动代理 通过 [https://github.com/lqqyt2423/go-mitmproxy/](go-mitmproxy) 实现。
+被动代理 通过 [go-mitmproxy](https://github.com/lqqyt2423/go-mitmproxy/) 实现。
 
 ### Security Copilot
 
@@ -352,11 +353,11 @@ https://github.com/SleepingBag945/dddd
 
 ## License
 
-This code is distributed under the MIT license. See [LICENSE](https://github.com/yhy0/Jie/blob/main/LICENSE) in this directory.
+This code is distributed under the AGPL-3.0 license. See [LICENSE](https://github.com/yhy0/Jie/blob/main/LICENSE) in this directory.
 
 ## 鸣谢
 
-感谢 各位师傅的开源作品和博客以及 [JetBrains](https://www.jetbrains.com/) 提供的一系列好用的 IDE 和对本项目的支持。
+感谢各位师傅的开源作品和博客以及 [JetBrains](https://www.jetbrains.com/) 提供的一系列好用的 IDE 对本项目的支持。
 
 ![JetBrains Logo (Main) logo](https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg)
 

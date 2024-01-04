@@ -18,10 +18,11 @@ import (
 **/
 
 var (
-    plugins   []string
-    show      bool
-    noPlugins bool
-    copilot   bool
+    plugins    []string
+    show       bool
+    noPlugins  bool
+    allPlugins bool
+    copilot    bool
 )
 
 var webScanCmd = &cobra.Command{
@@ -30,13 +31,23 @@ var webScanCmd = &cobra.Command{
     Run: func(cmd *cobra.Command, args []string) {
         if !noPlugins {
             // 如果没有禁用插件，并且没有指定插件，则按照配置文件默认插件
-            if plugins != nil && len(plugins) > 0 {
-                // 首先全部关闭，然后开启指定的，防止配置文件干扰
-                for k := range conf.Plugin {
-                    conf.Plugin[k] = false
-                }
-                for _, plugin := range plugins {
-                    conf.Plugin[plugin] = true
+            if plugins != nil {
+                if len(plugins) == 1 && plugins[0] == "all" {
+                    // 插件全部开启
+                    for k := range conf.Plugin {
+                        conf.Plugin[k] = true
+                    }
+                    logging.Logger.Infoln("Scan plugins are all on")
+                } else {
+                    // 首先全部关闭，然后开启指定的，防止配置文件干扰
+                    for k := range conf.Plugin {
+                        conf.Plugin[k] = false
+                    }
+                    for _, plugin := range plugins {
+                        conf.Plugin[plugin] = true
+                    }
+                    
+                    logging.Logger.Infoln("Plugins:", strings.Join(plugins, ", "))
                 }
             }
         } else { // 禁用插件
@@ -45,14 +56,11 @@ var webScanCmd = &cobra.Command{
                 conf.Plugin[k] = false
             }
         }
-        if len(plugins) > 0 {
-            logging.Logger.Infoln("Plugins:", strings.Join(plugins, ", "))
-        }
-
+        
         conf.GlobalConfig.WebScan.Poc = Poc
         conf.GlobalConfig.Reverse.Host = host
         conf.GlobalConfig.Reverse.Host = domain
-
+        
         if conf.GlobalConfig.Passive.WebPort != "" {
             if conf.GlobalConfig.Passive.WebPass == "" {
                 conf.GlobalConfig.Passive.WebPass = util.RandStr()
@@ -60,7 +68,7 @@ var webScanCmd = &cobra.Command{
             }
             go SCopilot.Init()
         }
-
+        
         if conf.GlobalConfig.Passive.ProxyPort != "" {
             // 原型链 xss 检测使用无头浏览器
             crawler.NewCrawlergo(false)
@@ -72,7 +80,7 @@ var webScanCmd = &cobra.Command{
             for _, target := range conf.GlobalConfig.Options.Targets {
                 mode.Active(target)
             }
-
+            
             if copilot { // 阻塞，不退出
                 logging.Logger.Infoln("Scan complete. Blocking program, go to the default port 9088 to view detailed scan information")
                 select {}
@@ -84,22 +92,22 @@ var webScanCmd = &cobra.Command{
 func webScanCmdInit() {
     rootCmd.AddCommand(webScanCmd)
     // 设置需要开启的插件
-    webScanCmd.Flags().StringSliceVarP(&plugins, "plugin", "p", nil, "Vulnerable Plugin, (example: --plugin xss,csrf,sql,dir ...)")
-    webScanCmd.Flags().BoolVar(&noPlugins, "np", false, "not run plugin")
-
+    webScanCmd.Flags().StringSliceVarP(&plugins, "plugin", "p", nil, "Vulnerable Plugin, (example: --plugin xss,csrf,sql,dir ...)\r\n指定开启的插件，当指定 all 时开启全部插件")
+    webScanCmd.Flags().BoolVar(&noPlugins, "np", false, "not run plugin.\r\n禁用所有的插件")
+    
     // 是否显示无头浏览器
-    webScanCmd.Flags().BoolVar(&show, "show", false, "specifies whether the show the browser in headless mode")
-
+    webScanCmd.Flags().BoolVar(&show, "show", false, "specifies whether the show the browser in headless mode.\r\n主动扫描下是否显示浏览器")
+    
     // 设置需要开启的 nuclei poc
-    webScanCmd.Flags().StringSliceVar(&Poc, "poc", nil, "specify the nuclei poc to run, separated by ','(example: test.yml,./test/*)")
-
+    webScanCmd.Flags().StringSliceVar(&Poc, "poc", nil, "specify the nuclei poc to run, separated by ','(example: test.yml,./test/*).\r\n自定义的nuclei 漏洞模板地址")
+    
     // 被动监听，收集流量 Security Copilot mode
-    webScanCmd.Flags().StringVar(&conf.GlobalConfig.Passive.ProxyPort, "listen", "", "use proxy resource collector, value is proxy addr, (example: 127.0.0.1:9080)")
-    webScanCmd.Flags().StringVar(&conf.GlobalConfig.Passive.WebPort, "web", "9088", "Security Copilot web report port, (example: 9088)")
-    webScanCmd.Flags().StringVar(&conf.GlobalConfig.Passive.WebUser, "user", "yhy", "Security Copilot web report authorized user, (example: yhy)")
-    webScanCmd.Flags().StringVar(&conf.GlobalConfig.Passive.WebPass, "pwd", "", "Security Copilot web report authorized pwd")
-
+    webScanCmd.Flags().StringVar(&conf.GlobalConfig.Passive.ProxyPort, "listen", "", "use proxy resource collector, value is proxy addr, (example: 127.0.0.1:9080).\r\n被动模式监听的代理地址，默认 127.0.0.1:9080")
+    webScanCmd.Flags().StringVar(&conf.GlobalConfig.Passive.WebPort, "web", "9088", "Security Copilot web report port, (example: 9088)].\r\nweb页面端口，默认9088")
+    webScanCmd.Flags().StringVar(&conf.GlobalConfig.Passive.WebUser, "user", "yhy", "Security Copilot web report authorized user, (example: yhy).]\r\nweb页面登录用户名，默认为yhy")
+    webScanCmd.Flags().StringVar(&conf.GlobalConfig.Passive.WebPass, "pwd", "", "Security Copilot web report authorized pwd.\r\nweb页面登录密码，不指定会随机生成一个密码")
+    
     // 是否阻塞，方便查看 security copilot 页面
-    webScanCmd.Flags().BoolVar(&copilot, "copilot", false, "Blocking program, go to the default port 9088 to view detailed scan information")
-
+    webScanCmd.Flags().BoolVar(&copilot, "copilot", false, "Blocking program, go to the default port 9088 to view detailed scan information.\r\n主动模式下，可以通过指定该参数阻塞程序，扫描完不退出程序，可以到 web 端口查看信息。")
+    
 }

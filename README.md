@@ -9,7 +9,7 @@
     <img alt="Release" src="https://img.shields.io/github/license/yhy0/Jie"/>
   </a>
   <a href="https://github.com/yhy0/Jie">
-    <img alt="Release" src="https://img.shields.io/badge/release-v1.0.0-brightgreen"/>
+    <img alt="Release" src="https://img.shields.io/badge/release-v1.0.1-brightgreen"/>
   </a>
   <a href="https://github.com/yhy0/Jie">
     <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/yhy0/Jie?color=9cf"/>
@@ -24,7 +24,10 @@
 
 
 
-通过[主动爬虫模式](https://github.com/Qianlitp/crawlergo)或[被动代理](https://github.com/lqqyt2423/go-mitmproxy)获取流量，对流量进行分析、扫描
+
+通过[主动爬虫模式](https://github.com/Qianlitp/crawlergo)或[被动代理](https://github.com/lqqyt2423/go-mitmproxy)获取流量，对流量进行分析、扫描。
+
+**使用前请详细阅读文档** 
 
 ## 主动模式
 
@@ -35,7 +38,7 @@
 ./Jie web -t https://public-firing-range.appspot.com/ -p xss -o vulnerability_report.html --copilot
 ```
 
-不指定 web 的用户名密码，或自动生成
+不指定 web 的用户名密码，会自动生成一个`yhy/密码`，可以在日志中查看,比如下面就是自动生成的
 
 `INFO [cmd:webscan.go(glob):55] Security Copilot web report authorized:yhy/3TxSZw8t8w`
 
@@ -49,31 +52,83 @@
 
 挂上扫描器后，过一遍网站，即使没有漏洞，也要告诉我这个网站的大致信息(指纹、cdn、端口信息、敏感信息、API 路径、子域名等等)，这样帮助人工进行进一步的梳理，辅助挖洞，而不是扫描完毕没洞就是完事了，还要人工重新过一遍。
 
-![image-20240101121809597](images/image-20240101121809597.png)
-
-![image-20240101121931631](images/image-20240101121931631.png)
-
-![image-20240101121957058](images/image-20240101121957058.png)
-
 ### 证书下载
 
-HTTPS 证书相关逻辑与 [mitmproxy](https://mitmproxy.org/) 兼容，并保存在 ~/.mitmproxy 文件夹中。
+被动代理下HTTPS 网站需要安装证书，HTTPS 证书相关逻辑与 [mitmproxy](https://mitmproxy.org/) 兼容，并保存在 ~/.mitmproxy 文件夹中。
 
 安装信任根证书, 安装步骤可参考 Python mitmproxy 文档：[About Certificates](https://docs.mitmproxy.org/stable/concepts-certificates/)。
 
 ### 启动
 
-```bash
-./Jie  web --listen :9081 --web 9088 --user yhy --pwd 123 --debug
+```
+ ./Jie  web --listen :9081 --web 9088 --user yhy --pwd 123 --debug
 ```
 
 这样会监听 9081 端口，web 界面(SecurityCopilot)开放会在 9088 端口
 
 浏览器指定代理 9081，或者联动 burp
 
+![image-20240101121809597](images/image-20240101121809597.png)
+
+![image-20240101121931631](images/image-20240101121931631.png)
+
+![image-20240101121957058](images/image-20240101121957058.png)
+
+## 基本使用
+
 ### 配置
 
-一些配置可以通过 `Jie_config.yaml`修改，也可以通过`http://127.0.0.1:9088/`的配置界面修改
+一些配置可以通过 [Jie_config.yaml](./Jie_config.yaml)修改，也可以通过`http://127.0.0.1:9088/`的配置界面修改（web 界面修改后会实时更新到配置文件中）
+
+`./Jie web -h`
+
+```bash
+Flags:
+      --copilot          Blocking program, go to the default port 9088 to view detailed scan information.
+                         主动模式下，可以通过指定该参数阻塞程序，扫描完不退出程序，可以到 web 端口查看信息。
+  -h, --help             help for web
+      --listen string    use proxy resource collector, value is proxy addr, (example: 127.0.0.1:9080).
+                         被动模式监听的代理地址，默认 127.0.0.1:9080
+      --np               not run plugin.
+                         禁用所有的插件
+  -p, --plugin strings   Vulnerable Plugin, (example: --plugin xss,csrf,sql,dir ...)
+                         指定开启的插件，当指定 all 时开启全部插件
+      --poc strings      specify the nuclei poc to run, separated by ','(example: test.yml,./test/*).
+                         自定义的nuclei 漏洞模板地址
+      --pwd string       Security Copilot web report authorized pwd.
+                         web页面登录密码，不指定会随机生成一个密码
+      --show             specifies whether the show the browser in headless mode.
+                         主动扫描下是否显示浏览器
+      --user string      Security Copilot web report authorized user, (example: yhy).]
+                         web页面登录用户名，默认为yhy (default "yhy")
+      --web string       Security Copilot web report port, (example: 9088)].
+                         web页面端口，默认9088 (default "9088")
+
+Global Flags:
+      --debug           debug
+  -f, --file string     target file
+                        主动扫描目标列表，每行一个
+  -o, --out string      output report file(eg:vulnerability_report.html)
+                        漏洞结果报告保存地址
+      --proxy string    proxy, (example: --proxy http://127.0.0.1:8080)
+                        指定 http/https 代理
+  -t, --target string   target
+                        主动扫描目标，被动下不需要指定
+```
+
+### 下载编译
+
+https://github.com/yhy0/Jie/releases/latest 中下载对应系统的程序，全程都是由 **Github Action** 自动化构建，请放心使用
+
+#### Linux/Mac
+
+执行`make`即可编译
+
+#### Windows
+
+安装 `MinGW`
+
+设置 `CGO_ENABLED=1` ，然后 `go build main.go`或者在安装`MinGM`后将`make.exe`加入环境变量，之后执行`make`
 
 ### 与 Burp 联动
 

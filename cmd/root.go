@@ -48,18 +48,18 @@ func init() {
     fmt.Println("\t" + aurora.Green(conf.Banner).String())
     fmt.Println("\t\t" + aurora.Red("v"+conf.Version).String())
     fmt.Println("\t" + aurora.Blue(conf.Website).String() + "\n")
-
+    
     fmt.Println(aurora.Red("Use with caution. You are responsible for your actions.").String())
     fmt.Println(aurora.Red("Developers assume no liability and are not responsible for any misuse or damage.").String() + "\n")
-
+    
     rootCmd.CompletionOptions.DisableDefaultCmd = true
-    rootCmd.PersistentFlags().StringVarP(&conf.GlobalConfig.Options.Target, "target", "t", "", "target")
-    rootCmd.PersistentFlags().StringVarP(&conf.GlobalConfig.Options.TargetFile, "file", "f", "", "target file")
-    rootCmd.PersistentFlags().StringVarP(&conf.GlobalConfig.Options.Output, "out", "o", "", "output report file(eg:vulnerability_report.html)")
-    rootCmd.PersistentFlags().StringVar(&proxy, "proxy", "", "proxy, (example: --proxy http://127.0.0.1:8080)")
+    rootCmd.PersistentFlags().StringVarP(&conf.GlobalConfig.Options.Target, "target", "t", "", "target\r\n主动扫描目标，被动下不需要指定")
+    rootCmd.PersistentFlags().StringVarP(&conf.GlobalConfig.Options.TargetFile, "file", "f", "", "target file\r\n主动扫描目标列表，每行一个")
+    rootCmd.PersistentFlags().StringVarP(&conf.GlobalConfig.Options.Output, "out", "o", "", "output report file(eg:vulnerability_report.html)\r\n漏洞结果报告保存地址")
+    rootCmd.PersistentFlags().StringVar(&proxy, "proxy", "", "proxy, (example: --proxy http://127.0.0.1:8080)\r\n指定 http/https 代理")
     rootCmd.PersistentFlags().BoolVar(&conf.GlobalConfig.Debug, "debug", false, "debug")
     // rootCmd.MarkPersistentFlagRequired("target")
-
+    
     webScanCmdInit()
     shiroCmdinit()
     struts2CmdInit()
@@ -88,7 +88,7 @@ func initTargetList() {
             return
         }
         buffer := bufio.NewReader(file)
-
+        
         for {
             line, err := buffer.ReadString('\n')
             line = strings.TrimSpace(line)

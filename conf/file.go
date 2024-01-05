@@ -179,7 +179,7 @@ collection:
 func HotConf() {
     viper.SetConfigType("yaml")
     viper.SetConfigFile(ConfigFile)
-
+    
     // watch 监控配置文件变化
     viper.WatchConfig()
     viper.OnConfigChange(func(e fsnotify.Event) {
@@ -193,7 +193,7 @@ func HotConf() {
 func Init() {
     // 配置文件路径 当前文件夹 + SCopilot.yaml
     ConfigFile = path.Join("./" + FileName)
-
+    
     // 检测配置文件是否存在
     if !util.Exists(ConfigFile) {
         err := WriteYamlConfig()
@@ -205,9 +205,9 @@ func Init() {
     } else {
         logging.Logger.Infoln("Load profile ", ConfigFile)
     }
-
+    
     ReadYamlConfig()
-
+    
     HotConf()
 }
 
@@ -220,13 +220,13 @@ func WriteYamlConfig() error {
             panic(err)
         }
     }
-
+    
     // 写入默认配置文件
     err := ioutil.WriteFile(FileName, defaultConfigYaml, 0644)
     if err != nil {
         logging.Logger.Fatalf("创建默认配置文件失败: %s", err)
     }
-
+    
     return nil
 }
 
@@ -234,13 +234,13 @@ func WriteYamlConfig() error {
 func ReadYamlConfig() {
     viper.SetConfigType("yaml")
     viper.SetConfigFile(ConfigFile)
-
+    
     err := viper.ReadInConfig()
     if err != nil {
         logging.Logger.Fatalf("Fail to read %s: %+v", ConfigFile, err)
     }
     err = viper.Unmarshal(&GlobalConfig)
-
+    
     if err != nil {
         logging.Logger.Fatalf("Fail to parse '%s', check format: %+v", ConfigFile, err)
     }
@@ -253,69 +253,81 @@ func ReadPlugin() {
     for k := range Plugin {
         Plugin[k] = false
     }
-
-    if GlobalConfig.Plugins.BruteForce.Web {
-        Plugin["brute"] = true
-    }
-    if GlobalConfig.Plugins.BruteForce.Service {
-        Plugin["hydra"] = true
-    }
-    if GlobalConfig.Plugins.CmdInjection.Enabled {
-        Plugin["cmd"] = true
-    }
-
-    if GlobalConfig.Plugins.CrlfInjection.Enabled {
-        Plugin["crlf"] = true
-    }
-
+    
     if GlobalConfig.Plugins.XSS.Enabled {
         Plugin["xss"] = true
     }
-
+    
     if GlobalConfig.Plugins.Sql.Enabled {
         Plugin["sql"] = true
     }
-
+    
     if GlobalConfig.Plugins.SqlmapApi.Enabled {
         Plugin["sqlmap"] = true
     }
+    
+    if GlobalConfig.Plugins.CmdInjection.Enabled {
+        Plugin["cmd"] = true
+    }
+    
     if GlobalConfig.Plugins.XXE.Enabled {
         Plugin["xxe"] = true
     }
-
+    
     if GlobalConfig.Plugins.SSRF.Enabled {
         Plugin["ssrf"] = true
     }
-
-    if GlobalConfig.Plugins.BBscan.Enabled {
-        Plugin["bbscan"] = true
+    
+    if GlobalConfig.Plugins.BruteForce.Web {
+        Plugin["brute"] = true
     }
-
-    if GlobalConfig.Plugins.Jsonp.Enabled {
-        Plugin["jsonp"] = true
+    
+    if GlobalConfig.Plugins.BruteForce.Service {
+        Plugin["hydra"] = true
     }
-
+    
     if GlobalConfig.Plugins.ByPass403.Enabled {
         Plugin["bypass403"] = true
     }
-
+    
+    if GlobalConfig.Plugins.Jsonp.Enabled {
+        Plugin["jsonp"] = true
+    }
+    
+    if GlobalConfig.Plugins.CrlfInjection.Enabled {
+        Plugin["crlf"] = true
+    }
+    
+    if GlobalConfig.Plugins.Log4j.Enabled {
+        Plugin["log4j"] = true
+    }
+    
     if GlobalConfig.Plugins.Fastjson.Enabled {
         Plugin["fastjson"] = true
     }
-
-    if GlobalConfig.Plugins.NginxAliasTraversal.Enabled {
-        Plugin["nginx-alias-traversal"] = true
-    }
-
-    if GlobalConfig.Plugins.Poc.Enabled {
-        Plugin["poc"] = true
-    }
-
-    if GlobalConfig.Plugins.Nuclei.Enabled {
-        Plugin["nuclei"] = true
-    }
-
+    
     if GlobalConfig.Plugins.PortScan.Enabled {
         Plugin["portScan"] = true
     }
+    
+    if GlobalConfig.Plugins.Poc.Enabled {
+        Plugin["poc"] = true
+    }
+    
+    if GlobalConfig.Plugins.Nuclei.Enabled {
+        Plugin["nuclei"] = true
+    }
+    
+    if GlobalConfig.Plugins.BBscan.Enabled {
+        Plugin["bbscan"] = true
+    }
+    
+    if GlobalConfig.Plugins.Archive.Enabled {
+        Plugin["archive"] = true
+    }
+    
+    if GlobalConfig.Plugins.NginxAliasTraversal.Enabled {
+        Plugin["nginx-alias-traversal"] = true
+    }
+    
 }

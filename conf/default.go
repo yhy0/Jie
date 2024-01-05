@@ -9,24 +9,25 @@ package conf
 var (
     // Plugin 插件单独从配置文件中读取出来，方便使用
     Plugin = map[string]bool{
-        "xss":       false,
-        "sql":       false,
-        "sqlmap":    false,
-        "cmd":       false,
-        "xxe":       false,
-        "ssrf":      false,
-        "brute":     false, // web 类登录爆破
-        "hydra":     false, // mysql、redis类服务爆破
-        "bypass403": false,
-        "jsonp":     false,
-        "crlf":      false,
-        "log4j":     false,
-        "fastjson":  false,
-        "portScan":  false,
-        "poc":       false,
-        "nuclei":    false,
-        "bbscan":    false,
-        "archive":   false,
+        "xss":                   false,
+        "sql":                   false,
+        "sqlmap":                false,
+        "cmd":                   false,
+        "xxe":                   false,
+        "ssrf":                  false,
+        "brute":                 false, // web 类登录爆破
+        "hydra":                 false, // mysql、redis类服务爆破
+        "bypass403":             false,
+        "jsonp":                 false,
+        "crlf":                  false,
+        "log4j":                 false,
+        "fastjson":              false,
+        "portScan":              false,
+        "poc":                   false,
+        "nuclei":                false,
+        "bbscan":                false,
+        "archive":               false,
+        "nginx-alias-traversal": false,
     }
 )
 

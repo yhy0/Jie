@@ -79,20 +79,20 @@ type Plugins struct {
         UsernameDictionary string `json:"usernameDict"`
         PasswordDictionary string `json:"passwordDict"`
     } `json:"bruteForce"`
-
+    
     CmdInjection struct {
         Enabled bool `json:"enabled"`
     } `json:"cmdInjection"`
-
+    
     CrlfInjection struct {
         Enabled bool `json:"enabled"`
     } `json:"crlfInjection"`
-
+    
     XSS struct {
         Enabled           bool `json:"enabled"`
         DetectXssInCookie bool `json:"detectXssInCookie"`
     } `json:"xss"`
-
+    
     Sql struct {
         Enabled               bool `json:"enabled"`
         BooleanBasedDetection bool `json:"booleanBasedDetection"`
@@ -100,57 +100,57 @@ type Plugins struct {
         ErrorBasedDetection   bool `json:"errorBasedDetection"`
         DetectInCookie        bool `json:"detectInCookie"`
     } `json:"sql"`
-
+    
     SqlmapApi Sqlmap `json:"sqlmapApi"`
-
+    
     XXE struct {
         Enabled bool `json:"enabled"`
     } `json:"xxe"`
-
+    
     SSRF struct {
         Enabled bool `json:"enabled"`
     } `json:"ssrf"`
-
+    
     BBscan struct {
         Enabled bool `json:"enabled"`
     } `json:"bbscan"`
-
+    
     Jsonp struct {
         Enabled bool `json:"enabled"`
     } `json:"jsonp"`
-
+    
     Log4j struct {
         Enabled bool `json:"enabled"`
     } `json:"log4j"`
-
+    
     ByPass403 struct {
         Enabled bool `json:"enabled"`
     } `json:"bypass403"`
-
+    
     Fastjson struct {
         Enabled bool `json:"enabled"`
     } `json:"fastjson"`
-
+    
     NginxAliasTraversal struct {
         Enabled bool `json:"enabled"`
     } `json:"nginxAliasTraversal"`
-
+    
     Poc struct {
         Enabled bool `json:"enabled"`
     } `json:"poc"`
-
+    
     Nuclei struct {
         Enabled bool `json:"enabled"`
     } `json:"nuclei"`
-
+    
     Archive struct {
         Enabled bool `json:"enabled"`
     } `json:"archive"`
-
+    
     IIS struct {
         Enabled bool `json:"enabled"`
     } `json:"iis"`
-
+    
     PortScan struct {
         Enabled bool `json:"enabled"`
     } `json:"portScan"`

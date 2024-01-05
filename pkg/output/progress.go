@@ -3,6 +3,7 @@ package output
 import (
     "fmt"
     "github.com/logrusorgru/aurora"
+    "github.com/yhy0/Jie/conf"
     "time"
 )
 
@@ -16,6 +17,9 @@ var TaskCounter int64
 var TaskCompletionCounter int64
 
 func Progress() {
+    if conf.NoProgressBar {
+        return
+    }
     i := 0
     for {
         if TaskCounter == TaskCompletionCounter {

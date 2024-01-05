@@ -57,21 +57,26 @@ var seenRequests sync.Map // 这里主要是为了一些返回包检测类的判
 
 // Distribution 对爬虫结果或者被动发现结果进行任务分发
 func (t *Task) Distribution(in *input.CrawlResult) {
-    atomic.AddInt64(&output.TaskCounter, 1)
+    if !conf.NoProgressBar {
+        atomic.AddInt64(&output.TaskCounter, 1)
+    }
+    
     t.Wg.Add()
     defer func() {
         t.Wg.Done()
         logging.Logger.Debugln("Done", in.Url)
-        atomic.AddInt64(&output.TaskCompletionCounter, 1)
+        if !conf.NoProgressBar {
+            atomic.AddInt64(&output.TaskCompletionCounter, 1)
+        }
     }()
-
+    
     logging.Logger.Debugln(fmt.Sprintf("[%s] [%s] %s 扫描任务开始", in.UniqueId, in.Method, in.Url))
     // 这些返回包内容检测、指纹识别等因为没有使用检测是否扫描的逻辑，所以会重复检测，造成一定程度的资源消耗，问题应该不大
     // TODO 还没有想好怎么写逻辑，因为一些扫描插件会用到这些结果，搞成插件化的话，就需要控制插件的执行顺序，后续看看吧，目前影响不大
     msg := output.SCopilotData{
         Target: in.Host,
     }
-
+    
     if in.Headers == nil {
         in.Headers = make(map[string]string)
     } else {
@@ -79,7 +84,7 @@ func (t *Task) Distribution(in *input.CrawlResult) {
             in.ContentType = value
         }
     }
-
+    
     var hostNoPort string
     port := strings.Split(in.Host, ":")
     if len(port) > 1 {
@@ -87,9 +92,9 @@ func (t *Task) Distribution(in *input.CrawlResult) {
     } else {
         hostNoPort = in.Host
     }
-
+    
     in.Ip = hostNoPort
-
+    
     if t.ScanTask[in.Host] == nil {
         lock.Lock()
         t.ScanTask[in.Host] = &ScanTask{
@@ -103,7 +108,7 @@ func (t *Task) Distribution(in *input.CrawlResult) {
         }
         lock.Unlock()
     }
-
+    
     // cdn 只检测一次
     if !t.ScanTask[in.Host].PerServer["cdnCheck"] {
         lock.Lock()
@@ -128,20 +133,20 @@ func (t *Task) Distribution(in *input.CrawlResult) {
             in.Cdn = matched
         }
     }
-
+    
     msg.HostNoPort = hostNoPort
-
+    
     // 指纹识别, 插件扫描会用到, 还是放到这里吧，多次识别也不影响
     fingerprints := fingprints.Identify([]byte(in.Resp.Body), in.Resp.Header)
     if len(fingerprints) > 0 {
         msg.Fingerprints = append(msg.Fingerprints, fingerprints...)
         in.Fingerprints = util.RemoveDuplicateElement(append(in.Fingerprints, msg.Fingerprints...))
     }
-
+    
     msg.SiteMap = append(msg.SiteMap, in.Url)
-
+    
     msg.CollectionMsg = collection.Info(in.Url, hostNoPort, in.Resp.Body, in.ContentType)
-
+    
     // 请求头中存在 Authorization 时，看看是不是 JWT ，如果是，自动对 JWT 进行爆破
     if v, ok := in.Headers["Authorization"]; ok {
         value := strings.Split(v, " ") // 有的 JWT ，是 Xxx Jwt 这种格式
@@ -177,7 +182,7 @@ func (t *Task) Distribution(in *input.CrawlResult) {
             }
         }
     }
-
+    
     // 没有检测到 shiro 时，扫描的请求中添加一个 请求头检测一下 Cookie: rememberMe=3
     // TODO 这里不对，添加到这里，返回的数据包并没有经过这里，放到 httpx.request(...) 中 进行指纹检测的话，怎么返回获取指纹？还是说对于这种指纹检测，主动进行一次发包 (不太想使用这种方式)
     if !util.InSliceCaseFold("shiro", in.Fingerprints) {
@@ -187,12 +192,12 @@ func (t *Task) Distribution(in *input.CrawlResult) {
             in.Headers["Cookie"] = "rememberMe=3"
         }
     }
-
+    
     // 更新数据
     output.SCopilot(in.Host, msg)
-
+    
     sensitive.KeyDetection(in.Url, in.Resp.Body)
-
+    
     errorMsg := sensitive.PageErrorMessageCheck(in.Url, in.RawRequest, in.Resp.Body)
     if len(errorMsg) > 0 {
         var res []string
@@ -209,7 +214,7 @@ func (t *Task) Distribution(in *input.CrawlResult) {
             },
         }
     }
-
+    
     // 非 css、js 类进行扫描, 单独进行 判断是否识别过
     if !strings.HasSuffix(in.ParseUrl.Path, ".css") && !strings.HasSuffix(in.ParseUrl.Path, ".js") {
         // 插件扫描
@@ -225,20 +230,20 @@ func (t *Task) Distribution(in *input.CrawlResult) {
         if isScanned(in.UniqueId) {
             return
         }
-
+        
         if strings.HasSuffix(in.ParseUrl.Path, ".js") {
             // 对于 js 这种单独判断是否扫描过，减少消耗
             if strings.HasPrefix(in.Resp.Body, "webpackJsonp(") || strings.Contains(in.Resp.Body, "window[\"webpackJsonp\"]") {
                 msg.Fingerprints = util.RemoveDuplicateElement(append(msg.Fingerprints, "Webpack"))
                 in.Fingerprints = util.RemoveDuplicateElement(append(in.Fingerprints, msg.Fingerprints...))
             }
-
+            
             // 前端 js 中存在 sourcemap 文件，即 xxx.js.map 这种可以使用 sourcemap 等工具还原前端代码
             match := rex.FindStringSubmatch(in.Resp.Body)
             if match != nil {
                 msg.Fingerprints = util.RemoveDuplicateElement(append(msg.Fingerprints, "SourceMap"))
                 in.Fingerprints = util.RemoveDuplicateElement(append(in.Fingerprints, msg.Fingerprints...))
-
+                
                 output.OutChannel <- output.VulMessage{
                     DataType: "web_vul",
                     Plugin:   "SourceMap",
@@ -251,10 +256,10 @@ func (t *Task) Distribution(in *input.CrawlResult) {
             }
         }
     }
-
+    
     // 更新数据
     output.SCopilot(in.Host, msg)
-
+    
     go func() {
         // 判断 Archive 是否有数据，如果有的话分发至扫描
         if !t.ScanTask[in.Host].Archive && in.Archive != nil {
@@ -288,7 +293,7 @@ func (t *Task) Distribution(in *input.CrawlResult) {
                 }
             }
         }
-
+        
         t.ScanTask[in.Host].Archive = true
     }()
 }

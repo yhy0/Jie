@@ -110,4 +110,6 @@ func webScanCmdInit() {
     // 是否阻塞，方便查看 security copilot 页面
     webScanCmd.Flags().BoolVar(&copilot, "copilot", false, "Blocking program, go to the default port 9088 to view detailed scan information.\r\n主动模式下，可以通过指定该参数阻塞程序，扫描完不退出程序，可以到 web 端口查看信息。")
     
+    webScanCmd.Flags().BoolVar(&conf.NoProgressBar, "npb", false, "Turn off the progress display.\r\n关闭进度信息显示。")
+    
 }

@@ -37,20 +37,20 @@ var PerServerPlugins = make(map[string]Addon)
 func init() {
     PerFilePlugins["xss"] = &xss.Plugin{}
     PerFilePlugins["sql"] = &sql.Plugin{}
-    PerFilePlugins["sqlmap"] = &sqlmap.Plugin{}
+    PerFilePlugins["sqlmapApi"] = &sqlmap.Plugin{}
     PerFilePlugins["ssrf"] = &ssrf.Plugin{}
     PerFilePlugins["jsonp"] = &jsonp.Plugin{}
     PerFilePlugins["cmd"] = &cmdinject.Plugin{}
     PerFilePlugins["xxe"] = &xxe.Plugin{}
     PerFilePlugins["fastjson"] = &fastjson.Plugin{}
     PerFilePlugins["bypass403"] = &bypass403.Plugin{}
-
+    
     PerFolderPlugins["crlf"] = &crlf.Plugin{}
     PerFolderPlugins["iis"] = &crlf.Plugin{}
     PerFolderPlugins["nginx-alias-traversal"] = &traversal.Plugin{}
     PerFolderPlugins["log4j"] = &log4j.Plugin{}
     PerFolderPlugins["bbscan"] = &bbscan.Plugin{} // 扫描规则路径不是 root 的需要扫描
-
+    
     PerServerPlugins["bbscan"] = &bbscan.Plugin{}
     PerServerPlugins["portScan"] = &portScan.Plugin{}
     PerServerPlugins["nuclei"] = &PerServer.NucleiPlugin{}

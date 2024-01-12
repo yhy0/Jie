@@ -263,7 +263,20 @@ func ReadPlugin() {
     }
     
     if GlobalConfig.Plugins.SqlmapApi.Enabled {
-        Plugin["sqlmap"] = true
+        Plugin["sqlmapApi"] = true
+        GlobalConfig.SqlmapApi = Sqlmap{
+            Enabled:  true,
+            Url:      GlobalConfig.Plugins.SqlmapApi.Url,
+            Username: GlobalConfig.Plugins.SqlmapApi.Username,
+            Password: GlobalConfig.Plugins.SqlmapApi.Password,
+        }
+    } else {
+        GlobalConfig.SqlmapApi = Sqlmap{
+            Enabled:  false,
+            Url:      GlobalConfig.Plugins.SqlmapApi.Url,
+            Username: GlobalConfig.Plugins.SqlmapApi.Username,
+            Password: GlobalConfig.Plugins.SqlmapApi.Password,
+        }
     }
     
     if GlobalConfig.Plugins.CmdInjection.Enabled {

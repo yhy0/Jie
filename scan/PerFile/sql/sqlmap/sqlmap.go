@@ -34,16 +34,16 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
     }
     // 转发之前先判断是否有参数，存在参数才转发
     params := util.ExtractParameters(in.Url, in.Method, in.RequestBody, in.Headers)
-
+    
     if len(params) == 0 {
         return
     }
-
+    
     if conf.GlobalConfig.SqlmapApi.Url == "" {
         logging.Logger.Errorln("sql api 未配置")
         return
     }
-
+    
     // 创建新任务
     taskID := createTask()
     if taskID == "" {
@@ -52,7 +52,7 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
     // 开始扫描
     startScan(taskID, in)
     logging.Logger.Debugln("Sqlmap Scan started for target:", in.Url, taskID)
-
+    
     // 监控任务状态
     go getTaskStatus(taskID, in.Url)
 }
@@ -69,7 +69,7 @@ func (p *Plugin) IsScanned(key string) bool {
 }
 
 func (p *Plugin) Name() string {
-    return "sqlmap"
+    return "sqlmapApi"
 }
 
 var client = &http.Client{}
@@ -80,14 +80,14 @@ func createTask() string {
         Taskid  string `json:"taskid"`
         Success bool   `json:"success"`
     }{}
-
+    
     err := json.Unmarshal(body, result)
-
+    
     if err != nil {
         logging.Logger.Errorln(err, body)
         return ""
     }
-
+    
     return result.Taskid
 }
 
@@ -102,30 +102,30 @@ func startScan(taskID string, in *input.CrawlResult) bool {
         Verbose:     5,
         Proxy:       conf.GlobalConfig.Http.Proxy,
     }
-
+    
     for k, v := range in.Headers {
         data.Headers += k + ": " + v + "\r\n"
     }
-
+    
     jsonData, err := json.Marshal(data)
     if err != nil {
         logging.Logger.Println("Error converting struct to JSON:", err)
         return false
     }
-
+    
     body := request("POST", fmt.Sprintf("/scan/%s/start", taskID), string(jsonData))
-
+    
     result := &struct {
         Engineid int  `json:"engineid"`
         Success  bool `json:"success"`
     }{}
-
+    
     err = json.Unmarshal(body, result)
     if err != nil {
         logging.Logger.Errorln(err)
         return false
     }
-
+    
     return result.Success
 }
 
@@ -149,20 +149,20 @@ func getTaskStatus(taskID string, target string) {
             time.Sleep(5 * time.Second)
             continue
         }
-
+        
         resultBody := request("GET", resultURL, "")
         result := &struct {
             Success bool                     `json:"success"`
             Error   []string                 `json:"error"`
             Data    []map[string]interface{} `json:"data"`
         }{}
-
+        
         err = json.Unmarshal(resultBody, result)
         if err != nil {
             logging.Logger.Errorln(err)
             return
         }
-
+        
         if len(result.Data) > 0 {
             for index := range result.Data {
                 tmpType := make([]interface{}, 0)
@@ -203,11 +203,20 @@ func request(method, endpoint string, body string) []byte {
         MaxIdleConnsPerHost: -1,
         DisableKeepAlives:   true,
     }
-
+    
     if conf.GlobalConfig.Http.Proxy != "" {
         proxyURL, _ := url.Parse(conf.GlobalConfig.Http.Proxy)
         Transport.Proxy = http.ProxyURL(proxyURL)
     }
+    
+    if strings.HasSuffix(conf.GlobalConfig.SqlmapApi.Url, "/") {
+        conf.GlobalConfig.SqlmapApi.Url = strings.TrimRight(conf.GlobalConfig.SqlmapApi.Url, "/")
+    }
+    
+    if !strings.HasPrefix(conf.GlobalConfig.SqlmapApi.Url, "https://") && !strings.HasPrefix(conf.GlobalConfig.SqlmapApi.Url, "http://") {
+        conf.GlobalConfig.SqlmapApi.Url = "http://" + conf.GlobalConfig.SqlmapApi.Url
+    }
+    
     req, err := http.NewRequest(method, conf.GlobalConfig.SqlmapApi.Url+endpoint, strings.NewReader(body))
     if err != nil {
         logging.Logger.Println("Error creating request:", err)
@@ -218,19 +227,19 @@ func request(method, endpoint string, body string) []byte {
     if conf.GlobalConfig.SqlmapApi.Username != "" && conf.GlobalConfig.SqlmapApi.Password != "" {
         req.SetBasicAuth(conf.GlobalConfig.SqlmapApi.Username, conf.GlobalConfig.SqlmapApi.Password)
     }
-
+    
     resp, err := client.Do(req)
     if err != nil {
         logging.Logger.Println("Error executing request:", err)
         return nil
     }
     defer resp.Body.Close()
-
+    
     respBody, err := ioutil.ReadAll(resp.Body)
     if err != nil {
         logging.Logger.Println("Error reading response body:", err)
         return nil
     }
-
+    
     return respBody
 }

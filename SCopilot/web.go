@@ -122,7 +122,7 @@ func Init() {
             "include":      conf.GlobalConfig.Mitmproxy.Include,
             "exclude":      conf.GlobalConfig.Mitmproxy.Exclude,
             "filterSuffix": conf.GlobalConfig.Mitmproxy.FilterSuffix,
-            "sqlmap":       conf.GlobalConfig.SqlmapApi,
+            "sqlmapApi":    conf.GlobalConfig.SqlmapApi,
             "year":         time.Now().Year(),
         })
     })
@@ -173,7 +173,7 @@ func Init() {
         password := c.PostForm("password")
         
         if sqlmap == "on" {
-            conf.Plugin["sqlmap"] = true
+            conf.Plugin["sqlmapApi"] = true
             conf.GlobalConfig.SqlmapApi = conf.Sqlmap{
                 Enabled:  true,
                 Url:      sqlmapApi,
@@ -181,7 +181,7 @@ func Init() {
                 Password: password,
             }
         } else {
-            conf.Plugin["sqlmap"] = false
+            conf.Plugin["sqlmapApi"] = false
             conf.GlobalConfig.SqlmapApi = conf.Sqlmap{
                 Enabled:  false,
                 Url:      sqlmapApi,
@@ -201,7 +201,7 @@ func Init() {
             "include":      conf.GlobalConfig.Mitmproxy.Include,
             "exclude":      conf.GlobalConfig.Mitmproxy.Exclude,
             "filterSuffix": conf.GlobalConfig.Mitmproxy.FilterSuffix,
-            "sqlmap":       conf.GlobalConfig.SqlmapApi,
+            "sqlmapApi":    conf.GlobalConfig.SqlmapApi,
             "year":         time.Now().Year(),
         })
     })

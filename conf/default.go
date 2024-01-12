@@ -11,7 +11,7 @@ var (
     Plugin = map[string]bool{
         "xss":                   false,
         "sql":                   false,
-        "sqlmap":                false,
+        "sqlmapApi":             false,
         "cmd":                   false,
         "xxe":                   false,
         "ssrf":                  false,

@@ -446,7 +446,8 @@
 
         const host = window.location.hostname;
         const t = new URLSearchParams(window.location.search).get('host');
-        const socket = new WebSocket(`ws://${host}:9088/ws?host=${t}`);
+        const port = "{{ .webPort }}";
+        const socket = new WebSocket(`ws://${host}:${port}/ws?host=${t}`);
 
         socket.addEventListener('message', (event) => {
             var toastElList = [].slice.call(document.querySelectorAll('.toast'))

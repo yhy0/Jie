@@ -130,7 +130,8 @@
     <script>
         const targetListDiv = document.getElementById('targetList');
         const host = window.location.hostname;
-        const socket = new WebSocket(`ws://${host}:9088/ws`);
+        const port = "{{ .webPort }}";
+        const socket = new WebSocket(`ws://${host}:${port}/ws`);
 
         socket.addEventListener('message', (event) => {
             const data = JSON.parse(event.data);

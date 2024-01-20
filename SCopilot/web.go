@@ -101,8 +101,9 @@ func Init() {
     
     authorized.GET("/index", func(c *gin.Context) {
         c.HTML(http.StatusOK, "index.html", gin.H{
-            "list": output.SCopilotLists,
-            "year": time.Now().Year(),
+            "webPort": conf.GlobalConfig.Passive.WebPort,
+            "list":    output.SCopilotLists,
+            "year":    time.Now().Year(),
         })
     })
     
@@ -110,9 +111,10 @@ func Init() {
         host := c.Query("host")
         
         c.HTML(http.StatusOK, "SCopilot.html", gin.H{
-            "data":   output.SCopilotMessage[host],
-            "ipInfo": output.IPInfoList[output.SCopilotMessage[host].HostNoPort],
-            "year":   time.Now().Year(),
+            "webPort": conf.GlobalConfig.Passive.WebPort,
+            "data":    output.SCopilotMessage[host],
+            "ipInfo":  output.IPInfoList[output.SCopilotMessage[host].HostNoPort],
+            "year":    time.Now().Year(),
         })
     })
     

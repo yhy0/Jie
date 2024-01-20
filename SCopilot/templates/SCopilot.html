@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Security Copilot Report - Jie</title>
     <!-- Include Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/lumen/bootstrap.min.css" rel="stylesheet">
     <style>
         .vuln-card.Low {
             border-color: #6c757d;
@@ -59,7 +59,7 @@
 <main>
     <div class="container">
         <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom">
-            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
+            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-decoration-none">
                 <svg class="bi me-2" width="40" height="32"><use xlink:href="#yi"/></svg>
                 <h3 class="fs-4">Security Copilot Report - Jie</h3>
             </a>
@@ -90,10 +90,10 @@
                         {{ end }}
                         <p></p>
                         {{ if .ipInfo.AllRecords }}
-                        <div class="p-3 col overflow-auto" style="max-height: 80px;">
+                        <div class="col overflow-auto" style="max-height: 80px;">
                             <ul class="list-group">
                                 {{ range $i, $records := .ipInfo.AllRecords }}
-                                    <li class="list-group-item">{{ $records }}</li>
+                                    <li class="list-group-item text-danger-emphasis">{{ $records }}</li>
                                 {{ end }}
                             </ul>
                         </div>
@@ -244,7 +244,7 @@
 
                 <div class="tab-pane fade list-group container-fluid mt-3 d-grid gap-3" id="collection-tab-pane" role="tabpanel" aria-labelledby="collection-tab" tabindex="0">
                     <div class="row">
-                        <div class="col mx-2 p-3 card" style="width: 18rem;">
+                        <div class="col mx-2 p-3 card border-primary" style="width: 18rem;">
                             <div class="card-header d-flex justify-content-between">
                                 Subdomain
                                 <button class="copy_btn btn btn-sm btn-outline-secondary" data-clipboard-action="copy" data-clipboard-target="#subdomain-list">
@@ -253,13 +253,28 @@
                                     </svg>
                                 </button>
                             </div>
-                            <ul id="subdomain-list" class="list-group list-group-flush overflow-auto" style="max-height: 24rem;">
+                            <ul id="subdomain-list" class="list-group list-group-flush overflow-auto card-text" style="max-height: 24rem;">
                                 {{range $index, $message := .data.CollectionMsg.Subdomain }}
-                                    <li class="list-group-item">{{ $message }}</li>
+                                <li class="list-group-item">{{ $message }}</li>
                                 {{ end }}
                             </ul>
                         </div>
-                        <div class="col mx-2 p-3 card" style="width: 18rem;">
+                        <div class="col mx-2 p-3 card border-primary" style="width: 18rem;">
+                            <div class="card-header d-flex justify-content-between">
+                                OtherDomain
+                                <button class="copy_btn btn btn-sm btn-outline-secondary" data-clipboard-target="#other-domain-list">
+                                    <svg width="16" height="16" fill="currentColor" class="bi bi-clipboard">
+                                        <use xlink:href="#clipboard-icon"></use>
+                                    </svg>
+                                </button>
+                            </div>
+                            <ul id="other-domain-list" class="list-group list-group-flush overflow-auto" style="max-height: 24rem;">
+                                {{range $index, $message := .data.CollectionMsg.OtherDomain }}
+                                <li class="list-group-item">{{ $message }}</li>
+                                {{ end }}
+                            </ul>
+                        </div>
+                        <div class="col mx-2 p-3 card border-warning" style="width: 18rem;">
                             <div class="card-header d-flex justify-content-between">
                                 InnerIp
                                 <button class="copy_btn btn btn-sm btn-outline-secondary" data-clipboard-target="#innerIp-list">
@@ -274,7 +289,7 @@
                                 {{ end }}
                             </ul>
                         </div>
-                        <div class="col mx-2 p-3 card" style="width: 18rem;">
+                        <div class="col mx-2 p-3 card border-warning" style="width: 18rem;">
                             <div class="card-header d-flex justify-content-between">
                                 PublicIp
                                 <button class="copy_btn btn btn-sm btn-outline-secondary" data-clipboard-target="#publicIp-list">
@@ -292,22 +307,7 @@
                     </div>
 
                     <div class="row">
-                        <div class="col mx-2 p-3 card" style="width: 18rem;">
-                            <div class="card-header d-flex justify-content-between">
-                                OtherDomain
-                                <button class="copy_btn btn btn-sm btn-outline-secondary" data-clipboard-target="#other-domain-list">
-                                    <svg width="16" height="16" fill="currentColor" class="bi bi-clipboard">
-                                        <use xlink:href="#clipboard-icon"></use>
-                                    </svg>
-                                </button>
-                            </div>
-                            <ul id="other-domain-list" class="list-group list-group-flush overflow-auto" style="max-height: 24rem;">
-                                {{range $index, $message := .data.CollectionMsg.OtherDomain }}
-                                <li class="list-group-item">{{ $message }}</li>
-                                {{ end }}
-                            </ul>
-                        </div>
-                        <div class="col mx-2 p-3 card" style="width: 18rem;">
+                        <div class="col mx-2 p-3 card border-danger" style="width: 18rem;">
                             <div class="card-header d-flex justify-content-between">
                                 Phone & Email & IdCard
                                 <button class="copy_btn btn btn-sm btn-outline-secondary" data-clipboard-target="#pei-list">
@@ -328,7 +328,7 @@
                                 {{ end }}
                             </ul>
                         </div>
-                        <div class="col mx-2 p-3 card" style="width: 18rem;">
+                        <div class="col mx-2 p-3 card border-danger" style="width: 18rem;">
                             <div class="card-header d-flex justify-content-between">
                                 Others
                                 <button class="copy_btn btn btn-sm btn-outline-secondary" data-clipboard-target="#other-list">
@@ -345,7 +345,7 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col mx-2 p-3 card" style="width: 18rem;">
+                        <div class="col mx-2 p-3 card border-success" style="width: 18rem;">
                             <div class="card-header d-flex justify-content-between">
                                 API
                                 <button class="copy_btn btn btn-sm btn-outline-secondary" data-clipboard-target="#api-list">
@@ -360,7 +360,7 @@
                                 {{ end }}
                             </ul>
                         </div>
-                        <div class="col mx-2 p-3 card bd-clipboard" style="width: 18rem;">
+                        <div class="col mx-2 p-3 card border-success" style="width: 18rem;">
                             <div class="card-header d-flex justify-content-between">
                                 Urls
                                 <button class="copy_btn btn btn-sm btn-outline-secondary" data-clipboard-target="#url-list">

@@ -29,7 +29,7 @@ var (
     RegContentType   *regexp.Regexp
     RegContentTypeNo *regexp.Regexp
     RegFingprints    *regexp.Regexp
-
+    
     BlackText      *regexp.Regexp
     BlackRegexText *regexp.Regexp
     BlackAllText   *regexp.Regexp
@@ -63,11 +63,11 @@ func init() {
     RegContentType, _ = regexp.Compile(`{type="(.*?)"}`)
     RegContentTypeNo, _ = regexp.Compile(`{type_no="(.*?)"}`)
     RegFingprints, _ = regexp.Compile(`{fingprints="(.*?)"}`)
-
+    
     BlackText, _ = regexp.Compile(`{text="(.*)"}`)
     BlackRegexText, _ = regexp.Compile(`{regex_text="(.*)"}`)
     BlackAllText, _ = regexp.Compile(`{all_text="(.*)"}`)
-
+    
     // 返回[]fs.DirEntry
     entries, err := rulesFiles.ReadDir("rules")
     if err != nil {
@@ -79,7 +79,7 @@ func init() {
             logging.Logger.Errorf("BBscan error , read %s error: %v", entry.Name(), err)
             continue
         }
-
+        
         if entry.Name() == "black.list" {
             for _, str := range util.CvtLines(string(rulesContent)) {
                 if strings.HasPrefix(str, "#") {
@@ -89,7 +89,7 @@ func init() {
                     continue
                 }
                 var black scan_util.BlackRule
-
+                
                 text := BlackText.FindStringSubmatch(str)
                 if len(text) > 0 {
                     black.Type = "text"
@@ -115,17 +115,17 @@ func init() {
                     continue
                 }
                 var rule Rule
-
+                
                 tag := RegTag.FindStringSubmatch(str)
                 status := RegStatus.FindStringSubmatch(str)
                 contentType := RegContentType.FindStringSubmatch(str)
                 contentTypeNo := RegContentTypeNo.FindStringSubmatch(str)
                 fingprints := RegFingprints.FindStringSubmatch(str)
-
+                
                 if len(tag) > 0 {
                     rule.Tag = tag[1]
                 }
-
+                
                 if len(status) > 0 {
                     rule.Status = status[1]
                 }
@@ -138,7 +138,7 @@ func init() {
                 if len(fingprints) > 0 {
                     rule.Fingprints = strings.Split(fingprints[1], ",")
                 }
-
+                
                 if util.Contains(str, "{root_only}") {
                     rule.Root = true
                 }
@@ -162,18 +162,18 @@ func ReqPage(u string, header map[string]string, client *httpx.Client) (*Page, *
     page := &Page{}
     var backUpSuffixList = []string{".tar", ".tar.gz", ".zip", ".rar", ".7z", ".bz2", ".gz", ".war"}
     var method = "GET"
-
+    
     for _, ext := range backUpSuffixList {
         if strings.HasSuffix(u, ext) {
             method = "HEAD"
         }
     }
-
+    
     res, err := client.Request(u, method, "", header)
     if err != nil {
         return nil, nil, err
     }
-
+    
     page.title = getTitle(res.Body)
     page.locationUrl = res.Location
     if res.StatusCode != 302 && res.Location == "" {
@@ -194,12 +194,12 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
     if strings.HasSuffix(u, "/") {
         u = u[:len(u)-1]
     }
-
+    
     var (
         technologies []string
         resContents  []string // 找到的页面返回集合，用来进行网页相似度比较，用来去除大量的返回一样的
     )
-
+    
     _, url404res, err := ReqPage(u+path404, header, client)
     if err == nil {
         if url404res.StatusCode == 404 {
@@ -207,17 +207,18 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
         }
         resContents = append(resContents, strings.ReplaceAll(url404res.Body, path404, ""))
     }
-
+    
     wg := sync.WaitGroup{}
     ch := make(chan struct{}, 20)
     var l sync.Mutex
     count := 0
-
+    
     for path, rule := range Rules {
+        // 状态码 500 以上 30 次就不扫描了
         if count > 30 {
             return technologies
         }
-
+        
         f := false
         // 当传入的指纹为空时，则全部规则都进行扫描
         if len(rule.Fingprints) > 0 {
@@ -227,7 +228,7 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
                     f = true
                     break
                 }
-
+                
                 for _, fp := range fingprints {
                     if util.InSliceCaseFold(fp, fingprints) {
                         f = true
@@ -238,12 +239,12 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
         } else {
             f = true
         }
-
+        
         // 有指纹，但没有匹配则该规则不扫描
         if !f {
             continue
         }
-
+        
         if util.Contains(path, "{sub}") {
             t, err := url.Parse(u)
             if err != nil {
@@ -253,7 +254,7 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
             path = strings.ReplaceAll(path, "{sub}", t.Hostname())
         }
         path = strings.TrimLeft(path, "/")
-
+        
         // 根据传入的路径进行拼接扫描目录
         var target string
         if rule.Root { // 该路径规则只会出现在主目录下, 并且 传入的是主目录，则加上，否则不进行该规则的扫描
@@ -265,33 +266,40 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
         } else {
             target = u + "/" + path
         }
-
+        
         wg.Add(1)
         ch <- struct{}{}
-
+        
         go func(t string, r *Rule) {
             defer wg.Done()
             defer func() { <-ch }()
             <-time.After(time.Duration(100) * time.Millisecond)
             page, res, err := ReqPage(t, header, client)
-
+            
             if err == nil && res != nil {
+                if res.StatusCode >= 500 {
+                    l.Lock()
+                    count += 1
+                    l.Unlock()
+                    return
+                }
+                
                 // 黑名单，跳过
                 if scan_util.IsBlackHtml(res.Body, res.Header["Content-Type"]) {
                     return
                 }
-
+                
                 // ContentLength 为 0 的，都丢弃
                 if res.ContentLength == 0 {
                     return
                 }
-
+                
                 contentType := res.Header.Get("Content-Type")
                 // 返回是个图片
                 if util.Contains(contentType, "image/") {
                     return
                 }
-
+                
                 if strings.HasSuffix(t, ".xml") {
                     if !util.Contains(contentType, "xml") {
                         return
@@ -301,7 +309,7 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
                         return
                     }
                 }
-
+                
                 // 规则匹配
                 if !page.isBackUpPage {
                     if len(strings.TrimSpace(res.Body)) == 0 {
@@ -318,18 +326,18 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
                     if res.StatusCode < 200 || res.StatusCode > 300 || res.ContentLength < 10 {
                         return
                     }
-
+                    
                     // 太小的丢弃，有的 waf 会根据请求构造压缩包
                     if res.ContentLength < 100 {
                         return
                     }
-
+                    
                 }
-
+                
                 if r.Tag != "" && !util.Contains(res.Body, r.Tag) {
                     return
                 }
-
+                
                 similar := false
                 if len(res.Body) != 0 {
                     // 与成功的进行相似度比较，排除一些重复项 比如一个目标返回很多这种，写入黑名单的话，会有很多，所以先这样去除 {"code":99999,"msg":"未知错误","status":0}
@@ -337,7 +345,7 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
                         similar = strsim.Compare(body, res.Body) > 0.9 // 不相似才会往下执行
                     }
                 }
-
+                
                 if !similar {
                     // 对扫到的 swagger 进行自动化测试
                     if strings.Contains(t, "swagger") {
@@ -348,13 +356,12 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
                         technologies = append(technologies, "Basic")
                         l.Unlock()
                     }
-
+                    
                     l.Lock()
                     technologies = append(addFingerprintsnormal(t, technologies, res, client)) // 基于200页面文件扫描指纹添加
                     resContents = append(resContents, strings.ReplaceAll(res.Body, t, ""))
-                    count += 1
                     l.Unlock()
-
+                    
                     output.OutChannel <- output.VulMessage{
                         DataType: "web_vul",
                         Plugin:   "BBscan",
@@ -371,16 +378,16 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
                 }
             }
         }(target, rule)
-
+        
     }
-
+    
     wg.Wait()
     return technologies
 }
 
 func SingleScan(targets []string, path string) {
     rule := Rules[path]
-
+    
     wg := sync.WaitGroup{}
     ch := make(chan struct{}, 50)
     for _, target := range targets {
@@ -388,14 +395,14 @@ func SingleScan(targets []string, path string) {
             t, _ := url.Parse(target)
             path = strings.ReplaceAll(path, "{sub}", t.Hostname())
         }
-
+        
         wg.Add(1)
         ch <- struct{}{}
         go func(u string) {
             defer wg.Done()
             defer func() { <-ch }()
             res, err := httpx.Request(u+path, "GET", "", nil)
-
+            
             if err != nil {
                 return
             }
@@ -403,13 +410,13 @@ func SingleScan(targets []string, path string) {
             if scan_util.IsBlackHtml(res.Body, res.Header["Content-Type"]) {
                 return
             }
-
+            
             contentType := res.Header.Get("Content-Type")
             // 返回是个图片
             if util.Contains(contentType, "image/") {
                 return
             }
-
+            
             if strings.HasSuffix(path, ".xml") {
                 if !util.Contains(contentType, "xml") {
                     return
@@ -419,12 +426,12 @@ func SingleScan(targets []string, path string) {
                     return
                 }
             }
-
+            
             // 返回包是个下载文件，但文件内容为空丢弃
             // if res.Header.Get("Content-Type") == "application/octet-stream" && res.ContentLength == 0 {
             //    return
             // }
-
+            
             // 规则匹配
             if (rule.Type != "" && !util.Contains(contentType, rule.Type)) || (rule.TypeNo != "" && util.Contains(contentType, rule.TypeNo)) {
                 return
@@ -432,7 +439,7 @@ func SingleScan(targets []string, path string) {
             if rule.Status != "" && strconv.Itoa(res.StatusCode) != rule.Status {
                 return
             }
-
+            
             if rule.Tag != "" && !util.Contains(res.Body, rule.Tag) {
                 return
             }
@@ -440,7 +447,7 @@ func SingleScan(targets []string, path string) {
             if strings.Contains(path, "swagger") {
                 swagger.Scan(u+path, httpx.NewClient(nil))
             }
-
+            
             output.OutChannel <- output.VulMessage{
                 DataType: "web_vul",
                 Plugin:   "BBscan",

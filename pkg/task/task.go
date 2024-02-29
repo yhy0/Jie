@@ -113,7 +113,6 @@ func (t *Task) Distribution(in *input.CrawlResult) {
     if !t.ScanTask[in.Host].PerServer["cdnCheck"] {
         lock.Lock()
         t.ScanTask[in.Host].PerServer["cdnCheck"] = true
-        lock.Unlock()
         if _, ok := output.IPInfoList[hostNoPort]; !ok {
             // cdn 检测
             matched, value, itemType, dnsData := util.CheckCdn(hostNoPort)
@@ -132,6 +131,7 @@ func (t *Task) Distribution(in *input.CrawlResult) {
             }
             in.Cdn = matched
         }
+        lock.Unlock()
     }
     
     msg.HostNoPort = hostNoPort

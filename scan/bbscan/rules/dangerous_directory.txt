@@ -6,3 +6,5 @@
 # 有两种情况
 /jmreport/testConnection            {status=405}        {type="html"}     {tag="type=Method Not Allowed"}     {root_only}
 /jmreport/testConnection            {status=200}        {type="application/json"}     {tag="不支持GET请求方法"}     {root_only}
+
+/webservice/        {status=200}        {type="html"}     {tag="Available SOAP services:"}

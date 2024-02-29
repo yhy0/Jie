@@ -78,7 +78,7 @@ var webScanCmd = &cobra.Command{
             // 初始化爬虫
             crawler.NewCrawlergo(show)
             for _, target := range conf.GlobalConfig.Options.Targets {
-                mode.Active(target)
+                mode.Active(target, nil)
             }
             
             if copilot { // 阻塞，不退出

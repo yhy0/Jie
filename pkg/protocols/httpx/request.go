@@ -70,7 +70,7 @@ func NewClient(o *Options) *Client {
             Headers:         conf.GlobalConfig.Http.Headers,
         }
     }
-
+    
     client := &Client{}
     /*
        Req 同时支持 HTTP/1.1，HTTP/2 和 HTTP/3，如果服务端支持，默认情况下首选 HTTP/2，其次 HTTP/1.1，这是由 TLS 握手协商的。
@@ -80,17 +80,17 @@ func NewClient(o *Options) *Client {
         SetUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36").
         // SetCommonContentType("application/x-www-form-urlencoded; charset=utf-8").
         SetTimeout(time.Duration(o.Timeout) * time.Second)
-
+    
     // https://github.com/imroc/req/issues/272
     if conf.GlobalConfig.Http.ForceHTTP1 {
         c.EnableForceHTTP1()
     } else {
         c.ImpersonateChrome() // 模拟Chrome浏览器, 不能和 EnableForceXXXX() 同时使用
     }
-
+    
     c.SetMaxConnsPerHost(o.MaxConnsPerHost)
     c.SetMaxIdleConns(o.MaxConnsPerHost)
-
+    
     // Add proxy
     if o.Proxy != "" {
         logging.Logger.Infoln("use proxy:", o.Proxy)
@@ -101,22 +101,22 @@ func NewClient(o *Options) *Client {
             logging.Logger.Warnln("Unsupported proxy protocol: %s", proxyURL.Scheme)
         }
     }
-
+    
     if !o.VerifySSL {
         c.EnableInsecureSkipVerify()
     }
-
+    
     if o.RetryTimes > 0 {
         c.SetCommonRetryCount(o.RetryTimes).
             SetCommonRetryBackoffInterval(1*time.Second, 5*time.Second)
     }
-
+    
     if o.QPS == 0 {
         o.QPS = conf.GlobalConfig.Http.MaxQps
     }
     // Initiate rate limit instance
     client.RateLimiter = ratelimit.New(o.QPS)
-
+    
     client.Client = c
     client.Options = o
     return client
@@ -129,10 +129,10 @@ func (c *Client) Basic(target string, method string, body string, header map[str
 
 func (c *Client) Request(target string, method string, body string, header map[string]string) (*Response, error) {
     method = strings.ToUpper(method)
-
+    
     // https://req.cool/docs/tutorial/debugging/
     var requestDumpBuf, responseDumpBuf bytes.Buffer
-
+    
     // Enable dump with fully customized settings at client level.
     opt := &req.DumpOptions{
         RequestOutput:  &requestDumpBuf,
@@ -143,7 +143,7 @@ func (c *Client) Request(target string, method string, body string, header map[s
         ResponseBody:   true,
         Async:          false,
     }
-
+    
     // 重定向
     if c.Options.AllowRedirect == 0 {
         c.Client.SetRedirectPolicy(req.NoRedirectPolicy())
@@ -158,9 +158,9 @@ func (c *Client) Request(target string, method string, body string, header map[s
     }
     // 防止出现一些错误，这次重定向后，修改回去
     c.Options.AllowRedirect = 0
-
+    
     request := c.Client.R().SetDumpOptions(opt).EnableDump().EnableTrace() // 启用 trace，获取响应的时间
-
+    
     if c.Options.Headers != nil {
         if c.Options.Headers["Accept-Encoding"] == "gzip, deflate" {
             delete(c.Options.Headers, "Accept-Encoding")
@@ -174,7 +174,7 @@ func (c *Client) Request(target string, method string, body string, header map[s
         }
         request.SetHeaders(header)
     }
-
+    
     c.RateLimiter.Take()
     var resp *req.Response
     var err error
@@ -196,35 +196,35 @@ func (c *Client) Request(target string, method string, body string, header map[s
         logging.Logger.Warningf("Unsupported method: %s", method)
         return nil, errors.New(fmt.Sprintf("Unsupported method: %s", method))
     }
-
+    
     if err != nil {
         return nil, err
     }
-
+    
     var (
         location string
         respBody string
     )
-
+    
     if respLocation, err := resp.Location(); err == nil {
         location = respLocation.String()
     }
-
+    
     if respBodyByte, err := ioutil.ReadAll(resp.Body); err == nil {
         respBody = string(respBodyByte)
     }
     defer resp.Body.Close()
-
+    
     if resp.StatusCode == 200 {
         // 检查一下是否为 js 控制的跳转
         if checkJSRedirect(respBody) {
             resp.StatusCode = 302
         }
     }
-
+    
     // 检测所有的返回包，可能有某个插件导致报错，存在报错信息
     sensitive.PageErrorMessageCheck(target, requestDumpBuf.String(), respBody)
-
+    
     return &Response{
         Status:           resp.Status,
         StatusCode:       resp.StatusCode,
@@ -252,47 +252,47 @@ func (c *Client) Upload(target string, params map[string]string, name, fileName 
         ResponseBody:   true,
         Async:          false,
     }
-
+    
     request := c.Client.R().SetDumpOptions(opt).EnableDump().
         SetHeaders(c.Options.Headers).
         EnableTrace() // 启用 trace，获取响应的时间
-
+    
     var resp *req.Response
     var err error
-
+    
     request.
         SetFileBytes(name, fileName, []byte("test")). // 文件名，文件内容
         SetFormData(params) // 写入body中额外参数
-
+    
     if c.Options.Headers != nil {
         if c.Options.Headers["Accept-Encoding"] == "gzip, deflate" {
             delete(c.Options.Headers, "Accept-Encoding")
         }
         request.SetHeaders(c.Options.Headers)
     }
-
+    
     resp, err = request.Post(target)
-
+    
     if err != nil {
         return nil, err
     }
-
+    
     var (
         location string
         respBody string
     )
-
+    
     if respLocation, err := resp.Location(); err == nil {
         location = respLocation.String()
     }
-
+    
     if respBodyByte, err := ioutil.ReadAll(resp.Body); err == nil {
         respBody = string(respBodyByte)
     }
     defer resp.Body.Close()
-
+    
     c.RateLimiter.Take()
-
+    
     return &Response{
         Status:           resp.Status,
         StatusCode:       resp.StatusCode,
@@ -318,7 +318,7 @@ func checkJSRedirect(htmlStr string) bool {
         `addEventListener\([^,]+,\s*function`,
         `(?ms)<a id="a-link"></a>\s*<script>\s*localStorage\.x5referer.*?document\.getElementById`,
     }
-
+    
     for _, pattern := range redirectPatterns {
         re := regexp.MustCompile(pattern)
         if re.MatchString(htmlStr) {
@@ -350,7 +350,7 @@ func Request10(host, raw string) (*Response, error) {
         logging.Logger.Errorln("Error sending request:", err)
         return nil, err
     }
-
+    
     // 读取响应
     reader := bufio.NewReader(conn)
     resp, err := http.ReadResponse(reader, nil)
@@ -359,31 +359,27 @@ func Request10(host, raw string) (*Response, error) {
         return nil, err
     }
     defer resp.Body.Close()
-
+    
     // 读取响应内容
     responseDump, _ := httputil.DumpResponse(resp, true)
-    var location string
-    var respBody string
+    
     defer resp.Body.Close()
-
-    if bodyTmp, err := ioutil.ReadAll(resp.Body); err == nil {
-        respBody = string(bodyTmp)
-    }
-    if respLocation, err := resp.Location(); err == nil {
-        location = respLocation.String()
-    }
-
+    
+    // return &Response{
+    //     resp.Status,
+    //     resp.StatusCode,
+    //     respBody,
+    //     raw,
+    //     string(responseDump),
+    //     resp.Header,
+    //     int(resp.ContentLength),
+    //     resp.Request.URL.String(),
+    //     location,
+    //     0,
+    // }, nil
     return &Response{
-        resp.Status,
-        resp.StatusCode,
-        respBody,
-        raw,
-        string(responseDump),
-        resp.Header,
-        int(resp.ContentLength),
-        resp.Request.URL.String(),
-        location,
-        0,
+        RequestDump:  raw,
+        ResponseDump: string(responseDump),
     }, nil
 }
 

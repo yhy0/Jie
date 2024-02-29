@@ -25,6 +25,8 @@ type Plugin struct {
     SeenRequests sync.Map
 }
 
+var lock sync.Mutex
+
 func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client *httpx.Client) {
     if in.Cdn {
         return
@@ -32,8 +34,11 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
     if p.IsScanned(in.UniqueId) || in.Ip == "" {
         return
     }
-
-    output.IPInfoList[in.Ip].PortService = Scan(target, in.Ip)
+    
+    res := Scan(target, in.Ip)
+    lock.Lock()
+    output.IPInfoList[in.Ip].PortService = res
+    lock.Unlock()
 }
 
 func (p *Plugin) IsScanned(key string) bool {
@@ -53,7 +58,7 @@ func (p *Plugin) Name() string {
 
 func Scan(target, ip string) map[string]string {
     var lock sync.Mutex
-
+    
     portService := make(map[string]string)
     options := runner.Options{
         Host:     goflags.StringSlice{ip},
@@ -77,17 +82,17 @@ func Scan(target, ip string) map[string]string {
         // Ports: "",
         TopPorts: "1000", // 扫描 top1000
     }
-
+    
     naabuRunner, err := runner.NewRunner(&options)
     if err != nil {
         logging.Logger.Errorln(err)
         return portService
     }
     defer naabuRunner.Close()
-
+    
     naabuRunner.RunEnumeration()
-
+    
     logging.Logger.Println(portService)
-
+    
     return portService
 }

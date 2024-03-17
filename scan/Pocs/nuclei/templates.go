@@ -15,8 +15,7 @@ var defaultTemplates = []string{
     "cnvd/",
     "cves/",
     "default-logins/",
-    "dns/azure-takeover-detection.yaml",
-    "dns/elasticbeantalk-takeover.yaml",
+    "dns/",
     "exposed-panels/",
     "exposures/",
     "file/keys/",
@@ -40,14 +39,9 @@ var defaultTemplates = []string{
     "miscellaneous/htaccess-config.yaml",
     "miscellaneous/ntlm-directories.yaml",
     "miscellaneous/xml-schema-detect.yaml",
-    "network/clickhouse-unauth.yaml",
-    "network/exposed-adb.yaml",
-    "network/exposed-redis.yaml",
-    "network/exposed-zookeeper.yaml",
-    "network/ftp-weak-credentials.yaml",
-    "network/mongodb-unauth.yaml",
-    "network/sap-router-info-leak.yaml",
-    "network/tidb-unauth.yaml",
+    "network/exposures/",
+    "network/default-login/",
+    "network/misconfig/",
     "takeovers/",
     "vulnerabilities/",
 }
@@ -273,15 +267,15 @@ func generateTemplates(fingerprints []string) (templates []string, tags []string
         } else if util.Contains(fingerprint, "python") {
             templates = append(templates, "file/python/")
         }
-
+        
     }
-
+    
     if len(tags) == 0 && len(templates) == 0 {
         templates = defaultTemplates
     } else {
         templates = funk.UniqString(append(templates, publiTemplates...))
     }
-
+    
     return
-
+    
 }

@@ -3,17 +3,17 @@ package nuclei
 import (
     "bufio"
     "fmt"
-    "github.com/projectdiscovery/nuclei/v2/pkg/types"
+    "github.com/projectdiscovery/gologger"
+    "github.com/projectdiscovery/nuclei/v3/pkg/types"
     errorutil "github.com/projectdiscovery/utils/errors"
     fileutil "github.com/projectdiscovery/utils/file"
     proxyutils "github.com/projectdiscovery/utils/proxy"
-    "github.com/yhy0/logging"
     "net/url"
     "os"
     "strings"
 )
 
-// loadProxyServers load list of proxy servers from file or comma seperated
+// loadProxyServers load list of proxy servers from file or comma separated
 func loadProxyServers(options *types.Options) error {
     if len(options.Proxy) == 0 {
         return nil
@@ -52,11 +52,11 @@ func loadProxyServers(options *types.Options) error {
     if proxyURL.Scheme == proxyutils.HTTP || proxyURL.Scheme == proxyutils.HTTPS {
         types.ProxyURL = proxyURL.String()
         types.ProxySocksURL = ""
-        logging.Logger.Infof("Using %s as proxy server", proxyURL.String())
+        gologger.Verbose().Msgf("Using %s as proxy server", proxyURL.String())
     } else if proxyURL.Scheme == proxyutils.SOCKS5 {
         types.ProxyURL = ""
         types.ProxySocksURL = proxyURL.String()
-        logging.Logger.Infof("Using %s as socket proxy server", proxyURL.String())
+        gologger.Verbose().Msgf("Using %s as socket proxy server", proxyURL.String())
     }
     return nil
 }

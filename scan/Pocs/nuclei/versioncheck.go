@@ -12,8 +12,8 @@ import (
     "net/url"
     "os"
     "runtime"
-
-    "github.com/projectdiscovery/nuclei/v2/pkg/catalog/config"
+    
+    "github.com/projectdiscovery/nuclei/v3/pkg/catalog/config"
     "github.com/projectdiscovery/retryablehttp-go"
     updateutils "github.com/projectdiscovery/utils/update"
 )
@@ -60,7 +60,7 @@ func NucleiVersionCheck() error {
             if tool.Version != "" {
                 nucleiversion = "v" + tool.Version
             }
-
+        
         case "nuclei-templates":
             if tool.Version != "" {
                 templateversion = "v" + tool.Version

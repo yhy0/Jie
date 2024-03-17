@@ -1,12 +1,13 @@
 package nuclei
 
 import (
+    "fmt"
     "github.com/logrusorgru/aurora"
     "github.com/yhy0/Jie/conf"
     "github.com/yhy0/Jie/pkg/output"
     "github.com/yhy0/logging"
-    "sync"
     "testing"
+    "time"
 )
 
 /**
@@ -18,21 +19,18 @@ import (
 func TestNuclei(t *testing.T) {
     logging.Logger = logging.New(false, "", "1", true)
     conf.GlobalConfig = &conf.Config{}
-
+    
     conf.GlobalConfig.Http.Proxy = "http://127.0.0.1:8080"
-
-    // 使用 sync.WaitGroup 防止 OutChannel 中的数据没有完全被消费，导致的数据漏掉问题
-    var wg sync.WaitGroup
-    wg.Add(1)
-
+    // conf.GlobalConfig.WebScan.Poc = []string{"/Users/yhy/Desktop/test.yaml"}
+    
     go func() {
-        defer wg.Done()
         for v := range output.OutChannel {
             logging.Logger.Infoln(aurora.Red(v.PrintScreen()).String())
         }
     }()
-
+    
     Scan("https://yarx.koalr.me/", nil)
-
-    wg.Wait()
+    
+    fmt.Println("wait ...")
+    time.Sleep(5 * time.Second)
 }

@@ -5,13 +5,6 @@ import (
     "context"
     "crypto/md5"
     "fmt"
-    "github.com/olekukonko/tablewriter"
-    "github.com/projectdiscovery/nuclei/v2/pkg/catalog/config"
-    "github.com/projectdiscovery/nuclei/v2/pkg/external/customtemplates"
-    errorutil "github.com/projectdiscovery/utils/errors"
-    fileutil "github.com/projectdiscovery/utils/file"
-    stringsutil "github.com/projectdiscovery/utils/strings"
-    updateutils "github.com/projectdiscovery/utils/update"
     "github.com/yhy0/logging"
     "io"
     "io/fs"
@@ -19,13 +12,16 @@ import (
     "path/filepath"
     "strconv"
     "strings"
+    
+    "github.com/charmbracelet/glamour"
+    "github.com/olekukonko/tablewriter"
+    "github.com/projectdiscovery/nuclei/v3/pkg/catalog/config"
+    "github.com/projectdiscovery/nuclei/v3/pkg/external/customtemplates"
+    errorutil "github.com/projectdiscovery/utils/errors"
+    fileutil "github.com/projectdiscovery/utils/file"
+    stringsutil "github.com/projectdiscovery/utils/strings"
+    updateutils "github.com/projectdiscovery/utils/update"
 )
-
-/**
-   @author yhy
-   @since 2023/6/1
-   @desc //TODO
-**/
 
 const (
     checkSumFilePerm = 0644
@@ -34,6 +30,7 @@ const (
 var (
     HideProgressBar        = true
     HideUpdateChangesTable = false
+    HideReleaseNotes       = true
 )
 
 // TemplateUpdateResults contains the results of template update
@@ -62,7 +59,9 @@ func (t *templateUpdateResults) String() string {
 // TemplateManager is a manager for templates.
 // It downloads / updates / installs templates.
 type TemplateManager struct {
-    CustomTemplates *customtemplates.CustomTemplatesManager // optional if given tries to download custom templates
+    CustomTemplates        *customtemplates.CustomTemplatesManager // optional if given tries to download custom templates
+    DisablePublicTemplates bool                                    // if true,
+    // public templates are not downloaded from the GitHub nuclei-templates repository
 }
 
 // FreshInstallIfNotExists installs templates if they are not already installed
@@ -83,7 +82,7 @@ func (t *TemplateManager) FreshInstallIfNotExists() error {
 
 // UpdateIfOutdated updates templates if they are outdated
 func (t *TemplateManager) UpdateIfOutdated() error {
-    // if folder does not exist, its a fresh install and not update
+    // if the templates folder does not exist, it's a fresh installation and do not update
     if !fileutil.FolderExists(config.DefaultConfig.TemplatesDirectory) {
         return t.FreshInstallIfNotExists()
     }
@@ -100,12 +99,17 @@ func (t *TemplateManager) installTemplatesAt(dir string) error {
             return errorutil.NewWithErr(err).Msgf("failed to create directory at %s", dir)
         }
     }
+    if t.DisablePublicTemplates {
+        logging.Logger.Infoln("Skipping installation of public nuclei-templates")
+        return nil
+    }
     ghrd, err := updateutils.NewghReleaseDownloader(config.OfficialNucleiTemplatesRepoName)
     if err != nil {
         return errorutil.NewWithErr(err).Msgf("failed to install templates at %s", dir)
     }
+    
     // write templates to disk
-    if err := t.writeTemplatestoDisk(ghrd, dir); err != nil {
+    if err := t.writeTemplatesToDisk(ghrd, dir); err != nil {
         return errorutil.NewWithErr(err).Msgf("failed to write templates to disk at %s", dir)
     }
     logging.Logger.Infof("Successfully installed nuclei-templates at %s", dir)
@@ -114,42 +118,46 @@ func (t *TemplateManager) installTemplatesAt(dir string) error {
 
 // updateTemplatesAt updates templates at given directory
 func (t *TemplateManager) updateTemplatesAt(dir string) error {
-    // firstly read checksums from .checksum file these are used to generate stats
+    if t.DisablePublicTemplates {
+        logging.Logger.Infof("Skipping update of public nuclei-templates")
+        return nil
+    }
+    // firstly, read checksums from .checksum file these are used to generate stats
     oldchecksums, err := t.getChecksumFromDir(dir)
     if err != nil {
-        // if something went wrong overwrite all files
+        // if something went wrong, overwrite all files
         oldchecksums = make(map[string]string)
     }
-
+    
     ghrd, err := updateutils.NewghReleaseDownloader(config.OfficialNucleiTemplatesRepoName)
     if err != nil {
         return errorutil.NewWithErr(err).Msgf("failed to install templates at %s", dir)
     }
-
-    logging.Logger.Infof("Your current nuclei-templates %s are outdated. Latest is %s", config.DefaultConfig.TemplateVersion, ghrd.Latest.GetTagName())
-
+    
+    logging.Logger.Infof("Your current nuclei-templates %s are outdated. Latest is %s\n", config.DefaultConfig.TemplateVersion, ghrd.Latest.GetTagName())
+    
     // write templates to disk
-    if err := t.writeTemplatestoDisk(ghrd, dir); err != nil {
+    if err := t.writeTemplatesToDisk(ghrd, dir); err != nil {
         return err
     }
-
+    
     // get checksums from new templates
     newchecksums, err := t.getChecksumFromDir(dir)
     if err != nil {
         // unlikely this case will happen
         return errorutil.NewWithErr(err).Msgf("failed to get checksums from %s after update", dir)
     }
-
+    
     // summarize all changes
     results := t.summarizeChanges(oldchecksums, newchecksums)
-
+    
     // print summary
     if results.totalCount > 0 {
         logging.Logger.Infof("Successfully updated nuclei-templates (%v) to %s. GoodLuck!", ghrd.Latest.GetTagName(), dir)
         if !HideUpdateChangesTable {
             // print summary table
-            logging.Logger.Infof("\nNuclei Templates %s Changelog\n", ghrd.Latest.GetTagName())
-            logging.Logger.Infoln(results.String())
+            logging.Logger.Printf("\nNuclei Templates %s Changelog\n", ghrd.Latest.GetTagName())
+            logging.Logger.Println(results.String())
         }
     } else {
         logging.Logger.Infof("Successfully updated nuclei-templates (%v) to %s. GoodLuck!", ghrd.Latest.GetTagName(), dir)
@@ -178,10 +186,10 @@ func (t *TemplateManager) summarizeChanges(old, new map[string]string) *template
     return results
 }
 
-// getAbsoluteFilePath returns absolute path where a file should be written based on given uri(i.e files in zip)
-// if returned path is empty, it means that file should not be written and skipped
-func (t *TemplateManager) getAbsoluteFilePath(templatedir, uri string, f fs.FileInfo) string {
-    // overwrite .nuclei-ignore everytime nuclei-templates are downloaded
+// getAbsoluteFilePath returns an absolute path where a file should be written based on given uri(i.e., files in zip)
+// if a returned path is empty, it means that file should not be written and skipped
+func (t *TemplateManager) getAbsoluteFilePath(templateDir, uri string, f fs.FileInfo) string {
+    // overwrite .nuclei-ignore every time nuclei-templates are downloaded
     if f.Name() == config.NucleiIgnoreFileName {
         return config.DefaultConfig.GetIgnoreFilePath()
     }
@@ -191,37 +199,37 @@ func (t *TemplateManager) getAbsoluteFilePath(templatedir, uri string, f fs.File
             return ""
         }
     }
-
+    
     // get root or leftmost directory name from path
     // this is in format `projectdiscovery-nuclei-templates-commithash`
-
+    
     index := strings.Index(uri, "/")
     if index == -1 {
         // zip files does not have directory at all , in this case log error but continue
         logging.Logger.Warnf("failed to get directory name from uri: %s", uri)
-        return filepath.Join(templatedir, uri)
+        return filepath.Join(templateDir, uri)
     }
-    // seperator is also included in rootDir
+    // separator is also included in rootDir
     rootDirectory := uri[:index+1]
     relPath := strings.TrimPrefix(uri, rootDirectory)
-
+    
     // if it is a github meta directory skip it
     if stringsutil.HasPrefixAny(relPath, ".github", ".git") {
         return ""
     }
-
-    newPath := filepath.Clean(filepath.Join(templatedir, relPath))
-
-    if !strings.HasPrefix(newPath, templatedir) {
+    
+    newPath := filepath.Clean(filepath.Join(templateDir, relPath))
+    
+    if !strings.HasPrefix(newPath, templateDir) {
         // we don't allow LFI
         return ""
     }
-
-    if newPath == templatedir || newPath == templatedir+string(os.PathSeparator) {
+    
+    if newPath == templateDir || newPath == templateDir+string(os.PathSeparator) {
         // skip writing the folder itself since it already exists
         return ""
     }
-
+    
     if relPath != "" && f.IsDir() {
         // if uri is a directory, create it
         if err := fileutil.CreateFolder(newPath); err != nil {
@@ -233,22 +241,22 @@ func (t *TemplateManager) getAbsoluteFilePath(templatedir, uri string, f fs.File
 }
 
 // writeChecksumFileInDir is actual method responsible for writing all templates to directory
-func (t *TemplateManager) writeTemplatestoDisk(ghrd *updateutils.GHReleaseDownloader, dir string) error {
-    LocaltemplatesIndex, err := config.GetNucleiTemplatesIndex()
+func (t *TemplateManager) writeTemplatesToDisk(ghrd *updateutils.GHReleaseDownloader, dir string) error {
+    localTemplatesIndex, err := config.GetNucleiTemplatesIndex()
     if err != nil {
         logging.Logger.Warnf("failed to get local nuclei-templates index: %s", err)
-        if LocaltemplatesIndex == nil {
-            LocaltemplatesIndex = map[string]string{} // no-op
+        if localTemplatesIndex == nil {
+            localTemplatesIndex = map[string]string{} // no-op
         }
     }
-
+    
     callbackFunc := func(uri string, f fs.FileInfo, r io.Reader) error {
         writePath := t.getAbsoluteFilePath(dir, uri, f)
         if writePath == "" {
             // skip writing file
             return nil
         }
-
+        
         bin, err := io.ReadAll(r)
         if err != nil {
             // if error occurs, iteration also stops
@@ -258,10 +266,10 @@ func (t *TemplateManager) writeTemplatestoDisk(ghrd *updateutils.GHReleaseDownlo
         // instead of creating it from scratch
         id, _ := config.GetTemplateIDFromReader(bytes.NewReader(bin), uri)
         if id != "" {
-            // based on template id, check if we are updating path of official nuclei template
-            if oldPath, ok := LocaltemplatesIndex[id]; ok {
+            // based on template id, check if we are updating a path of official nuclei template
+            if oldPath, ok := localTemplatesIndex[id]; ok {
                 if oldPath != writePath {
-                    // write new template at new path and delete old template
+                    // write new template at a new path and delete old template
                     if err := os.WriteFile(writePath, bin, f.Mode()); err != nil {
                         return errorutil.NewWithErr(err).Msgf("failed to write file %s", uri)
                     }
@@ -280,7 +288,7 @@ func (t *TemplateManager) writeTemplatestoDisk(ghrd *updateutils.GHReleaseDownlo
     if err != nil {
         return errorutil.NewWithErr(err).Msgf("failed to download templates")
     }
-
+    
     if err := config.DefaultConfig.WriteTemplatesConfig(); err != nil {
         return errorutil.NewWithErr(err).Msgf("failed to write templates config")
     }
@@ -288,32 +296,47 @@ func (t *TemplateManager) writeTemplatestoDisk(ghrd *updateutils.GHReleaseDownlo
     if err := config.DefaultConfig.UpdateNucleiIgnoreHash(); err != nil {
         return errorutil.NewWithErr(err).Msgf("failed to update nuclei ignore hash")
     }
-
+    
     // update templates version in config file
     if err := config.DefaultConfig.SetTemplatesVersion(ghrd.Latest.GetTagName()); err != nil {
         return errorutil.NewWithErr(err).Msgf("failed to update templates version")
     }
-
+    
     PurgeEmptyDirectories(dir)
-
+    
     // generate index of all templates
     _ = os.Remove(config.DefaultConfig.GetTemplateIndexFilePath())
-
+    
     index, err := config.GetNucleiTemplatesIndex()
     if err != nil {
         return errorutil.NewWithErr(err).Msgf("failed to get nuclei templates index")
     }
-
+    
     if err = config.DefaultConfig.WriteTemplatesIndex(index); err != nil {
         return errorutil.NewWithErr(err).Msgf("failed to write nuclei templates index")
     }
-
-    // after installation create and write checksums to .checksum file
+    
+    if !HideReleaseNotes {
+        output := ghrd.Latest.GetBody()
+        // adjust colors for both dark / light terminal themes
+        r, err := glamour.NewTermRenderer(glamour.WithAutoStyle())
+        if err != nil {
+            logging.Logger.Warnf("markdown rendering not supported: %v", err)
+        }
+        if rendered, err := r.Render(output); err == nil {
+            output = rendered
+        } else {
+            logging.Logger.Warnln(err.Error())
+        }
+        logging.Logger.Infof("\n%v\n\n", output)
+    }
+    
+    // after installation, create and write checksums to .checksum file
     return t.writeChecksumFileInDir(dir)
 }
 
 // getChecksumFromDir returns a map containing checksums (md5 hash) of all yaml files (with .yaml extension)
-// if .checksum file does not exist checksums are calculated and returned
+// if .checksum file does not exist, checksums are calculated and returned
 func (t *TemplateManager) getChecksumFromDir(dir string) (map[string]string, error) {
     checksumFilePath := config.DefaultConfig.GetChecksumFilePath()
     if fileutil.FileExists(checksumFilePath) {
@@ -354,7 +377,7 @@ func (t *TemplateManager) calculateChecksumMap(dir string) (map[string]string, e
     // checksums (md5 hash) of all yaml files (with .yaml extension) and the
     // format is map[filePath]checksum
     checksumMap := map[string]string{}
-
+    
     getChecksum := func(filepath string) (string, error) {
         // return md5 hash of the file
         bin, err := os.ReadFile(filepath)
@@ -363,7 +386,7 @@ func (t *TemplateManager) calculateChecksumMap(dir string) (map[string]string, e
         }
         return fmt.Sprintf("%x", md5.Sum(bin)), nil
     }
-
+    
     err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
         if err != nil {
             return err
@@ -372,7 +395,7 @@ func (t *TemplateManager) calculateChecksumMap(dir string) (map[string]string, e
         if stringsutil.HasPrefixAny(path, config.DefaultConfig.GetAllCustomTemplateDirs()...) {
             return nil
         }
-
+        
         // current implementations calculates checksums of all files (including .yaml,.txt,.md,.json etc)
         if !d.IsDir() {
             checksum, err := getChecksum(path)

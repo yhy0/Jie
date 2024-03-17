@@ -10,7 +10,7 @@ import (
     "sort"
     "strings"
     "sync"
-
+    
     mapset "github.com/deckarep/golang-set/v2"
 )
 
@@ -95,9 +95,9 @@ func (s *SmartFilter) DoFilter(req *model.Request) bool {
         // logging.Logger.Debugf("filter req by simplefilter: " + req.URL.RequestURI())
         return true
     }
-
+    
     req.Filter.FragmentID = s.calcFragmentID(req.URL.Fragment)
-
+    
     // 标记
     if req.Method == config.GET || req.Method == config.DELETE || req.Method == config.HEAD || req.Method == config.OPTIONS {
         s.getMark(req)
@@ -107,22 +107,22 @@ func (s *SmartFilter) DoFilter(req *model.Request) bool {
     } else {
         // logging.Logger.Debug("dont support such method: " + req.Method)
     }
-
+    
     // 对标记后的请求进行去重
     uniqueId := req.Filter.UniqueId
     if s.uniqueMarkedIds.Contains(uniqueId) {
         // logging.Logger.Debugf("filter req by uniqueMarkedIds 1: " + req.URL.RequestURI())
         return true
     }
-
+    
     // 全局数值型参数标记
     s.globalFilterLocationMark(req)
-
+    
     // 接下来对标记的GET请求进行去重
     if req.Method == config.GET || req.Method == config.DELETE || req.Method == config.HEAD || req.Method == config.OPTIONS {
         // 对超过阈值的GET请求进行标记
         s.overCountMark(req)
-
+        
         // 重新计算 QueryMapId
         req.Filter.QueryMapId = getParamMapID(req.Filter.MarkedQueryMap)
         // 重新计算 PathId
@@ -131,17 +131,17 @@ func (s *SmartFilter) DoFilter(req *model.Request) bool {
         // 重新计算 PostDataId
         req.Filter.PostDataId = getParamMapID(req.Filter.MarkedPostDataMap)
     }
-
+    
     // 重新计算请求唯一ID
     req.Filter.UniqueId = getMarkedUniqueID(req)
-
+    
     // 新的ID再次去重
     newUniqueId := req.Filter.UniqueId
     if s.uniqueMarkedIds.Contains(newUniqueId) {
         // logging.Logger.Debugf("filter req by uniqueMarkedIds 2: " + req.URL.RequestURI())
         return true
     }
-
+    
     // 添加到结果集中
     s.uniqueMarkedIds.Add(newUniqueId)
     return false
@@ -170,13 +170,13 @@ func (s *SmartFilter) getMark(req *model.Request) {
     // 首先是解码前的预先替换
     todoURL := *(req.URL)
     todoURL.RawQuery = s.preQueryMark(todoURL.RawQuery)
-
+    
     // 依次打标记
     queryMap := todoURL.QueryMap()
     queryMap = markParamName(queryMap)
     queryMap = s.markParamValue(queryMap, *req)
     markedPath := MarkPath(todoURL.Path)
-
+    
     // 计算唯一的ID
     var queryKeyID string
     var queryMapID string
@@ -188,13 +188,13 @@ func (s *SmartFilter) getMark(req *model.Request) {
         queryMapID = ""
     }
     pathID := getPathID(markedPath)
-
+    
     req.Filter.MarkedQueryMap = queryMap
     req.Filter.QueryKeysId = queryKeyID
     req.Filter.QueryMapId = queryMapID
     req.Filter.MarkedPath = markedPath
     req.Filter.PathId = pathID
-
+    
     // 最后计算标记后的唯一请求ID
     req.Filter.UniqueId = getMarkedUniqueID(req)
 }
@@ -205,11 +205,11 @@ func (s *SmartFilter) getMark(req *model.Request) {
 */
 func (s *SmartFilter) postMark(req *model.Request) {
     postDataMap := req.PostDataMap()
-
+    
     postDataMap = markParamName(postDataMap)
     postDataMap = s.markParamValue(postDataMap, *req)
     markedPath := MarkPath(req.URL.Path)
-
+    
     // 计算唯一的ID
     var postDataMapID string
     if len(postDataMap) != 0 {
@@ -218,12 +218,12 @@ func (s *SmartFilter) postMark(req *model.Request) {
         postDataMapID = ""
     }
     pathID := getPathID(markedPath)
-
+    
     req.Filter.MarkedPostDataMap = postDataMap
     req.Filter.PostDataId = postDataMapID
     req.Filter.MarkedPath = markedPath
     req.Filter.PathId = pathID
-
+    
     // 最后计算标记后的唯一请求ID
     req.Filter.UniqueId = getMarkedUniqueID(req)
 }
@@ -415,44 +415,41 @@ func (s *SmartFilter) repeatCountStatistic(req *model.Request) {
         } else {
             s.filterParamKeyRepeatCount.Store(queryKeyId, 1)
         }
-
+        
         for key, value := range req.Filter.MarkedQueryMap {
             // 某个URL的所有参数名重复数量统计
             paramQueryKey := queryKeyId + key
-
+            
             if set, ok := s.filterParamKeySingleValues.Load(paramQueryKey); ok {
-                set := set.(mapset.Set[interface{}])
-                set.Add(value)
+                set.(mapset.Set[interface{}]).Add(value)
             } else {
                 s.filterParamKeySingleValues.Store(paramQueryKey, mapset.NewSet(value))
             }
-
+            
             // 本轮所有URL中某个参数重复数量统计
             if _, ok := s.filterParamKeyAllValues.Load(key); !ok {
                 s.filterParamKeyAllValues.Store(key, mapset.NewSet(value))
             } else {
                 if v, ok := s.filterParamKeyAllValues.Load(key); ok {
-                    set := v.(mapset.Set[interface{}])
-                    if !set.Contains(value) {
-                        set.Add(value)
+                    if !v.(mapset.Set[interface{}]).Contains(value) {
+                        v.(mapset.Set[interface{}]).Add(value)
                     }
                 }
             }
-
+            
             // 如果参数值为空，统计该PATH下的空值参数名个数
             if value == "" {
                 if _, ok := s.filterPathParamEmptyValues.Load(pathId); !ok {
                     s.filterPathParamEmptyValues.Store(pathId, mapset.NewSet(key))
                 } else {
                     if v, ok := s.filterPathParamEmptyValues.Load(pathId); ok {
-                        set := v.(mapset.Set[string])
-                        if !set.Contains(key) {
-                            set.Add(key)
+                        if !v.(mapset.Set[string]).Contains(key) {
+                            v.(mapset.Set[string]).Add(key)
                         }
                     }
                 }
             }
-
+            
             pathIdKey := pathId + key
             // 某path下的参数值去重标记出现次数统计
             if v, ok := s.filterPathParamKeySymbol.Load(pathIdKey); ok {
@@ -462,15 +459,15 @@ func (s *SmartFilter) repeatCountStatistic(req *model.Request) {
             } else {
                 s.filterPathParamKeySymbol.Store(pathIdKey, 1)
             }
-
+            
         }
     }
-
+    
     // 相对于上一级目录，本级path目录的数量统计，存在文件后缀的情况下，放行常见脚本后缀
     if req.URL.ParentPath() == "" || inCommonScriptSuffix(req.URL.FileExt()) {
         return
     }
-
+    
     //
     parentPathId := tools.StrMd5(req.URL.ParentPath())
     currentPath := strings.Replace(req.Filter.MarkedPath, req.URL.ParentPath(), "", -1)
@@ -478,9 +475,8 @@ func (s *SmartFilter) repeatCountStatistic(req *model.Request) {
         s.filterParentPathValues.Store(parentPathId, mapset.NewSet(currentPath))
     } else {
         if v, ok := s.filterParentPathValues.Load(parentPathId); ok {
-            set := v.(mapset.Set[string])
-            if !set.Contains(currentPath) {
-                set.Add(currentPath)
+            if !v.(mapset.Set[string]).Contains(currentPath) {
+                v.(mapset.Set[string]).Add(currentPath)
             }
         }
     }
@@ -500,34 +496,31 @@ func (s *SmartFilter) overCountMark(req *model.Request) {
             for key := range req.Filter.MarkedQueryMap {
                 paramQueryKey := queryKeyId + key
                 if set, ok := s.filterParamKeySingleValues.Load(paramQueryKey); ok {
-                    set := set.(mapset.Set[string])
-                    if set.Cardinality() > 3 {
+                    if set.(mapset.Set[interface{}]).Cardinality() > 3 {
                         req.Filter.MarkedQueryMap[key] = FixParamRepeatMark
                     }
                 }
             }
         }
-
+        
         for key := range req.Filter.MarkedQueryMap {
             // 所有URL中，某个参数不同的值出现次数超过阈值，打标记去重
             if paramKeySet, ok := s.filterParamKeyAllValues.Load(key); ok {
-                _paramKeySet := paramKeySet.(mapset.Set[interface{}])
-                if _paramKeySet.Cardinality() > MaxParamKeyAllCount {
+                if paramKeySet.(mapset.Set[interface{}]).Cardinality() > MaxParamKeyAllCount {
                     req.Filter.MarkedQueryMap[key] = FixParamRepeatMark
                 }
             }
-
+            
             pathIdKey := pathId + key
             // 某个PATH的GET参数值去重标记出现次数超过阈值，则对该PATH的该参数进行全局标记
             if v, ok := s.filterPathParamKeySymbol.Load(pathIdKey); ok && v.(int) > MaxPathParamKeySymbolCount {
                 req.Filter.MarkedQueryMap[key] = FixParamRepeatMark
             }
         }
-
+        
         // 处理某个path下空参数值的参数个数超过阈值 如伪静态： http://bang.360.cn/?chu_xiu
         if v, ok := s.filterPathParamEmptyValues.Load(pathId); ok {
-            set := v.(mapset.Set[string])
-            if set.Cardinality() > MaxPathParamEmptyCount {
+            if v.(mapset.Set[string]).Cardinality() > MaxPathParamEmptyCount {
                 newMarkerQueryMap := map[string]interface{}{}
                 for key, value := range req.Filter.MarkedQueryMap {
                     if value == "" {
@@ -540,15 +533,14 @@ func (s *SmartFilter) overCountMark(req *model.Request) {
             }
         }
     }
-
+    
     // 处理本级path的伪静态
     if req.URL.ParentPath() == "" || inCommonScriptSuffix(req.URL.FileExt()) {
         return
     }
     parentPathId := tools.StrMd5(req.URL.ParentPath())
     if set, ok := s.filterParentPathValues.Load(parentPathId); ok {
-        set := set.(mapset.Set[string])
-        if set.Cardinality() > MaxParentPathCount {
+        if set.(mapset.Set[string]).Cardinality() > MaxParentPathCount {
             if strings.HasSuffix(req.URL.ParentPath(), "/") {
                 req.Filter.MarkedPath = req.URL.ParentPath() + FixPathMark
             } else {
@@ -586,7 +578,7 @@ func getMarkedUniqueID(req *model.Request) string {
     } else {
         paramId = req.Filter.PostDataId
     }
-
+    
     uniqueStr := req.Method + paramId + req.Filter.PathId + req.URL.Host + req.Filter.FragmentID
     if req.RedirectionFlag {
         uniqueStr += "Redirection"
@@ -594,7 +586,7 @@ func getMarkedUniqueID(req *model.Request) string {
     if req.URL.Path == "/" && req.URL.RawQuery == "" && req.URL.Scheme == "https" {
         uniqueStr += "https"
     }
-
+    
     return tools.StrMd5(uniqueStr)
 }
 

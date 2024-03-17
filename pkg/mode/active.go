@@ -3,6 +3,7 @@ package mode
 import (
     "encoding/json"
     "fmt"
+    "github.com/projectdiscovery/katana/pkg/output"
     "github.com/remeh/sizedwaitgroup"
     "github.com/thoas/go-funk"
     "github.com/yhy0/Jie/conf"
@@ -94,8 +95,15 @@ func Active(target string, fingerprint []string) ([]string, []string) {
     
     wafs := waf.Scan(target, resp.Body, client)
     
+    var subdomains []string
     // 爬虫的同时进行指纹识别
-    subdomains := Crawler(target, wafs, t, fingerprint)
+    if conf.GlobalConfig.WebScan.Craw == "c" {
+        logging.Logger.Infoln("Crawling with Crawlergo.")
+        subdomains = Crawlergo(target, wafs, t, fingerprint)
+    } else {
+        logging.Logger.Infoln("Crawling with Katana.")
+        subdomains = Katana(target, wafs, t, fingerprint)
+    }
     
     t.Wg.Wait()
     
@@ -106,8 +114,91 @@ func Active(target string, fingerprint []string) ([]string, []string) {
     return subdomains, t.Fingerprints
 }
 
-// Crawler 运行爬虫, 对爬虫结果进行处理
-func Crawler(target string, waf []string, t *task.Task, fingerprint []string) []string {
+func Katana(target string, waf []string, t *task.Task, fingerprint []string) []string {
+    t.Wg.Add()
+    defer t.Wg.Done()
+    parseUrl, err := url.Parse(target)
+    if err != nil {
+        logging.Logger.Errorln(err)
+        return nil
+    }
+    rootHostname := parseUrl.Host
+    
+    i := 0
+    now := time.Now()
+    out := func(result output.Result) { // Callback function to execute for result
+        curl := strings.ReplaceAll(result.Request.URL, "\\n", "")
+        curl = strings.ReplaceAll(curl, "\\t", "")
+        curl = strings.ReplaceAll(curl, "\\n", "")
+        parseUrl, err := url.Parse(curl)
+        if err != nil {
+            logging.Logger.Errorln(err)
+            return
+        }
+        logging.Logger.Infof("Katana: [%s] %v %v", result.Request.Method, result.Request.URL, result.Request.Body)
+        i++
+        
+        // 只要这个域名的，其他的都不要
+        if !strings.EqualFold(parseUrl.Host, rootHostname) {
+            return
+        }
+        
+        var host string
+        // 有的会带80、443端口号，导致    example.com 和 example.com:80、example.com:443被认为是不同的网站
+        if strings.Contains(parseUrl.Host, ":443") || strings.Contains(parseUrl.Host, ":80") {
+            host = strings.Split(parseUrl.Host, ":")[0]
+        } else {
+            host = parseUrl.Host
+        }
+        resp, err := t.ScanTask[host].Client.Request(result.Request.URL, result.Request.Method, result.Request.Body, result.Request.Headers)
+        if err != nil {
+            logging.Logger.Errorln(err)
+            return
+        }
+        
+        headers := make(map[string][]string)
+        
+        for k, v := range result.Request.Headers {
+            headers[k] = strings.Split(v, ", ")
+        }
+        
+        _fingerprint := fingprints.Identify([]byte(result.Request.Body), headers)
+        
+        fingerprint = funk.UniqString(append(_fingerprint, fingerprint...))
+        
+        // 对爬虫结果格式化
+        var crawlResult = &input.CrawlResult{
+            Url:          result.Request.URL,
+            ParseUrl:     parseUrl,
+            Host:         host,
+            Target:       target,
+            Method:       result.Request.Method,
+            Source:       result.Request.Source,
+            Headers:      make(map[string]string),
+            RequestBody:  result.Request.Body,
+            Fingerprints: fingerprint,
+            Waf:          waf,
+            Resp:         resp,
+            UniqueId:     util.UUID(), // 这里爬虫中已经判断过了，所以生成一个 uuid 就行
+        }
+        
+        // 分发扫描任务
+        go t.Distribution(crawlResult)
+    }
+    
+    if conf.GlobalConfig.WebScan.Craw == "h" {
+        crawler.Katana(target, false, false, out)
+    } else {
+        crawler.Katana(target, true, conf.GlobalConfig.WebScan.Show, out)
+    }
+    
+    logging.Logger.Infof("Task finished, %d results, %d subdomains found, runtime: %d s", i, 0, time.Now().Unix()-now.Unix())
+    
+    return nil
+}
+
+// Crawlergo 运行爬虫, 对爬虫结果进行处理
+func Crawlergo(target string, waf []string, t *task.Task, fingerprint []string) []string {
     t.Wg.Add()
     defer t.Wg.Done()
     var targets []*model.Request
@@ -143,7 +234,7 @@ func Crawler(target string, waf []string, t *task.Task, fingerprint []string) []
             }
         }
         
-        logging.Logger.Infof("[crawlergo]: [%s] %v %v", result.ReqList.Method, result.ReqList.URL.String(), result.ReqList.PostData)
+        logging.Logger.Infof("crawlergo: [%s] %v %v", result.ReqList.Method, result.ReqList.URL.String(), result.ReqList.PostData)
         
         curl := strings.ReplaceAll(result.ReqList.URL.String(), "\\n", "")
         curl = strings.ReplaceAll(curl, "\\t", "")

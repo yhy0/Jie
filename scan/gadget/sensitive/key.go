@@ -2,7 +2,7 @@ package sensitive
 
 import (
     "embed"
-    "github.com/projectdiscovery/nuclei/v2/pkg/templates"
+    "github.com/projectdiscovery/nuclei/v3/pkg/templates"
     "github.com/yhy0/Jie/pkg/output"
     "gopkg.in/yaml.v3"
     "io/fs"
@@ -34,17 +34,17 @@ func init() {
     if err != nil {
         return
     }
-
+    
     for _, file := range ruleDir {
         if file.IsDir() {
             ruleDir2, _ := fs.ReadDir(ruleFiles, "rules/"+file.Name())
-
+            
             for _, file2 := range ruleDir2 {
                 content, err := ruleFiles.ReadFile("rules/" + file.Name() + "/" + file2.Name())
                 if err != nil {
                     continue
                 }
-
+                
                 var rule templates.Template
                 err = yaml.Unmarshal(content, &rule)
                 if err != nil || rule.ID == "" {
@@ -53,23 +53,23 @@ func init() {
                 rules = append(rules, rule)
             }
         }
-
+        
         content, _ := ruleFiles.ReadFile("rules/" + file.Name())
-
+        
         var rule templates.Template
         err := yaml.Unmarshal(content, &rule)
         if err != nil || rule.ID == "" {
             continue
         }
-
+        
         rules = append(rules, rule)
     }
-
+    
     // 预编译正则
     regexCompiled = make(map[string][]*regexp.Regexp, len(rules))
     for _, rule := range rules {
         e := rule.RequestsFile[0].Operators.Extractors[0]
-
+        
         for _, regex := range e.Regex {
             compiled, err := regexp.Compile(regex)
             if err != nil {
@@ -77,11 +77,11 @@ func init() {
             }
             regexCompiled[rule.ID] = append(regexCompiled[rule.ID], compiled)
         }
-
+        
     }
     // todo 800 好像还是有点多，400 吧
     limit = make(chan struct{}, 400)
-
+    
 }
 
 // KeyDetection 页面敏感信息检测
@@ -97,7 +97,7 @@ func KeyDetection(url, body string) {
                 if len(mm) > 1 && strings.Trim(mm[1], " ") == "" {
                     continue
                 }
-
+                
                 mm = strings.Split(m, "=")
                 // Token=    去除
                 if len(mm) > 1 && strings.Trim(mm[1], " ") == "" {
@@ -107,7 +107,7 @@ func KeyDetection(url, body string) {
             }
             <-limit
         }
-
+        
         if len(matchedRegexes) > 0 {
             output.OutChannel <- output.VulMessage{
                 DataType: "web_vul",
@@ -123,5 +123,5 @@ func KeyDetection(url, body string) {
             }
         }
     }
-
+    
 }

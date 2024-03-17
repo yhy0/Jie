@@ -20,7 +20,9 @@ type Config struct {
 }
 
 type WebScan struct {
-    Poc []string `json:"poc"`
+    Poc  []string `json:"poc"`
+    Craw string   `json:"craw"`
+    Show bool     `json:"show"`
 }
 
 type Options struct {

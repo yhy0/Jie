@@ -1,6 +1,7 @@
 package portScan
 
 import (
+    "context"
     "github.com/projectdiscovery/goflags"
     "github.com/projectdiscovery/naabu/v2/pkg/result"
     "github.com/projectdiscovery/naabu/v2/pkg/runner"
@@ -90,7 +91,7 @@ func Scan(target, ip string) map[string]string {
     }
     defer naabuRunner.Close()
     
-    naabuRunner.RunEnumeration()
+    naabuRunner.RunEnumeration(context.Background())
     
     logging.Logger.Println(portService)
     

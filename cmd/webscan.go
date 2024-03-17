@@ -20,6 +20,7 @@ import (
 var (
     plugins    []string
     show       bool
+    craw       string
     noPlugins  bool
     allPlugins bool
     copilot    bool
@@ -58,6 +59,8 @@ var webScanCmd = &cobra.Command{
         }
         
         conf.GlobalConfig.WebScan.Poc = Poc
+        conf.GlobalConfig.WebScan.Show = show
+        conf.GlobalConfig.WebScan.Craw = craw
         conf.GlobalConfig.Reverse.Host = host
         conf.GlobalConfig.Reverse.Host = domain
         
@@ -70,13 +73,15 @@ var webScanCmd = &cobra.Command{
         }
         
         if conf.GlobalConfig.Passive.ProxyPort != "" {
-            // 原型链 xss 检测使用无头浏览器
             crawler.NewCrawlergo(false)
             // 被动扫描
             mode.Passive()
         } else {
             // 初始化爬虫
-            crawler.NewCrawlergo(show)
+            if conf.GlobalConfig.WebScan.Craw == "c" {
+                crawler.NewCrawlergo(show)
+            }
+            
             for _, target := range conf.GlobalConfig.Options.Targets {
                 mode.Active(target, nil)
             }
@@ -100,6 +105,7 @@ func webScanCmdInit() {
     
     // 设置需要开启的 nuclei poc
     webScanCmd.Flags().StringSliceVar(&Poc, "poc", nil, "specify the nuclei poc to run, separated by ','(example: test.yml,./test/*).\r\n自定义的nuclei 漏洞模板地址")
+    webScanCmd.Flags().StringVarP(&craw, "craw", "c", "k", "Select crawler:c or k or kh. (c:Crawlergo, k:Katana Standard Mode(default), kh:(Katana Headless Mode))\r\n选择哪一个爬虫，c:Crawlergo, k:Katana 标准模式(default),kh: Katana无头模式")
     
     // 被动监听，收集流量 Security Copilot mode
     webScanCmd.Flags().StringVar(&conf.GlobalConfig.Passive.ProxyPort, "listen", "", "use proxy resource collector, value is proxy addr, (example: 127.0.0.1:9080).\r\n被动模式监听的代理地址，默认 127.0.0.1:9080")

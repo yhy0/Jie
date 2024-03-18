@@ -186,7 +186,7 @@ func Katana(target string, waf []string, t *task.Task, fingerprint []string) []s
         go t.Distribution(crawlResult)
     }
     
-    if conf.GlobalConfig.WebScan.Craw == "h" {
+    if conf.GlobalConfig.WebScan.Craw == "k" {
         crawler.Katana(target, false, false, out)
     } else {
         crawler.Katana(target, true, conf.GlobalConfig.WebScan.Show, out)
@@ -304,8 +304,7 @@ func getOption() model.Options {
     if crawler.TaskConfig.ExtraHeadersString != "" {
         err := json.Unmarshal([]byte(crawler.TaskConfig.ExtraHeadersString), &crawler.TaskConfig.ExtraHeaders)
         if err != nil {
-            logging.Logger.Fatal("custom headers can't be Unmarshal.")
-            panic(err)
+            logging.Logger.Errorln("custom headers can't be Unmarshal.", err)
         }
         option.Headers = crawler.TaskConfig.ExtraHeaders
     }

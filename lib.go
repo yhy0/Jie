@@ -20,12 +20,13 @@ func lib() {
     logging.Logger = logging.New(conf.GlobalConfig.Debug, "", "Jie", true)
     conf.Init()
     conf.GlobalConfig.Http.Proxy = ""
+    conf.GlobalConfig.WebScan.Craw = "k"
     conf.GlobalConfig.WebScan.Poc = nil
     conf.GlobalConfig.Reverse.Host = "https://dig.pm/"
     conf.GlobalConfig.Passive.WebPort = "9088"
     conf.GlobalConfig.Passive.WebUser = "yhy"
     conf.GlobalConfig.Passive.WebPass = "123456" // 注意修改为强口令
-
+    
     // 全部插件开启
     for k := range conf.Plugin {
         // if k == "nuclei" || k == "poc" {
@@ -33,14 +34,14 @@ func lib() {
         // }
         conf.Plugin[k] = true
     }
-
+    
     if conf.GlobalConfig.Passive.WebPort != "" {
         go SCopilot.Init()
     }
-
+    
     // 初始化爬虫
     crawler.NewCrawlergo(false)
-
+    
     go func() {
         for v := range output.OutChannel {
             // SCopilot 显示
@@ -53,7 +54,7 @@ func lib() {
                 msg := output.SCopilotData{
                     Target: v.VulnData.Target,
                 }
-
+                
                 if v.Level == "Low" {
                     msg.InfoMsg = []output.PluginMsg{
                         {

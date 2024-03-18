@@ -53,7 +53,7 @@ func TestDomXss(t *testing.T) {
         // Fingerprints: technologies,
     }
     
-    mode.Crawler("https://public-firing-range.appspot.com/dom/", nil, task, nil)
+    mode.Crawlergo("https://public-firing-range.appspot.com/dom/", nil, task, nil)
     fmt.Println(count)
 }
 

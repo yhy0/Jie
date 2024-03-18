@@ -117,7 +117,7 @@ func KeyDetection(url, body string) {
                     CreateTime: time.Now().Format("2006-01-02 15:04:05"),
                     Target:     url,
                     Payload:    strings.Join(matchedRegexes, ","),
-                    Response:   body,
+                    // Response:   body, // todo js 这种文本过大，不显示了
                 },
                 Level: output.Medium,
             }

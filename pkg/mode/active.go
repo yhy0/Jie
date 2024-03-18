@@ -13,6 +13,7 @@ import (
     "github.com/yhy0/Jie/crawler/crawlergo/model"
     "github.com/yhy0/Jie/fingprints"
     "github.com/yhy0/Jie/pkg/input"
+    "github.com/yhy0/Jie/pkg/mitmproxy/go-mitmproxy/proxy"
     "github.com/yhy0/Jie/pkg/protocols/httpx"
     "github.com/yhy0/Jie/pkg/task"
     "github.com/yhy0/Jie/pkg/util"
@@ -186,7 +187,16 @@ func Katana(target string, waf []string, t *task.Task, fingerprint []string) []s
             Fingerprints: fingerprint,
             Waf:          waf,
             Resp:         resp,
-            UniqueId:     util.UUID(), // 这里爬虫中已经判断过了，所以生成一个 uuid 就行
+            // UniqueId:     util.UUID(), // 这里爬虫中已经判断过了，所以生成一个 uuid 就行
+            // 需要先自己实现，Katana 去重逻辑不太行
+            UniqueId: util.UniqueId(&proxy.Request{
+                Method: result.Request.Method,
+                URL:    parseUrl,
+                Header: headers,
+                Body:   []byte(result.Request.Body),
+            }),
+            RawRequest:  result.Request.Raw,
+            RawResponse: result.Response.Raw,
         }
         
         // 分发扫描任务

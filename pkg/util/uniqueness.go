@@ -33,7 +33,7 @@ func UniqueId(req *proxy.Request) string {
         logging.Logger.Errorln(err)
         return ""
     }
-
+    
     return key
 }
 
@@ -49,17 +49,17 @@ func getRequestKey(req *proxy.Request) (string, error) {
     } else {
         host = req.URL.Host
     }
-
+    
     // 将请求方法和 URL（不包括查询参数）连接在一起
     data := req.Method + req.URL.Scheme + "://" + host + req.URL.Path
-
+    
     // 提取查询参数的名称  有的即使是 POST 请求，url请求路径中也会存在参数，所以这里全部都要提取
     var paramNames []string
     queryParams := req.URL.Query()
     for paramName := range queryParams {
         paramNames = append(paramNames, paramName)
     }
-
+    
     if req.Method == "POST" {
         contentType := req.Header.Get("Content-Type")
         if strings.Contains(contentType, "application/x-www-form-urlencoded") {
@@ -91,13 +91,13 @@ func getRequestKey(req *proxy.Request) (string, error) {
             }
         }
     }
-
+    
     // 对查询参数名称进行排序，以确保相同的参数集合具有相同的哈希值
     sort.Strings(paramNames)
-
+    
     // 将排序后的参数名称连接在一起并添加到数据字符串中
     data += strings.Join(paramNames, "")
-
+    
     // 计算 MD5 哈希值
     hash := md5.Sum([]byte(data))
     return hex.EncodeToString(hash[:]), nil
@@ -109,29 +109,29 @@ func SimpleUniqueId(u string) string {
     if err != nil {
         return ""
     }
-
+    
     if parseUrl.Scheme == "http" && strings.HasSuffix(parseUrl.Host, ":80") {
         parseUrl.Host = strings.TrimRight(parseUrl.Host, ":80")
     } else if parseUrl.Scheme == "https" && strings.HasSuffix(parseUrl.Host, ":443") {
         parseUrl.Host = strings.TrimRight(parseUrl.Host, ":443")
     }
-
+    
     // 将请求方法和 URL（不包括查询参数）连接在一起
     data := parseUrl.Scheme + "://" + parseUrl.Host + parseUrl.Path
-
+    
     // 提取查询参数的名称  有的即使是 POST 请求，url请求路径中也会存在参数，所以这里全部都要提取
     var paramNames []string
     queryParams := parseUrl.Query()
     for paramName := range queryParams {
         paramNames = append(paramNames, paramName)
     }
-
+    
     // 对查询参数名称进行排序，以确保相同的参数集合具有相同的哈希值
     sort.Strings(paramNames)
-
+    
     // 将排序后的参数名称连接在一起并添加到数据字符串中
     data += strings.Join(paramNames, "")
-
+    
     // 计算 MD5 哈希值
     hash := md5.Sum([]byte(data))
     return hex.EncodeToString(hash[:])

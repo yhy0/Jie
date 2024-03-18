@@ -19,6 +19,7 @@ import (
     "github.com/yhy0/Jie/scan/gadget/waf"
     "github.com/yhy0/logging"
     "net/url"
+    "path"
     "regexp"
     "strings"
     "time"
@@ -135,6 +136,12 @@ func Katana(target string, waf []string, t *task.Task, fingerprint []string) []s
             logging.Logger.Errorln(err)
             return
         }
+        extension := strings.ToLower(path.Ext(parseUrl.Path))
+        
+        if util.InSlice(crawler.ExtensionFilter, extension) {
+            return
+        }
+        
         logging.Logger.Infof("Katana: [%s] %v %v", result.Request.Method, result.Request.URL, result.Request.Body)
         i++
         

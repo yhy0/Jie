@@ -17,9 +17,9 @@ import (
   @desc: //TODO
 **/
 
-// 默认过滤的后缀名
-var extensionFilter = []string{
-    ".css", ".png", ".gif", ".jpg", ".mp4", ".mp3", ".mng", ".pct", ".bmp", ".jpeg", ".pst", ".psp", ".ttf",
+// ExtensionFilter 默认过滤的后缀名
+var ExtensionFilter = []string{
+    ".png", ".gif", ".jpg", ".mp4", ".mp3", ".mng", ".pct", ".bmp", ".jpeg", ".pst", ".psp", ".ttf",
     ".tif", ".tiff", ".ai", ".drw", ".wma", ".ogg", ".wav", ".ra", ".aac", ".mid", ".au", ".aiff",
     ".dxf", ".eps", ".ps", ".svg", ".3gp", ".asf", ".asx", ".avi", ".mov", ".mpg", ".qt", ".rm",
     ".wmv", ".m4a", ".bin", ".xls", ".xlsx", ".ppt", ".pptx", ".doc", ".docx", ".odt", ".ods", ".odg",
@@ -43,7 +43,7 @@ func Katana(target string, headless bool, show bool, out func(result output.Resu
         OnResult:        out,
         Headless:        headless,
         Proxy:           conf.GlobalConfig.Http.Proxy,
-        ExtensionFilter: extensionFilter,
+        ExtensionFilter: ExtensionFilter,
     }
     if options.Headless {
         options.ShowBrowser = show

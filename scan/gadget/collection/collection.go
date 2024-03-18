@@ -28,7 +28,7 @@ func Info(target, domain string, body string, contentType string) (c output.Coll
         re := regexp.MustCompile(v)
         domains = util.RemoveQuotation(re.FindAllString(body, -1))
     }
-
+    
     // 使用 publicsuffix 包获取二级域名
     _domain, _ := publicsuffix.EffectiveTLDPlusOne(domain)
     for _, d := range domains {
@@ -46,7 +46,7 @@ func Info(target, domain string, body string, contentType string) (c output.Coll
             c.OtherDomain = append(c.OtherDomain, d)
         }
     }
-
+    
     var ips []string
     for _, v := range conf.GlobalConfig.Collection.IP {
         re := regexp.MustCompile(v)
@@ -75,26 +75,30 @@ func Info(target, domain string, body string, contentType string) (c output.Coll
         re := regexp.MustCompile(v)
         c.Phone = append(c.Phone, util.RemoveQuotation(re.FindAllString(body, -1))...)
     }
-
+    
     for _, v := range conf.GlobalConfig.Collection.Email {
         re := regexp.MustCompile(v)
         c.Email = append(c.Email, util.RemoveQuotation(re.FindAllString(body, -1))...)
     }
-
+    
     for _, v := range conf.GlobalConfig.Collection.IDCard {
         re := regexp.MustCompile(v)
         c.IdCard = append(c.IdCard, util.RemoveQuotation(re.FindAllString(body, -1))...)
     }
-
+    
     for _, v := range conf.GlobalConfig.Collection.Other {
         re := regexp.MustCompile(v)
         c.Others = append(c.Others, util.RemoveQuotation(re.FindAllString(body, -1))...)
     }
-
+    
     for _, v := range conf.GlobalConfig.Collection.API {
         re := regexp.MustCompile(v)
         apis := re.FindAllStringSubmatch(body, -1)
         for _, u := range apis {
+            // 正则识别出来的有空格、<、> 的排除，基本都是误报
+            if len(u) > 1 && (strings.Contains(u[0], " ") || strings.Contains(u[0], "<") || strings.Contains(u[0], ">")) {
+                continue
+            }
             if len(u) < 3 {
                 _u := util.RemoveQuotationMarks(u[0])
                 // "(?:\"|')(/[^/\"']+){2,}(?:\"|')"
@@ -113,7 +117,7 @@ func Info(target, domain string, body string, contentType string) (c output.Coll
             logging.Logger.Debugln(target, u)
         }
     }
-
+    
     for _, v := range conf.GlobalConfig.Collection.UrlFilter {
         re := regexp.MustCompile(v)
         urls := re.FindAllStringSubmatch(body, -1)
@@ -126,16 +130,16 @@ func Info(target, domain string, body string, contentType string) (c output.Coll
             c.Urls = append(c.Urls, u[0])
         }
     }
-
+    
     if funk.Contains(contentType, "application/javascript") {
         analyzer := jsluice.NewAnalyzer([]byte(body))
-
+        
         for _, res := range analyzer.GetURLs() {
             logging.Logger.Debugln("[jsluice]", target, res.URL)
             c.Api = append(c.Api, res.URL)
         }
     }
-
+    
     return
 }
 
@@ -159,13 +163,13 @@ func urlFilter(str [][]string) [][]string {
             str[i][0] = ""
             continue
         }
-
+        
         // 对抓到的域名做处理
         re := regexp.MustCompile("([a-z0-9\\-]+\\.)+([a-z0-9\\-]+\\.[a-z0-9\\-]+)(:[0-9]+)?").FindAllString(str[i][0], 1)
         if len(re) != 0 && !strings.HasPrefix(str[i][0], "http") && !strings.HasPrefix(str[i][0], "/") {
             str[i][0] = "http://" + str[i][0]
         }
-
+        
         // 过滤配置的黑名单
         for i2 := range conf.GlobalConfig.Collection.UrlFilter {
             _re := regexp.MustCompile(conf.GlobalConfig.Collection.UrlFilter[i2])
@@ -175,7 +179,7 @@ func urlFilter(str [][]string) [][]string {
                 break
             }
         }
-
+        
     }
     return str
 }

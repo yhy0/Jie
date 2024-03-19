@@ -1,7 +1,7 @@
 package programing
 
 import (
-    "regexp"
+    regexp "github.com/wasilibs/go-re2"
     "strings"
 )
 
@@ -24,18 +24,18 @@ func (p PHPPlugin) Fingerprint(body string, headers map[string][]string) bool {
             return true
         }
     }
-
+    
     if v, ok := headers["X-Powered-By"]; ok {
         if strings.Contains(strings.Join(v, ""), "PHP/") {
             return true
         }
     }
-
+    
     re := regexp.MustCompile(`\.php(?:$|\?)`)
     if re.FindStringIndex(body) != nil {
         return true
     }
-
+    
     return false
 }
 

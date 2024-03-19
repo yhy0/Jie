@@ -1,9 +1,9 @@
 package fastjson
 
 import (
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/pkg/protocols/httpx"
     "net/url"
-    "regexp"
     "strings"
 )
 

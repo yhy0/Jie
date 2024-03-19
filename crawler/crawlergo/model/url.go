@@ -3,12 +3,12 @@ package model
 import (
     "errors"
     "fmt"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/crawler/crawlergo/tools/requests"
     "net/url"
     "path"
-    "regexp"
     "strings"
-
+    
     "golang.org/x/net/publicsuffix"
 )
 
@@ -23,7 +23,7 @@ func GetUrl(_url string, parentUrls ...URL) (*URL, error) {
     if err != nil {
         return nil, err
     }
-
+    
     if len(parentUrls) == 0 {
         _u, err := requests.UrlParse(_url)
         if err != nil {
@@ -44,13 +44,13 @@ func GetUrl(_url string, parentUrls ...URL) (*URL, error) {
             u.Path = "/"
         }
     }
-
+    
     fixPath := regexp.MustCompile("^/{2,}")
-
+    
     if fixPath.MatchString(u.Path) {
         u.Path = fixPath.ReplaceAllString(u.Path, "/")
     }
-
+    
     return &u, nil
 }
 
@@ -60,7 +60,7 @@ func GetUrl(_url string, parentUrls ...URL) (*URL, error) {
 */
 func (u *URL) parse(_url string, parentUrls ...URL) (string, error) {
     _url = strings.Trim(_url, " ")
-
+    
     if len(_url) == 0 {
         return "", errors.New("invalid url, length 0")
     }
@@ -68,12 +68,12 @@ func (u *URL) parse(_url string, parentUrls ...URL) (string, error) {
     if strings.Count(_url, "#") > 1 {
         _url = regexp.MustCompile(`#+`).ReplaceAllString(_url, "#")
     }
-
+    
     // 没有父链接，直接退出
     if len(parentUrls) == 0 {
         return _url, nil
     }
-
+    
     if strings.HasPrefix(_url, "http://") || strings.HasPrefix(_url, "https://") {
         return _url, nil
     } else if strings.HasPrefix(_url, "javascript:") {

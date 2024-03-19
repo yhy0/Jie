@@ -4,8 +4,8 @@ import (
     "bytes"
     "encoding/binary"
     "fmt"
+    regexp "github.com/wasilibs/go-re2"
     "net"
-    "regexp"
     "strings"
     "time"
 )
@@ -98,85 +98,85 @@ func ajp_get_string(ajp_msg_ptr *[]byte, start uint16, end uint16) string {
 }
 
 func readAjpResponseBody(conn net.Conn) (bool, string) {
-
-    //read header
+    
+    // read header
     conn.SetReadDeadline(time.Now().Add(10 * time.Second))
     header := make([]byte, 4)
-
+    
     _, err := conn.Read(header)
     if err != nil {
-        //fmt.Println("Read failed:", err.Error())
+        // fmt.Println("Read failed:", err.Error())
         return false, ""
     }
     _ = ajp_get_string(&header, 0, 2)
     length := ajp_get_uint16(&header, 2, 2)
-
+    
     content := make([]byte, length)
-
+    
     _, err = conn.Read(content)
     if err != nil {
-        //fmt.Println("Read failed:", err.Error())
+        // fmt.Println("Read failed:", err.Error())
         return false, ""
     }
-    //read content
+    // read content
     prefix := int(content[0])
     status := ajp_get_uint16(&content, 1, 2)
-
+    
     if prefix != AJP13_SEND_HEADERS {
-        //fmt.Println("Read Ajp Header failed")
+        // fmt.Println("Read Ajp Header failed")
         return false, ""
     } else {
         if status == 403 {
-            //fmt.Println("Read failed: status ", status)
+            // fmt.Println("Read failed: status ", status)
             return false, ""
         }
     }
-
+    
     for {
-        //read header
+        // read header
         conn.SetReadDeadline(time.Now().Add(10 * time.Second))
         header := make([]byte, 4)
-
+        
         _, err = conn.Read(header)
         if err != nil {
-            //fmt.Println("Read failed:", err.Error())
+            // fmt.Println("Read failed:", err.Error())
             return true, ""
         }
         _ = ajp_get_string(&header, 0, 2)
         length := ajp_get_uint16(&header, 2, 2)
-
+        
         content := make([]byte, length)
-
+        
         _, err = conn.Read(content)
         if err != nil {
-            //fmt.Println("Read failed:", err.Error())
+            // fmt.Println("Read failed:", err.Error())
             return true, ""
         }
-        //read content
+        // read content
         prefix := int(content[0])
-
+        
         if prefix == AJP13_SEND_BODY_CHUNK {
             dataLength := ajp_get_uint16(&content, 1, 2)
             data := ajp_get_string(&content, 3, dataLength)
             return true, data
-
+            
         } else if prefix == AJP13_END_RESPONSE {
             return true, ""
         }
-
+        
     }
-
+    
 }
 
 func makePayload(host string, port int16) []byte {
     payloadBuffer := make([]byte, 0, 8192)
     ajp_msg_append_int8(&payloadBuffer, 2)
     ajp_msg_append_int8(&payloadBuffer, 2)
-    ajp_msg_append_string(&payloadBuffer, "HTTP/1.1") //protocol
-    ajp_msg_append_string(&payloadBuffer, "/vtest")   //req_uri
-    ajp_msg_append_string(&payloadBuffer, host)       //remote_addr (client)
-    ajp_msg_append_string(&payloadBuffer, "")         //remote_host (client)
-    ajp_msg_append_string(&payloadBuffer, host)       //server_name (server)
+    ajp_msg_append_string(&payloadBuffer, "HTTP/1.1") // protocol
+    ajp_msg_append_string(&payloadBuffer, "/vtest")   // req_uri
+    ajp_msg_append_string(&payloadBuffer, host)       // remote_addr (client)
+    ajp_msg_append_string(&payloadBuffer, "")         // remote_host (client)
+    ajp_msg_append_string(&payloadBuffer, host)       // server_name (server)
     ajp_msg_append_int16(&payloadBuffer, port)        // port (integer)
     ajp_msg_append_int8(&payloadBuffer, 0)            // is_ssl boolean
     ajp_msg_append_int16(&payloadBuffer, 9)           // number of headers (integer)
@@ -191,8 +191,8 @@ func makePayload(host string, port int16) []byte {
     ajp_msg_append_sc_string(&payloadBuffer, "max-age=0", "Cache-Control")
     ajp_msg_append_attribute_string(&payloadBuffer, "index", SC_A_REQ_ATTRIBUTE, "javax.servlet.include.request_uri")
     ajp_msg_append_attribute_string(&payloadBuffer, "/", SC_A_REQ_ATTRIBUTE, "javax.servlet.include.servlet_path")
-    payloadBuffer = append(payloadBuffer, 0xFF) //request_terminator
-
+    payloadBuffer = append(payloadBuffer, 0xFF) // request_terminator
+    
     var payloadLen = int16(len(payloadBuffer))
     firstbuffer := make([]byte, 2, 8192)
     firstbuffer[0] = 0x12
@@ -200,24 +200,24 @@ func makePayload(host string, port int16) []byte {
     ajp_msg_append_int16(&firstbuffer, payloadLen) // length of the payload in the forward request
     ajpBuffer := make([]byte, 2, 8192)
     ajpBuffer = append(firstbuffer, payloadBuffer...)
-
+    
     return ajpBuffer
-
+    
 }
 
 func getVersion(host string, port int16, payload []byte) (bool, string) {
-
+    
     conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", host, port), 10*time.Second)
-
+    
     if err != nil {
-        //fmt.Println("Connect failed:", err.Error())
+        // fmt.Println("Connect failed:", err.Error())
         return false, ""
     }
     defer conn.Close()
-
+    
     _, err = conn.Write(payload)
     if err != nil {
-        //fmt.Println("Write failed:", err.Error())
+        // fmt.Println("Write failed:", err.Error())
         return false, ""
     }
     isVulnerable, responseBody := readAjpResponseBody(conn)

@@ -2,6 +2,7 @@ package bbscan
 
 import (
     "github.com/antlabs/strsim"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/pkg/input"
     "github.com/yhy0/Jie/pkg/output"
     "github.com/yhy0/Jie/pkg/protocols/httpx"
@@ -10,7 +11,6 @@ import (
     scan_util "github.com/yhy0/Jie/scan/util"
     "github.com/yhy0/logging"
     "net/url"
-    "regexp"
     "strconv"
     "strings"
     "sync"

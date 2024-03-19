@@ -3,15 +3,15 @@ package crawlergo
 import (
     "fmt"
     "github.com/panjf2000/ants/v2"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/crawler/crawlergo/config"
     model2 "github.com/yhy0/Jie/crawler/crawlergo/model"
     "github.com/yhy0/Jie/crawler/crawlergo/tools"
     "github.com/yhy0/Jie/crawler/crawlergo/tools/requests"
     "github.com/yhy0/logging"
-    "regexp"
     "strings"
     "sync"
-
+    
     mapset "github.com/deckarep/golang-set/v2"
 )
 
@@ -44,10 +44,10 @@ func GetPathsFromRobots(navReq model2.Request) []*model2.Request {
     var result []*model2.Request
     var urlFindRegex = regexp.MustCompile(`(?:Disallow|Allow):.*?(/.+)`)
     var urlRegex = regexp.MustCompile(`(/.+)`)
-
+    
     navReq.URL.Path = "/"
     url := navReq.URL.NoQueryUrl() + "robots.txt"
-
+    
     resp, err := requests.Get(url, tools.ConvertHeaders(navReq.Headers),
         &requests.ReqOptions{AllowRedirect: false,
             Timeout: 5,
@@ -57,7 +57,7 @@ func GetPathsFromRobots(navReq model2.Request) []*model2.Request {
         // logging.Logger.Error("request to robots.txt error ", err)
         return result
     }
-
+    
     if resp.StatusCode < 200 || resp.StatusCode >= 300 {
         return result
     }
@@ -122,7 +122,7 @@ func doFuzz(navReq model2.Request, pathList []string) []*model2.Request {
             }
         }()
     }
-
+    
     pathFuzzWG.Wait()
     for _, _url := range validateUrl.ToSlice() {
         url, err := model2.GetUrl(_url)
@@ -141,7 +141,7 @@ func doFuzz(navReq model2.Request, pathList []string) []*model2.Request {
  */
 func (s singleFuzz) doRequest() {
     defer pathFuzzWG.Done()
-
+    
     url := fmt.Sprintf(`%s://%s/%s`, s.navReq.URL.Scheme, s.navReq.URL.Host, s.path)
     resp, errs := requests.Get(url, tools.ConvertHeaders(s.navReq.Headers),
         &requests.ReqOptions{Timeout: 2, AllowRedirect: false, Proxy: s.navReq.Proxy})

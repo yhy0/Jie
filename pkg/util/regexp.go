@@ -1,7 +1,7 @@
 package util
 
 import (
-    "regexp"
+    regexp "github.com/wasilibs/go-re2"
 )
 
 /**
@@ -17,7 +17,7 @@ func MatchAnyOfRegexp(regexps []string, match string) (bool, string) {
             return true, value
         }
     }
-
+    
     return false, ""
 }
 
@@ -31,6 +31,6 @@ func RegexpStr(patterns []string, str string) bool {
             return true
         }
     }
-
+    
     return false
 }

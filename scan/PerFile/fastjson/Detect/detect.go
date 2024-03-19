@@ -1,6 +1,7 @@
 package Detect
 
 import (
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/pkg/protocols/httpx"
     "github.com/yhy0/Jie/pkg/reverse"
     "github.com/yhy0/Jie/scan/PerFile/fastjson/Utils"
@@ -8,7 +9,6 @@ import (
     "log"
     "net/http"
     "net/http/httptrace"
-    "regexp"
     "strings"
     "time"
 )
@@ -40,12 +40,12 @@ func Version(url string, client *httpx.Client) Utils.Result {
     result.Url = url
     var payloads Utils.DNSPayloads
     isFastjson, jsonType := Fastjson(url, client)
-
+    
     if jsonType == "jackson" {
         result.Type = jsonType
         return result
     }
-
+    
     // 出网探测
     logging.Logger.Debugln("[" + result.Url + "] :" + "[+] 正在进行出网探测")
     payload, session := Utils.NET_DETECT_FACTORY()
@@ -103,7 +103,7 @@ func Version(url string, client *httpx.Client) Utils.Result {
             logging.Logger.Debugln("客户端与dnslog平台网络不可达")
             // 内网测试场景  施工中
         }
-
+        
     } else {
         // 不出网
         logging.Logger.Debugln("[" + result.Url + "] :" + "[-] 目标不出网")
@@ -116,7 +116,7 @@ func Version(url string, client *httpx.Client) Utils.Result {
             // fastjson > 1.2.61 且 不出网
         }
     }
-
+    
     result.Type = jsonType
     return result
 }
@@ -142,7 +142,7 @@ func Dependency(target string) []string {
                 logging.Logger.Debugln(findDependency[dependency])
                 results = append(results, findDependency[dependency])
             }
-
+            
         }
     }
     return results
@@ -180,17 +180,17 @@ func DnslogDetect(target string, payload string, session string, client *httpx.C
         logging.Logger.Debugln("与dns平台网络不可达,请检查网络", err)
         return Utils.NETWORK_NOT_ACCESS
     }
-
+    
     reg := regexp.MustCompile(`fastjson-version\s\d.\d.[0-9]+`)
     var version string
     version = reg.FindString(httpRsp.Body)
     if version != "" {
         return version[17:]
     }
-
+    
     time.Sleep(3 * time.Second) // 等3秒钟，防止由于网络原因误报
     logging.Logger.Debugln(payload + ":" + reverse.GetDnslogRecord(session))
-
+    
     body := reverse.GetDnslogRecord(session)
     if body == "" {
         return ""
@@ -199,7 +199,7 @@ func DnslogDetect(target string, payload string, session string, client *httpx.C
     dns_68 := regexp.MustCompile(`68_.`)
     dns_80 := regexp.MustCompile(`80_.`)
     dns_83 := regexp.MustCompile(`83_.`)
-
+    
     if dns_48.FindString(body) != "" {
         return "48"
     }
@@ -229,9 +229,9 @@ func ErrDetectVersion(target string, payload string, client *httpx.Client) strin
         logging.Logger.Debugln("与dns平台网络不可达,请检查网络", err)
         return Utils.NETWORK_NOT_ACCESS
     }
-
+    
     reg := regexp.MustCompile(`fastjson-version\s\d.\d.[0-9]+`)
-
+    
     version = reg.FindString(httpRsp.Body)
     if version == "" {
         reg = regexp.MustCompile(`jackson`)
@@ -255,7 +255,7 @@ func ErrDetectDependency(target string, payloadsMap map[string]string) []string 
             continue
         }
         reg := regexp.MustCompile(dependencyName)
-
+        
         find := reg.FindString(httpRsp.Body)
         if find != "" {
             result[cursor] = dependencyName
@@ -295,7 +295,7 @@ func TimeGet(url string, payload string) int64 {
     reqBody := strings.NewReader(payload)
     req, _ := http.NewRequest("POST", url, reqBody)
     var start time.Time
-
+    
     trace := &httptrace.ClientTrace{
         GotFirstResponseByte: func() {
             // fmt.Printf("Time from start to first byte: %v\n", time.Since(start))

@@ -1,7 +1,7 @@
 package programing
 
 import (
-    "regexp"
+    regexp "github.com/wasilibs/go-re2"
     "strings"
 )
 
@@ -19,12 +19,12 @@ func (p PerlPlugin) Fingerprint(body string, headers map[string][]string) bool {
             return true
         }
     }
-
+    
     re := regexp.MustCompile(`\.pl(?:$|\?)`)
     if re.FindStringIndex(body) != nil {
         return true
     }
-
+    
     return false
 }
 

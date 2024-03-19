@@ -1,7 +1,7 @@
 package programing
 
 import (
-    "regexp"
+    regexp "github.com/wasilibs/go-re2"
 )
 
 /**
@@ -17,7 +17,7 @@ func (p AspPlugin) Fingerprint(body string, headers map[string][]string) bool {
     if re.FindStringIndex(body) != nil {
         return true
     }
-
+    
     return false
 }
 

@@ -8,6 +8,7 @@ package cmdinject
 import (
     "fmt"
     "github.com/thoas/go-funk"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/conf"
     "github.com/yhy0/Jie/pkg/input"
     "github.com/yhy0/Jie/pkg/output"
@@ -15,7 +16,6 @@ import (
     "github.com/yhy0/Jie/pkg/reverse"
     "github.com/yhy0/Jie/pkg/util"
     "github.com/yhy0/logging"
-    "regexp"
     "strings"
     "sync"
     "time"
@@ -86,11 +86,11 @@ func command(in *input.CrawlResult, client *httpx.Client, variations *httpx.Vari
                     } else {
                         res, err = client.Request(in.Url, in.Method, originPayload, in.Headers)
                     }
-
+                    
                     if err != nil {
                         continue
                     }
-
+                    
                     if reverse.PullLogs(dnslog) {
                         output.OutChannel <- output.VulMessage{
                             DataType: "web_vul",
@@ -113,11 +113,11 @@ func command(in *input.CrawlResult, client *httpx.Client, variations *httpx.Vari
             }
         }
     }
-
+    
     if systemCommand(in, client, variations) {
         return false
     }
-
+    
     if util.InSliceCaseFold("php", in.Fingerprints) {
         return phpCommand(in, client, variations)
     } else if util.InSliceCaseFold("asp", in.Fingerprints) {
@@ -158,7 +158,7 @@ func systemCommand(in *input.CrawlResult, client *httpx.Client, variations *http
             "NjE2Mjk4Mwo=6162983",
         },
     }
-
+    
     if variations != nil {
         for _, p := range variations.Params {
             for _, spli := range []string{"", ";", "&&", "|"} {
@@ -177,7 +177,7 @@ func systemCommand(in *input.CrawlResult, client *httpx.Client, variations *http
                     if err != nil {
                         continue
                     }
-
+                    
                     for _, reStr := range reList {
                         re, _ := regexp.Compile(reStr)
                         result := re.FindString(res.ResponseDump)
@@ -204,7 +204,7 @@ func systemCommand(in *input.CrawlResult, client *httpx.Client, variations *http
             }
         }
     }
-
+    
     return false
 }
 
@@ -220,7 +220,7 @@ func phpCommand(in *input.CrawlResult, client *httpx.Client, variations *httpx.V
         `${@print(md5(31337))}\\`,
         `'.print(md5(31337)).'`,
     }
-
+    
     if variations != nil {
         for _, p := range variations.Params {
             for _, payload := range payloads {
@@ -234,12 +234,12 @@ func phpCommand(in *input.CrawlResult, client *httpx.Client, variations *httpx.V
                 } else {
                     res, err = client.Request(in.Url, in.Method, originPayload, in.Headers)
                 }
-
+                
                 logging.Logger.Debugln("payload:", originPayload)
                 if err != nil {
                     continue
                 }
-
+                
                 if funk.Contains(res.ResponseDump, "6f3249aa304055d63828af3bfab778f6") {
                     output.OutChannel <- output.VulMessage{
                         DataType: "web_vul",
@@ -258,7 +258,7 @@ func phpCommand(in *input.CrawlResult, client *httpx.Client, variations *httpx.V
                     }
                     return true
                 }
-
+                
                 var regexphp = `Parse error: syntax error,.*?\sin\s.*?\(\d+\).*?eval\(\)\'d\scode\son\sline\s<i>\d+<\/i>`
                 re, _ := regexp.Compile(regexphp)
                 result := re.FindString(res.ResponseDump)
@@ -280,7 +280,7 @@ func phpCommand(in *input.CrawlResult, client *httpx.Client, variations *httpx.V
                     }
                     return true
                 }
-
+                
             }
         }
     }
@@ -293,14 +293,14 @@ func aspCommand(in *input.CrawlResult, client *httpx.Client, variations *httpx.V
     randint1 := util.RandomNumber(10000, 90000)
     randint2 := util.RandomNumber(10000, 90000)
     randint3 := randint1 * randint2
-
+    
     // asp code injection
     var payloads = []string{
         fmt.Sprintf(`response.write(%v*%v)`, randint1, randint2),
         fmt.Sprintf(`'+response.write(%v*%v)+'`, randint1, randint2),
         fmt.Sprintf(`"response.write(%v*%v)+"`, randint1, randint2),
     }
-
+    
     if variations != nil {
         for _, p := range variations.Params {
             for _, payload := range payloads {
@@ -314,12 +314,12 @@ func aspCommand(in *input.CrawlResult, client *httpx.Client, variations *httpx.V
                 } else {
                     res, err = client.Request(in.Url, in.Method, originPayload, in.Headers)
                 }
-
+                
                 logging.Logger.Debugln("payload:", originPayload)
                 if err != nil {
                     continue
                 }
-
+                
                 if funk.Contains(res.ResponseDump, randint3) {
                     output.OutChannel <- output.VulMessage{
                         DataType: "web_vul",
@@ -341,6 +341,6 @@ func aspCommand(in *input.CrawlResult, client *httpx.Client, variations *httpx.V
             }
         }
     }
-
+    
     return false
 }

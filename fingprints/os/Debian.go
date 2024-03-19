@@ -1,7 +1,7 @@
 package os
 
 import (
-    "regexp"
+    regexp "github.com/wasilibs/go-re2"
     "strings"
 )
 
@@ -19,7 +19,7 @@ func (p DebianPlugin) Fingerprint(body string, headers map[string][]string) bool
             return true
         }
     }
-
+    
     if v, ok := headers["X-Powered-By"]; ok {
         re := regexp.MustCompile(`(?:Debian|dotdeb|(sarge|etch|lenny|squeeze|wheezy|jessie))`)
         if re.FindStringIndex(strings.Join(v, "")) != nil {

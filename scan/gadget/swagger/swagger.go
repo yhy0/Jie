@@ -3,6 +3,7 @@ package swagger
 import (
     "fmt"
     "github.com/buger/jsonparser"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/pkg/input"
     "github.com/yhy0/Jie/pkg/output"
     "github.com/yhy0/Jie/pkg/protocols/httpx"
@@ -11,7 +12,6 @@ import (
     util2 "github.com/yhy0/Jie/scan/util"
     "github.com/yhy0/logging"
     "net/url"
-    "regexp"
     "strings"
     "time"
 )
@@ -36,14 +36,14 @@ func Scan(target string, client *httpx.Client) {
     if err != nil {
         logging.Logger.Errorf("Scan url.Parse(%s) err: %v", target, err)
     }
-
+    
     host := u.Scheme + "://" + u.Host
     path := u.Path
-
+    
     var schema = u.Scheme + "://"
-
+    
     var basePath = ""
-
+    
     index := strings.LastIndex(path, "/")
     if index != 0 {
         basePath = path[:index]
@@ -53,12 +53,12 @@ func Scan(target string, client *httpx.Client) {
         logging.Logger.Errorln("Scan err: ", err)
         return
     }
-
+    
     var (
         swaggerResources bool
         swaggerJson      bool
     )
-
+    
     if util.Contains(req.Body, "Swagger UI") { // 传入的是 /swagger-ui.html
         // 访问 /swagger-resources 获取 对应的 api 集合
         t := strings.ReplaceAll(target, "swagger-ui.html", "swagger-resources")
@@ -69,18 +69,18 @@ func Scan(target string, client *httpx.Client) {
         }
         swaggerResources = true
     }
-
+    
     if util.Contains(req.Body, "swaggerVersion") {
         swaggerResources = true
     } else if util.Contains(req.Body, "swagger") {
         swaggerJson = true
     }
-
+    
     if !swaggerResources && !swaggerJson {
         logging.Logger.Warnf("Swagger parsing failed. Not find swaggerVersion/swagger")
         return
     }
-
+    
     if swaggerResources { // 传入的是 /swagger_resources ,首先解析出所有版本的 Swagger api 路径 eg: /v2/api-docs, /v1/api-docs, /test/api
         var apis []string
         for _, key := range Keys {
@@ -88,11 +88,11 @@ func Scan(target string, client *httpx.Client) {
                 if err != nil {
                     logging.Logger.Errorln(target, " jsonparser.ArrayEach error:", err.Error())
                 }
-
+                
                 api, _, _, _ := jsonparser.Get(value, key)
                 if len(api) > 0 {
                     apis = append(apis, string(api))
-
+                    
                 }
             })
             if len(apis) > 0 { // 说明找到路径了
@@ -105,7 +105,7 @@ func Scan(target string, client *httpx.Client) {
             logging.Logger.Warnln("Swagger-resources parsing success. Not find api doc. Program Exit.")
             return
         }
-
+        
         for _, api := range apis { // 获取全部 api 文档路径
             req, err = client.Request(host+basePath+api, "GET", "", nil)
             if err != nil {
@@ -118,7 +118,7 @@ func Scan(target string, client *httpx.Client) {
             }
         }
     }
-
+    
     if swaggerJson { // 表示传入的就是swagger api路径，直接解析 eg: /v2/api-docs
         req, err = client.Request(target, "GET", "", nil)
         if err != nil {
@@ -135,7 +135,7 @@ func Scan(target string, client *httpx.Client) {
 // ParseApi 解析 swagger api 文档
 func parseApi(body []byte, host, basePath, schema string, client *httpx.Client) {
     hostByte, _, _, _ := jsonparser.Get(body, "host")
-
+    
     if len(hostByte) > 0 {
         h := strings.Split(string(hostByte), ":")
         if !util.IsInnerIP(h[0]) {
@@ -143,25 +143,25 @@ func parseApi(body []byte, host, basePath, schema string, client *httpx.Client) 
         }
     }
     basePathTmp, _, _, _ := jsonparser.Get(body, "basePath")
-
+    
     if len(basePathTmp) > 0 {
         basePath = string(basePathTmp)
     }
-
+    
     paths, _, _, _ := jsonparser.Get(body, "paths") // 要拼接的路径信息
-
+    
     // $ref 参数中的这种参数的定义
     definitionsRef, _, _, _ := jsonparser.Get(body, "definitions") // 某些参数的定义
     definitionsMap := getDefinitions(definitionsRef)
-
+    
     // $ref 参数中的这种参数的定义 , 这种可能会作为路径或参数的一部分
     parametersRef, _, _, _ := jsonparser.Get(body, "parameters") // 某些参数的定义
     parametersMap := getParameters(parametersRef)
-
+    
     // 构造参数对 api 进行发包
     if len(paths) > 0 {
         apiMap := getMap(paths)
-
+        
         for path, v := range apiMap {
             var (
                 method string
@@ -175,12 +175,12 @@ func parseApi(body []byte, host, basePath, schema string, client *httpx.Client) 
                     contentType string
                 )
                 header := make(map[string]string)
-
+                
                 consumes, _, _, _ := jsonparser.Get([]byte(des), "consumes")
-
+                
                 contentType = strings.ReplaceAll(strings.ReplaceAll(string(consumes), "[\"", ""), "\"]", "")
                 parameters, _, _, _ := jsonparser.Get([]byte(des), "parameters")
-
+                
                 if len(parameters) > 0 {
                     _, err := jsonparser.ArrayEach(parameters, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
                         var (
@@ -188,16 +188,16 @@ func parseApi(body []byte, host, basePath, schema string, client *httpx.Client) 
                             isRequired string
                             paramsStr  string
                         )
-
+                        
                         arg, _, _, _ := jsonparser.Get(value, "name") // 参数名
                         inTmp, _, _, _ := jsonparser.Get(value, "in") // 参数出现位置
                         required, _, _, _ := jsonparser.Get(value, "required")
                         defaultByte, _, _, _ := jsonparser.Get(value, "default")
-
+                        
                         parameterRef, _, _, _ := jsonparser.Get(value, "$ref")
                         if len(parameterRef) > 0 {
                             parameter := strings.ReplaceAll(string(parameterRef), "#/parameters/", "")
-
+                            
                             if parametersMap[parameter].In == "header" {
                                 header[parametersMap[parameter].Name] = parametersMap[parameter].Value
                             } else if parametersMap[parameter].In == "path" {
@@ -209,11 +209,11 @@ func parseApi(body []byte, host, basePath, schema string, client *httpx.Client) 
                                 bodyParams += fmt.Sprintf("&%s", parametersMap[parameter].Value)
                             }
                         }
-
+                        
                         if len(required) > 0 {
                             isRequired = "*"
                         }
-
+                        
                         if len(defaultByte) > 0 {
                             paramsStr = fmt.Sprintf("&%s=%s", string(arg), string(defaultByte))
                         } else {
@@ -223,21 +223,21 @@ func parseApi(body []byte, host, basePath, schema string, client *httpx.Client) 
                                 if len(paraFormatTmp) > 0 {
                                     paramsStr = fmt.Sprintf("&%s=%s%s%s", string(arg), isRequired, paraFormat, isRequired)
                                 }
-
+                                
                                 if strings.Contains(string(value), "\"items\"") {
                                     paraFormatTmp, _, _, _ := jsonparser.Get(value, "items", "format")
                                     paraFormat = string(paraFormatTmp)
                                     paramsStr = fmt.Sprintf("&%s=%s%s%s", string(arg), isRequired, paraFormat, isRequired)
                                 }
-
+                                
                             } else if strings.Contains(string(value), "\"schema\"") {
                                 paraFormatTmp, _, _, _ := jsonparser.Get(value, "schema")
                                 if strings.Contains(string(paraFormatTmp), "\"$ref\"") {
                                     paraFormatTmp, _, _, _ = jsonparser.Get(paraFormatTmp, "$ref")
                                     paraFormat = strings.ReplaceAll(string(paraFormatTmp), "#/definitions/", "")
-
+                                    
                                     paraFormat = fmt.Sprintf("%s", definitionsMap[paraFormat])
-
+                                    
                                     if len(paraFormatTmp) > 0 {
                                         paramsStr = fmt.Sprintf("%s", paraFormat)
                                     }
@@ -254,17 +254,17 @@ func parseApi(body []byte, host, basePath, schema string, client *httpx.Client) 
                                         paramsStr = fmt.Sprintf("&%s=%s%s%s", string(arg), isRequired, paraFormat, isRequired)
                                     }
                                 }
-
+                                
                             } else {
                                 paraFormatTmp, _, _, _ := jsonparser.Get(value, "type")
                                 paraFormat = string(paraFormatTmp)
-
+                                
                                 if len(paraFormatTmp) > 0 {
                                     paramsStr = fmt.Sprintf("&%s=%s%s%s", string(arg), isRequired, paraFormat, isRequired)
                                 }
                             }
                         }
-
+                        
                         if strings.EqualFold(string(inTmp), "header") {
                             if len(defaultByte) > 0 {
                                 header[string(arg)] = string(defaultByte)
@@ -275,7 +275,7 @@ func parseApi(body []byte, host, basePath, schema string, client *httpx.Client) 
                                     header[string(arg)] = "1"
                                 }
                             }
-
+                            
                         } else if strings.Contains(string(inTmp), "path") {
                             if paraFormat == "string" {
                                 path = strings.ReplaceAll(path, "{"+string(arg)+"}", "test")
@@ -288,30 +288,30 @@ func parseApi(body []byte, host, basePath, schema string, client *httpx.Client) 
                             bodyParams += paramsStr
                         }
                     })
-
+                    
                     if err != nil {
                         logging.Logger.Errorln("ParseApi parameters error", err.Error())
                         continue
                     }
-
+                    
                 }
-
+                
                 queryParams = strings.Replace(queryParams, "&", "", 1)
                 bodyParams = strings.Replace(bodyParams, "&", "", 1)
-
+                
                 if contentType != "" {
                     header["Content-Type"] = contentType
                 }
-
+                
                 if strings.Contains(des, "#/definitions/") {
                     header["Content-Type"] = "application/json"
                 }
-
+                
                 scanApi(method, host, path, queryParams, bodyParams, header, basePath, schema, client)
             }
         }
     }
-
+    
 }
 
 // scanApi 对拼接的 api 进行未授权、ssrf、注入等测试
@@ -321,12 +321,12 @@ func scanApi(method, baseUrl, path, queryParams, bodyParams string, header map[s
     if strings.EqualFold(method, "delete") {
         return
     }
-
+    
     // 该 api 可能是一个删除、更新方法，安全着想不进行测试
     if util.Contains(path, "delete") || util.Contains(path, "del") || util.Contains(path, "update") {
         return
     }
-
+    
     queryParams = strings.ReplaceAll(queryParams, "*string*", "test")
     queryParams = strings.ReplaceAll(queryParams, "*int64*", "1")
     queryParams = strings.ReplaceAll(queryParams, "*int32*", "1")
@@ -336,7 +336,7 @@ func scanApi(method, baseUrl, path, queryParams, bodyParams string, header map[s
     queryParams = strings.ReplaceAll(queryParams, "*int8*", "1")
     queryParams = strings.ReplaceAll(queryParams, "*object*", "{}")
     queryParams = strings.ReplaceAll(queryParams, "=string", "=test")
-
+    
     bodyParams = strings.ReplaceAll(bodyParams, "*string*", "test")
     bodyParams = strings.ReplaceAll(bodyParams, "*int64*", "1")
     bodyParams = strings.ReplaceAll(bodyParams, "*int32*", "1")
@@ -345,26 +345,26 @@ func scanApi(method, baseUrl, path, queryParams, bodyParams string, header map[s
     bodyParams = strings.ReplaceAll(bodyParams, "*number*", "1")
     bodyParams = strings.ReplaceAll(bodyParams, "*boolean*", "true")
     bodyParams = strings.ReplaceAll(bodyParams, "=string", "=test")
-
+    
     host := schema + baseUrl
-
+    
     if basePath != "" {
         host = host + basePath
     }
-
+    
     // https://127.0.0.1/api/v2.0/   /test/ -> https://127.0.0.1/api/v2.0/test/
     if strings.HasSuffix(host, "/") && strings.HasPrefix(path, "/") {
         index := strings.LastIndex(host, "/")
         host = host[:index]
     }
-
+    
     var target string
     if queryParams != "" {
         target = host + path + "?" + queryParams
     } else {
         target = host + path
     }
-
+    
     if strings.Contains(bodyParams, "*file*") { // 文件上传
         fileBody := strings.Split(bodyParams, "&")
         var (
@@ -388,7 +388,7 @@ func scanApi(method, baseUrl, path, queryParams, bodyParams string, header map[s
             logging.Logger.Errorln("UploadRequest err", err)
             return
         }
-
+        
         if resp.StatusCode == 200 {
             output.OutChannel <- output.VulMessage{
                 DataType: "web_vul",
@@ -405,13 +405,13 @@ func scanApi(method, baseUrl, path, queryParams, bodyParams string, header map[s
                 Level: output.Medium,
             }
         }
-
+        
     } else { // ssrf、 文件读取测试
         sensitiveWords := []string{"url=", "path=", "uri=", "api=", "target=", "host=", "domain=", "ip=", "file="}
-
+        
         var queryParams2 string
         var bodyParams2 string
-
+        
         // ssrf、 文件读取测试
         for _, i := range sensitiveWords {
             if strings.Contains(queryParams, i) {
@@ -425,19 +425,19 @@ func scanApi(method, baseUrl, path, queryParams, bodyParams string, header map[s
                 bodyParams2 = strings.ReplaceAll(tmp, i+"test", i+"/etc/passwd")
             }
         }
-
+        
         scanSwagger(method, target, bodyParams, header, client)
-
+        
         if queryParams2 != "" {
             target = host + path + "?" + queryParams2
             scanSwagger(method, target, bodyParams, header, client)
         }
-
+        
         if bodyParams2 != "" {
             scanSwagger(method, target, bodyParams2, header, client)
         }
     }
-
+    
 }
 
 func scanSwagger(method, target, bodyParams string, header map[string]string, client *httpx.Client) {
@@ -448,11 +448,11 @@ func scanSwagger(method, target, bodyParams string, header map[string]string, cl
             logging.Logger.Errorf("scanApi(GET %s) err %v", target, err)
             return
         }
-
+        
         // 可能是未授权, 然后对 200 的进行ssrf、注入测试
         if res.StatusCode == 200 && !util2.IsBlackHtml(res.Body, res.Header["Content-Type"]) {
             logging.Logger.Infof("Possibly unauthorized access: GET %s", target)
-
+            
             in := &input.CrawlResult{
                 Url:     target,
                 Headers: header,
@@ -461,7 +461,7 @@ func scanSwagger(method, target, bodyParams string, header map[string]string, cl
             }
             sqlPlugin := &sql.Plugin{}
             sqlPlugin.Scan(target, "", in, client)
-
+            
             output.OutChannel <- output.VulMessage{
                 DataType: "web_vul",
                 Plugin:   "Swagger unauthorized",
@@ -476,10 +476,10 @@ func scanSwagger(method, target, bodyParams string, header map[string]string, cl
                 },
                 Level: output.Low,
             }
-
+            
             if util.Contains(res.Body, "<title>百度一下，你就知道</title>") {
                 logging.Logger.Infof("存在 SSRF漏洞: GET %s", target)
-
+                
                 output.OutChannel <- output.VulMessage{
                     DataType: "web_vul",
                     Plugin:   "Swagger SSRF",
@@ -495,10 +495,10 @@ func scanSwagger(method, target, bodyParams string, header map[string]string, cl
                     Level: output.Critical,
                 }
             }
-
+            
             if util.Contains(res.Body, "root:x:0:0:root:/root:") {
                 logging.Logger.Infof("存在任意文件读取漏洞: GET %s", target)
-
+                
                 output.OutChannel <- output.VulMessage{
                     DataType: "web_vul",
                     Plugin:   "Swagger File Reading",
@@ -515,18 +515,18 @@ func scanSwagger(method, target, bodyParams string, header map[string]string, cl
                 }
             }
         }
-
+        
     } else {
         res, err := client.Request(target, method, bodyParams, header)
         if err != nil {
             logging.Logger.Errorf("scanApi(%s %s) err %v", method, target, err)
             return
         }
-
+        
         if res.StatusCode == 200 && !util2.IsBlackHtml(res.Body, res.Header["Content-Type"]) { // 可能是未授权
             payload := fmt.Sprintf("%s %s %s", method, target, bodyParams)
             logging.Logger.Infof("Possibly unauthorized access: %s", payload)
-
+            
             in := &input.CrawlResult{
                 Url:     target,
                 Headers: header,
@@ -535,7 +535,7 @@ func scanSwagger(method, target, bodyParams string, header map[string]string, cl
             }
             sqlPlugin := &sql.Plugin{}
             sqlPlugin.Scan(target, "", in, client)
-
+            
             output.OutChannel <- output.VulMessage{
                 DataType: "web_vul",
                 Plugin:   "Swagger unauthorized",
@@ -550,9 +550,9 @@ func scanSwagger(method, target, bodyParams string, header map[string]string, cl
                 },
                 Level: output.Low,
             }
-
+            
             if util.Contains(res.Body, "<title>百度一下，你就知道</title>") {
-
+                
                 logging.Logger.Infof("存在SSRF漏洞漏洞: %s ", payload)
                 output.OutChannel <- output.VulMessage{
                     DataType: "web_vul",
@@ -569,10 +569,10 @@ func scanSwagger(method, target, bodyParams string, header map[string]string, cl
                     Level: output.Critical,
                 }
             }
-
+            
             if util.Contains(res.Body, "root:x:0:0:root:/root:") {
                 logging.Logger.Infof("存在任意文件读取漏洞: %s ", payload)
-
+                
                 output.OutChannel <- output.VulMessage{
                     DataType: "web_vul",
                     Plugin:   "Swagger File Reading",
@@ -594,26 +594,26 @@ func scanSwagger(method, target, bodyParams string, header map[string]string, cl
 
 func getMap(body []byte) map[string]string {
     apiMap := make(map[string]string)
-
+    
     // You can use `ObjectEach` helper to iterate objects { "key1":object1, "key2":object2, .... "keyN":objectN }
     jsonparser.ObjectEach(body, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
         // fmt.Printf("Key: %s\n Value: %s\n Type: %s\n", string(key), string(value), dataType)
         apiMap[string(key)] = string(value)
         return nil
     })
-
+    
     return apiMap
 }
 
 func getDefinitions(definitions []byte) map[string]string {
     definitionsMap := getMap(definitions)
-
+    
     if definitionsMap != nil {
         for path, v := range definitionsMap {
             properties, _, _, _ := jsonparser.Get([]byte(v), "properties")
-
+            
             var paramsStr string
-
+            
             for k, value := range getMap(properties) {
                 if strings.Contains(value, "\"example\"") {
                     paraExample, _, _, _ := jsonparser.Get([]byte(value), "example")
@@ -635,7 +635,7 @@ func getDefinitions(definitions []byte) map[string]string {
                         } else {
                             paraFormatTmp, _, _, _ = jsonparser.Get([]byte(value), "items")
                         }
-
+                        
                         if strings.Contains(string(paraFormatTmp), "\"items\"") {
                             var (
                                 paraFormatTmp1 []byte
@@ -654,7 +654,7 @@ func getDefinitions(definitions []byte) map[string]string {
                                 } else {
                                     paramsStr += fmt.Sprintf("\"%s\":\"*%s*\",", k, paraFormat)
                                 }
-
+                                
                             } else {
                                 paraFormatTmp1, _, _, _ = jsonparser.Get([]byte(value), "items", "items", "$ref")
                                 paraFormatType, _, _, _ = jsonparser.Get([]byte(value), "items", "type")
@@ -668,15 +668,15 @@ func getDefinitions(definitions []byte) map[string]string {
                                 } else {
                                     paramsStr += fmt.Sprintf("\"%s\":\"*%s*\",", k, paraFormat)
                                 }
-
+                                
                             }
-
+                            
                         } else {
                             var (
                                 paraFormatTmp1 []byte
                                 paraFormatType []byte
                             )
-
+                            
                             if flag {
                                 paraFormatTmp1, _, _, _ = jsonparser.Get([]byte(value), "additionalProperties", "items", "$ref")
                                 paraFormatType, _, _, _ = jsonparser.Get([]byte(value), "additionalProperties", "type")
@@ -704,9 +704,9 @@ func getDefinitions(definitions []byte) map[string]string {
                                     paramsStr += fmt.Sprintf("\"%s\":\"*%s*\",", k, paraFormat)
                                 }
                             }
-
+                            
                         }
-
+                        
                     } else {
                         paraFormatTmp, _, _, _ := jsonparser.Get([]byte(value), "$ref")
                         paraFormat := strings.ReplaceAll(string(paraFormatTmp), "#/definitions/", "")
@@ -716,9 +716,9 @@ func getDefinitions(definitions []byte) map[string]string {
                             paramsStr += fmt.Sprintf("\"%s\":\"*%s*\",", k, paraFormat)
                         }
                     }
-
+                    
                 } else if strings.Contains(value, "\"items\"") {
-
+                    
                     paraExample, _, _, _ := jsonparser.Get([]byte(value), "items", "example")
                     if len(paraExample) > 0 {
                         paramsStr += fmt.Sprintf("\"%s\":[%s],", k, string(paraExample))
@@ -728,7 +728,7 @@ func getDefinitions(definitions []byte) map[string]string {
                             paramsStr += fmt.Sprintf("\"%s\":[*%s*],", k, string(paraFormat))
                         }
                     }
-
+                    
                 } else {
                     paraFormat, _, _, _ := jsonparser.Get([]byte(value), "type")
                     if len(paraFormat) > 0 {
@@ -736,7 +736,7 @@ func getDefinitions(definitions []byte) map[string]string {
                     }
                 }
             }
-
+            
             paramsStr = strings.ReplaceAll(paramsStr, "*int32*", "1")
             paramsStr = strings.ReplaceAll(paramsStr, "*integer*", "1")
             paramsStr = strings.ReplaceAll(paramsStr, "*number*", "1")
@@ -748,11 +748,11 @@ func getDefinitions(definitions []byte) map[string]string {
             paramsStr = strings.ReplaceAll(paramsStr, "*date-time*", "\"2022-09-15T14:13:19.272Z\"")
             paramsStr = strings.TrimRight(paramsStr, ",")
             paramsStr = "{" + paramsStr + "}"
-
+            
             definitionsMap[path] = paramsStr
-
+            
         }
-
+        
         var limit = 0
         for {
             limit += 1
@@ -763,7 +763,7 @@ func getDefinitions(definitions []byte) map[string]string {
                     num += 1
                     regex := regexp.MustCompile(`\*\*[A-Za-z0-9-_=.]+\*\*`)
                     value := regex.FindAllString(v, -1)
-
+                    
                     for _, kk := range value {
                         kkk := strings.ReplaceAll(kk, "**", "")
                         reValue := definitionsMap[kkk]
@@ -772,17 +772,17 @@ func getDefinitions(definitions []byte) map[string]string {
                         }
                     }
                 }
-
+                
             }
-
+            
             if num == 0 || limit > 50 { // 防止死循环
                 break
             }
         }
-
+        
         return definitionsMap
     }
-
+    
     return nil
 }
 
@@ -794,7 +794,7 @@ func getParameters(parameters []byte) map[string]Parameter {
             parameterName, _, _, _ := jsonparser.Get([]byte(v), "name")
             parameterType, _, _, _ := jsonparser.Get([]byte(v), "type")
             parameterIn, _, _, _ := jsonparser.Get([]byte(v), "in")
-
+            
             var value string
             if string(parameterType) == "boolean" {
                 if string(parameterIn) == "path" || string(parameterIn) == "header" {
@@ -802,14 +802,14 @@ func getParameters(parameters []byte) map[string]Parameter {
                 } else {
                     value = string(parameterName) + "=*boolean*"
                 }
-
+                
             } else if string(parameterType) == "int" || string(parameterType) == "int8" || string(parameterType) == "integer" || string(parameterType) == "int32" || string(parameterType) == "int64" || string(parameterType) == "number" || string(parameterType) == "double" {
                 if string(parameterIn) == "path" || string(parameterIn) == "header" {
                     value = "1"
                 } else {
                     value = string(parameterName) + "=*int32*"
                 }
-
+                
             } else {
                 if string(parameterIn) == "path" || string(parameterIn) == "header" {
                     value = "test"
@@ -817,13 +817,13 @@ func getParameters(parameters []byte) map[string]Parameter {
                     value = string(parameterName) + "=*string*"
                 }
             }
-
+            
             argsMap[k] = Parameter{
                 Name:  string(parameterName),
                 Value: value,
                 In:    string(parameterIn),
             }
-
+            
         }
     }
     return argsMap

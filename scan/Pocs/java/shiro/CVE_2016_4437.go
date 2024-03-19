@@ -9,10 +9,10 @@ import (
     "encoding/base64"
     "fmt"
     "github.com/google/uuid"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/pkg/protocols/httpx"
     "github.com/yhy0/logging"
     "io"
-    "regexp"
     "strings"
 )
 

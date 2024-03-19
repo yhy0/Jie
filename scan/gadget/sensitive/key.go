@@ -3,10 +3,10 @@ package sensitive
 import (
     "embed"
     "github.com/projectdiscovery/nuclei/v3/pkg/templates"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/pkg/output"
     "gopkg.in/yaml.v3"
     "io/fs"
-    "regexp"
     "strings"
     "time"
 )

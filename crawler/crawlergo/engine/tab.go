@@ -5,17 +5,17 @@ import (
     "encoding/json"
     "errors"
     "fmt"
+    regexp "github.com/wasilibs/go-re2"
     cconfig "github.com/yhy0/Jie/crawler/crawlergo/config"
     "github.com/yhy0/Jie/crawler/crawlergo/js"
     "github.com/yhy0/Jie/crawler/crawlergo/model"
     "github.com/yhy0/Jie/crawler/crawlergo/xss"
     "github.com/yhy0/Jie/pkg/output"
     "github.com/yhy0/logging"
-    "regexp"
     "strings"
     "sync"
     "time"
-
+    
     "github.com/chromedp/cdproto/cdp"
     "github.com/chromedp/cdproto/dom"
     "github.com/chromedp/cdproto/fetch"
@@ -40,9 +40,9 @@ type Tab struct {
     FoundRedirection bool
     DocBodyNodeId    cdp.NodeID
     config           TabConfig
-
+    
     lock sync.Mutex
-
+    
     WG            sync.WaitGroup // 当前Tab页的等待同步计数
     collectLinkWG sync.WaitGroup
     loadedWG      sync.WaitGroup // Loaded之后的等待计数
@@ -85,7 +85,7 @@ func NewTab(browser *Browser, navigateReq model.Request, config TabConfig) *Tab 
     tab.NavigateReq = navigateReq
     tab.config = config
     tab.DocBodyNodeId = 0
-
+    
     // 设置请求拦截监听
     chromedp.ListenTarget(tab.Ctx, func(e interface{}) {
         switch v := e.(type) {
@@ -95,20 +95,20 @@ func NewTab(browser *Browser, navigateReq model.Request, config TabConfig) *Tab 
                 tab.LoaderID = string(v.LoaderID)
                 tab.TopFrameId = string(v.FrameID)
             }
-
+        
         // 请求发出时暂停 即 请求拦截
         case *fetch.EventRequestPaused:
             if v.ResponseStatusCode == 0 {
                 _ = fetch.ContinueRequest(v.RequestID).Do(tab.Ctx)
                 return
             }
-
+            
             url, err := model.GetUrl(v.Request.URL, *tab.NavigateReq.URL)
             if err != nil {
                 _ = fetch.ContinueRequest(v.RequestID).Do(tab.Ctx)
                 return
             }
-
+            
             // https://xz.aliyun.com/t/7064#toc-14
             // 返回一个假的图片
             if v.ResourceType == network.ResourceTypeImage || url.FileExt() == "ico" {
@@ -126,10 +126,10 @@ func NewTab(browser *Browser, navigateReq model.Request, config TabConfig) *Tab 
                 _ = fetch.FailRequest(v.RequestID, network.ErrorReasonBlockedByClient).Do(tab.Ctx)
                 return
             }
-
+            
             tab.WG.Add(1)
             go tab.InterceptRequest(v)
-
+            
             // tab.WG.Add(1)
             // go func() { // convert javascriptQ
             //    defer tab.WG.Done()
@@ -138,7 +138,7 @@ func NewTab(browser *Browser, navigateReq model.Request, config TabConfig) *Tab 
             //        logging.Logger.Errorf("[dom-based] hook %s error: %s\n", v.Request.URL, err)
             //    }
             // }()
-
+        
         // 解析所有JS文件中的URL并添加到结果中
         // 解析HTML文档中的URL
         // 查找当前页面的编码
@@ -163,7 +163,7 @@ func NewTab(browser *Browser, navigateReq model.Request, config TabConfig) *Tab 
         case *fetch.EventAuthRequired:
             tab.WG.Add(1)
             go tab.HandleAuthRequired(v)
-
+        
         // DOMContentLoaded
         // 开始执行表单填充 和 执行DOM节点观察函数
         // 只执行一次
@@ -182,12 +182,12 @@ func NewTab(browser *Browser, navigateReq model.Request, config TabConfig) *Tab 
             DOMContentLoadedRun = true
             tab.WG.Add(1)
             go tab.AfterDOMRun()
-
+        
         // close Dialog
         case *page.EventJavascriptDialogOpening:
             tab.WG.Add(1)
             go tab.dismissDialog()
-
+        
         // handle expose function 绑定事件监听
         case *runtime.EventBindingCalled:
             switch v.Name {
@@ -212,12 +212,12 @@ func NewTab(browser *Browser, navigateReq model.Request, config TabConfig) *Tab 
                     }
                 }
             }
-
+            
             tab.WG.Add(1)
             go tab.HandleBindingCalled(v)
         }
     })
-
+    
     return &tab
 }
 
@@ -249,7 +249,7 @@ func (tab *Tab) Start() {
             // XSS-Scan 使用的回调
             runtime.AddBinding("addLink"),
             runtime.AddBinding("Test"),
-
+            
             runtime.AddBinding(xss.EventPushVul),
             chromedp.ActionFunc(func(ctx context.Context) error {
                 _, err := page.AddScriptToEvaluateOnNewDocument(xss.PreloadJS).Do(ctx)
@@ -277,34 +277,34 @@ func (tab *Tab) Start() {
         }
         logging.Logger.Warn("navigate timeout ", tab.NavigateReq.URL.String())
     }
-
+    
     waitDone := func() <-chan struct{} {
         tab.WG.Wait()
         ch := make(chan struct{})
         defer close(ch)
         return ch
     }
-
+    
     select {
     case <-waitDone():
         // logging.Logger.Debug("all navigation tasks done.")
     case <-time.After(tab.config.DomContentLoadedTimeout + time.Second*10):
         // logging.Logger.Warn("navigation tasks TIMEOUT.")
     }
-
+    
     // 等待收集所有链接
     // logging.Logger.Debug("collectLinks start.")
     tab.collectLinkWG.Add(3)
     go tab.collectLinks()
     tab.collectLinkWG.Wait()
     // logging.Logger.Debug("collectLinks end.")
-
+    
     // 识别页面编码 并编码所有URL
     if tab.config.EncodeURLWithCharset {
         tab.DetectCharset()
         tab.EncodeAllURLWithCharset()
     }
-
+    
     // fmt.Println(tab.NavigateReq.URL.String(), len(tab.ResultList))
     // for _, v := range tab.ResultList {
     //    v.SimplePrint()
@@ -332,7 +332,7 @@ func (tab *Tab) AddResultUrl(method string, _url string, source string) {
         PostData: "",
     }
     referer := navUrl.String()
-
+    
     // 处理Host绑定
     if host, ok := tab.NavigateReq.Headers["Host"]; ok {
         if host != navUrl.Hostname() && url.Hostname() == host {
@@ -345,7 +345,7 @@ func (tab *Tab) AddResultUrl(method string, _url string, source string) {
     if cookie, ok := tab.NavigateReq.Headers["Cookie"]; ok {
         option.Headers["Cookie"] = cookie
     }
-
+    
     // 修正Referer
     option.Headers["Referer"] = referer
     for key, value := range tab.ExtraHeaders {
@@ -353,7 +353,7 @@ func (tab *Tab) AddResultUrl(method string, _url string, source string) {
     }
     req := model.GetRequest(method, url, option)
     req.Source = source
-
+    
     tab.lock.Lock()
     tab.ResultList = append(tab.ResultList, &req)
     tab.lock.Unlock()

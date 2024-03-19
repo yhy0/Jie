@@ -4,11 +4,11 @@ import (
     "embed"
     "github.com/antlabs/strsim"
     "github.com/projectdiscovery/nuclei/v3/pkg/templates"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/pkg/protocols/httpx"
     "github.com/yhy0/logging"
     "gopkg.in/yaml.v3"
     "math/rand"
-    "regexp"
     "strconv"
 )
 

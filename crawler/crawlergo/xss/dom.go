@@ -8,9 +8,9 @@ import (
     "github.com/chromedp/cdproto/fetch"
     "github.com/chromedp/cdproto/network"
     "github.com/sirupsen/logrus"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/pkg/util"
     "github.com/yhy0/Jie/scan/PerFile/xss/dom"
-    "regexp"
 )
 
 /**

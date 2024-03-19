@@ -4,11 +4,11 @@ import (
     "bytes"
     "errors"
     "fmt"
+    regexp "github.com/wasilibs/go-re2"
     "io"
     "log"
     "net/http"
-    "regexp"
-
+    
     "github.com/PuerkitoBio/goquery"
     "github.com/ipinfo/go/v2/ipinfo"
     stringsutil "github.com/projectdiscovery/utils/strings"
@@ -44,11 +44,11 @@ func (c *Categories) Compile(options *Options) (*cdncheck.InputCompiled, error) 
     if c.Common != nil {
         compiled.Common = c.Common.FQDN
     }
-
+    
     // Fetch custom scraper data and merge
     for dataType, scraper := range scraperTypeToScraperMap {
         var data map[string][]string
-
+        
         switch dataType {
         case "cdn":
             data = compiled.CDN
@@ -138,7 +138,7 @@ retry:
         return nil, err
     }
     defer resp.Body.Close()
-
+    
     data, err := io.ReadAll(resp.Body)
     if err != nil {
         return nil, err
@@ -160,9 +160,9 @@ retry:
         retried = true
         goto retry
     }
-
+    
     body := string(data)
-
+    
     cidrs := cidrRegex.FindAllString(body, -1)
     if len(cidrs) == 0 {
         return nil, errNoCidrFound

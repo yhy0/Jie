@@ -15,10 +15,10 @@
 package ftp
 
 import (
+    regexp "github.com/wasilibs/go-re2"
     "net"
-    "regexp"
     "time"
-
+    
     "github.com/yhy0/Jie/lib/fingerprintx/pkg/plugins"
     utils "github.com/yhy0/Jie/lib/fingerprintx/pkg/plugins/pluginutils"
 )
@@ -41,16 +41,16 @@ func (p *FTPPlugin) Run(conn net.Conn, timeout time.Duration, target plugins.Tar
     if len(response) == 0 {
         return nil, nil
     }
-
+    
     matches := ftpResponse.FindStringSubmatch(string(response))
     if matches == nil {
         return nil, nil
     }
-
+    
     payload := plugins.ServiceFTP{
         Banner: string(response),
     }
-
+    
     return plugins.CreateServiceFrom(target, payload, false, "", plugins.TCP), nil
 }
 

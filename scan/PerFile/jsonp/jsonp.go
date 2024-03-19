@@ -5,13 +5,13 @@ import (
     "fmt"
     "github.com/tdewolff/parse/v2"
     "github.com/tdewolff/parse/v2/js"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/pkg/input"
     "github.com/yhy0/Jie/pkg/output"
     "github.com/yhy0/Jie/pkg/protocols/httpx"
     "github.com/yhy0/logging"
     "io"
     "net/url"
-    "regexp"
     "sync"
     "time"
 )
@@ -30,13 +30,13 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
     if p.IsScanned(in.UniqueId) {
         return
     }
-
+    
     isvul, info, err := CheckSenseJsonp(in, client)
     if err != nil {
         logging.Logger.Errorf("check jsonp error: %v", err)
         return
     }
-
+    
     if isvul {
         output.OutChannel <- output.VulMessage{
             DataType: "web_vul",
@@ -82,7 +82,7 @@ func CheckSenseJsonp(in *input.CrawlResult, client *httpx.Client) (bool, *JsonpI
     if err != nil {
         return false, nil, err
     }
-
+    
     isCallback, callbackFuncName, err := CheckJSIsCallback(queryMap)
     if err != nil {
         return false, nil, err
@@ -114,7 +114,7 @@ func CheckSenseJsonp(in *input.CrawlResult, client *httpx.Client) (bool, *JsonpI
             }
             return isJsonp, info, nil
         }
-
+        
     }
     return false, nil, nil
 }
@@ -154,7 +154,7 @@ func GetJsResponse(in *input.CrawlResult, client *httpx.Client) (string, *JsonpI
     if err != nil {
         return "", nil, err
     }
-
+    
     if res.StatusCode != 200 {
         return "", nil, errors.New(fmt.Sprintf("Fake Origin Referer Fail. Status code: %d", res.StatusCode))
     }
@@ -162,7 +162,7 @@ func GetJsResponse(in *input.CrawlResult, client *httpx.Client) (string, *JsonpI
         res.RequestDump,
         res.ResponseDump,
     }
-
+    
     return res.Body, info, nil
 }
 
@@ -171,13 +171,13 @@ func CheckJsRespAst(content string, funcName string) (bool, error) {
     // var vardiscover bool
     var Valid_Callback bool = false
     var Valid_Key bool = false
-
+    
     obj := js.Options{}
     ast, err := js.Parse(parse.NewInputString(content), obj)
     if err != nil {
         return false, err
     }
-
+    
     logging.Logger.Debugf("Scope: %s", ast.Scope.String())
     logging.Logger.Debugf("JS: %s", ast.String())
     // ast.BlockStmt.String()

@@ -3,11 +3,11 @@ package sql
 import (
     "fmt"
     "github.com/thoas/go-funk"
+    regexp "github.com/wasilibs/go-re2"
     JieOutput "github.com/yhy0/Jie/pkg/output"
     "github.com/yhy0/Jie/pkg/protocols/httpx"
     "github.com/yhy0/Jie/pkg/util"
     "github.com/yhy0/logging"
-    "regexp"
     "strings"
     "time"
 )
@@ -22,20 +22,20 @@ import (
 func (sql *Sqlmap) HeuristicCheckSqlInjection() {
     // 避免POST请求出现参数重名，记录参数位置
     var injectableParamsPos []int
-
+    
     // 通过闭合字符生成 payload, 看页面是否回显报错信息
     randomTestString := getErrorBasedPreCheckPayload()
-
+    
     logging.Logger.Debugln(sql.Url, "开始启发式检测 sql 注入, payload:", randomTestString)
     cast := false
-
+    
     var err error
     var flag bool
-
+    
     if len(sql.DynamicPara) == 0 {
         flag = true
     }
-
+    
     errInject := false
     // 检测是否存转型的参数, 转型参数代表无法注入
     for pos, p := range sql.Variations.Params {
@@ -43,28 +43,28 @@ func (sql *Sqlmap) HeuristicCheckSqlInjection() {
         if !flag && funk.Contains(sql.DynamicPara, p.Name) {
             flag = true
         }
-
+        
         if flag {
             payload := sql.Variations.SetPayloadByIndex(p.Index, sql.Url, p.Value+randomTestString, sql.Method)
             if payload == "" {
                 continue
             }
             logging.Logger.Debugln(sql.Url, payload)
-
+            
             var res *httpx.Response
             if sql.Method == "GET" {
                 res, err = sql.Client.Request(payload, sql.Method, "", sql.Headers)
             } else {
                 res, err = sql.Client.Request(sql.Url, sql.Method, payload, sql.Headers)
             }
-
+            
             time.Sleep(time.Millisecond * 500)
-
+            
             if err != nil {
                 logging.Logger.Debugln(sql.Url, "checkIfInjectable Fuzz请求出错")
                 continue
             }
-
+            
             for _, value := range FormatExceptionStrings {
                 if funk.Contains(res.Body, value) {
                     cast = true
@@ -72,12 +72,12 @@ func (sql *Sqlmap) HeuristicCheckSqlInjection() {
                     break
                 }
             }
-
+            
             if cast {
                 cast = false
                 continue
             }
-
+            
             // 这里出现 sql 报错信息则直接认为存在注入点，直接返回，后续不进行，减少流量。 验证交给人工/sql, 误报应该不多吧？
             sql.DBMS = checkDBMSError(sql.Url, p.Name, payload, res)
             if sql.DBMS != "" {
@@ -94,7 +94,7 @@ func (sql *Sqlmap) HeuristicCheckSqlInjection() {
                 } else {
                     res, err = sql.Client.Request(sql.Url, sql.Method, payload, sql.Headers)
                 }
-
+                
                 time.Sleep(time.Millisecond * 500)
                 sql.DBMS = checkDBMSError(sql.Url, p.Name, payload, res)
                 if sql.DBMS != "" {
@@ -102,14 +102,14 @@ func (sql *Sqlmap) HeuristicCheckSqlInjection() {
                     return
                 }
             }
-
+            
             injectableParamsPos = append(injectableParamsPos, pos)
             logging.Logger.Debugf(sql.Url + " 参数: " + p.Name + " 未检测到转型,尝试注入检测")
-
+            
             // 这里也和 sql 一样 顺手检测一下xss、fi 漏洞
             randStr1, randStr2 := util.RandomLetters(6), util.RandomLetters(6)
             value := fmt.Sprintf("%s%s%s", randStr1, DummyNonSqliCheckAppendix, randStr2)
-
+            
             payload = sql.Variations.SetPayloadByIndex(p.Index, sql.Url, fmt.Sprintf("%s'%s", p.Value, value), sql.Method)
             if payload == "" {
                 continue
@@ -123,7 +123,7 @@ func (sql *Sqlmap) HeuristicCheckSqlInjection() {
                 logging.Logger.Debugln(sql.Url, " checkIfInjectable Fuzz请求出错, ", err)
                 continue
             }
-
+            
             if funk.Contains(res.Body, value) {
                 JieOutput.OutChannel <- JieOutput.VulMessage{
                     DataType: "web_vul",
@@ -141,11 +141,11 @@ func (sql *Sqlmap) HeuristicCheckSqlInjection() {
                     Level: JieOutput.Medium,
                 }
             }
-
+            
             // 检测文件包含
             re := regexp.MustCompile(FiErrorRegex)
             matches := re.FindAllStringSubmatch(res.Body, -1)
-
+            
             for _, match := range matches {
                 if strings.Contains(strings.ToLower(match[0]), strings.ToLower(randStr1)) {
                     JieOutput.OutChannel <- JieOutput.VulMessage{
@@ -168,12 +168,12 @@ func (sql *Sqlmap) HeuristicCheckSqlInjection() {
             }
         }
     }
-
+    
     if len(injectableParamsPos) == 0 && !errInject {
         logging.Logger.Debugln(sql.Url, "无可注入参数")
         return
     }
-
+    
     for _, pos := range injectableParamsPos {
         sql.checkSqlInjection(pos)
     }
@@ -185,13 +185,13 @@ func (sql *Sqlmap) checkSqlInjection(pos int) {
             return
         }
     }
-
+    
     for _, closeType := range CloseType {
         if sql.checkBoolBased(pos, closeType) {
             return
         }
     }
-
+    
     if sql.checkTimeBasedBlind(pos) {
         return
     }

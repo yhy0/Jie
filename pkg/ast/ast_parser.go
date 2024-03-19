@@ -3,18 +3,18 @@ package ast
 import (
     "bytes"
     "encoding/json"
-
+    
     "github.com/yhy0/Jie/pkg/util"
     "github.com/yhy0/logging"
-
+    
     "github.com/tdewolff/parse/v2"
     "github.com/tdewolff/parse/v2/js"
     "github.com/thoas/go-funk"
+    regexp "github.com/wasilibs/go-re2"
     "golang.org/x/net/html"
     "io"
     "os"
     "reflect"
-    "regexp"
     "strings"
 )
 
@@ -80,7 +80,7 @@ func Duplicate(a interface{}) (ret []interface{}) {
 func AnalyseJs(script, t string) []string {
     var params []string
     var varDiscover bool
-
+    
     l := js.NewLexer(parse.NewInputString(script))
     for {
         tt, text := l.Next()
@@ -112,7 +112,7 @@ func (parser *Parser) HttpParser(body *string) bool {
     // parser.tokenizer = btree.New(ByKeys)
     // Tree := []Node{}
     Tree := Node{}
-
+    
     z := html.NewTokenizer(strings.NewReader(*body))
     if parser.tokenizer == nil {
         parser.tokenizer = new(Node)
@@ -140,7 +140,7 @@ func (parser *Parser) HttpParser(body *string) bool {
             if cx == "br" {
                 continue
             }
-
+            
             for {
                 key, val, moreAttr := z.TagAttr()
                 if moreAttr {
@@ -149,7 +149,7 @@ func (parser *Parser) HttpParser(body *string) bool {
                     parser.attr = new(Attribute)
                     parser.attr.Key = mkey
                     parser.attr.Val = mval
-
+                    
                     Attributes = append(Attributes, parser.attr)
                 } else {
                     mkey := util.BytesToString(key)
@@ -161,10 +161,10 @@ func (parser *Parser) HttpParser(body *string) bool {
                     break
                 }
             }
-
+            
             Tree.Insert(i, cx, &parser.emptystr, &Attributes)
             // Tree.Set(&Node{Idx: i, Tagname: cx, Content: "", Attributes: Attributes})
-
+        
         case html.EndTagToken:
             name, _ := z.TagName()
             // logger.Debug("html.EndTagToken:%s", string(z.Raw()))
@@ -180,7 +180,7 @@ func (parser *Parser) HttpParser(body *string) bool {
                         }
                         break
                     }
-
+                    
                     item, ok := Tree.Max()
                     if ok {
                         parser.tokenizer.Set(item)
@@ -188,22 +188,22 @@ func (parser *Parser) HttpParser(body *string) bool {
                     } else {
                         break
                     }
-
+                    
                 } else {
                     break
                 }
             }
-
+        
         case html.SelfClosingTagToken:
             // logger.Debug("html.SelfClosingTagToken:%s", string(z.Raw()))
             Attributes := make([]*Attribute, 0)
             array, _ := z.TagName()
-
+            
             cx := util.BytesToString(array)
             if cx == "br" {
                 continue
             }
-
+            
             for {
                 key, val, moreAttr := z.TagAttr()
                 if moreAttr {
@@ -223,7 +223,7 @@ func (parser *Parser) HttpParser(body *string) bool {
                     break
                 }
             }
-
+            
             Tree.Insert(i, cx, &parser.emptystr, &Attributes)
             name, _ := z.TagName()
             for {
@@ -244,16 +244,16 @@ func (parser *Parser) HttpParser(body *string) bool {
                 }
             }
             // }
-
+        
         case html.CommentToken:
             Attributes := make([]*Attribute, 0)
             commentText := string(z.Text())
             parser.tokenizer.Insert(i, "comment", &commentText, &Attributes)
         }
-
+        
     }
 processing:
-
+    
     return true
 }
 
@@ -284,7 +284,7 @@ func SearchInputInResponse(input string, body string) []Occurence {
     parse.HttpParser(&body)
     tokens := parse.GetRoot()
     defer parse.Clear()
-
+    
     if tokens.Length() == 0 {
         return Occurences
     }
@@ -395,7 +395,7 @@ func AnalyseJSFuncByFlag(input string, script string) (string, error) {
                 match, _ := regexp.MatchString(reg, ast.String())
                 if match {
                     logging.Logger.Debugln("var %s flag exists in a closed function", str)
-
+                    
                     leftcloser := JsContexterLeft(input, ast.JSString())
                     Rightcloser := JsContexterRight(input, ast.JSString())
                     // 判断是否是单引号还是双引号的字符串变量
@@ -405,9 +405,9 @@ func AnalyseJSFuncByFlag(input string, script string) (string, error) {
                         // newpayload.WriteString("\"\";" + leftcloser + " console.log(\"" + input + "\"); " + Rightcloser + "//\\")
                         newpayload.WriteString("\"\";" + leftcloser + " console.log('" + input + "'); " + Rightcloser + "//\\")
                     } else {
-
+                    
                     }
-
+                    
                 } else {
                     logging.Logger.Debugln("var %s flag exists in Statement", str)
                     // 判断是否是单引号还是双引号的字符串变量
@@ -421,7 +421,7 @@ func AnalyseJSFuncByFlag(input string, script string) (string, error) {
             }
         }
     }
-
+    
 }
 
 // 反转字符串
@@ -440,7 +440,7 @@ func stripper(str string, substring rune, direction string) string {
         s              bytes.Buffer
         retstring      bytes.Buffer
     )
-
+    
     if direction == "right" {
         s.WriteString(reverseString(str))
     }
@@ -510,7 +510,7 @@ func JsContexterRight(xsschecker string, script string) string {
        pre0 == function loadTest () { var time = 11; if (1) { if (time < 20) { if (1) { var x = '
     */
     Lpayload := strings.Count(pre0, "{")
-
+    
     // pre = "'); }; } else { var x = '2222222'; }; };"
     // re := regexp.MustCompile(`(?s)\{.*?\}|(?s)\(.*?\)|(?s)".*?"|(?s)\'.*?\'`)
     // // '; }; } else { var x = '2222222'; }; };    //过滤前
@@ -586,5 +586,5 @@ func SaveCrawOutPut(ResultList map[string][]JsonUrl, FilePath string) {
             return
         }
     }
-
+    
 }

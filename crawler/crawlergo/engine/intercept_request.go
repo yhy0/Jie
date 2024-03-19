@@ -4,6 +4,7 @@ import (
     "bufio"
     "context"
     "encoding/base64"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/crawler/crawlergo/config"
     "github.com/yhy0/Jie/crawler/crawlergo/model"
     "github.com/yhy0/Jie/crawler/crawlergo/tools"
@@ -12,11 +13,10 @@ import (
     "github.com/yhy0/logging"
     "io"
     "net/textproto"
-    "regexp"
     "strconv"
     "strings"
     "time"
-
+    
     "github.com/chromedp/cdproto/fetch"
     "github.com/chromedp/cdproto/network"
 )
@@ -38,16 +38,16 @@ func (tab *Tab) InterceptRequest(v *fetch.EventRequestPaused) {
         PostData: _req.PostData,
     }
     req := model.GetRequest(_req.Method, url, _option)
-
+    
     if IsIgnoredByKeywordMatch(req, tab.config.IgnoreKeywords) {
         _ = fetch.FailRequest(v.RequestID, network.ErrorReasonBlockedByClient).Do(ctx)
         req.Source = config.FromXHR
         tab.AddResultRequest(req)
         return
     }
-
+    
     tab.HandleHostBinding(&req)
-
+    
     // // 静态资源 全部阻断
     // // https://github.com/Qianlitp/crawlergo/issues/106
     // if config.StaticSuffixSet.Contains(url.FileExt()) {
@@ -56,7 +56,7 @@ func (tab *Tab) InterceptRequest(v *fetch.EventRequestPaused) {
     //    tab.AddResultRequest(req)
     //    return
     // }
-
+    
     // 处理导航请求
     if tab.IsNavigatorRequest(v.NetworkID.String()) {
         tab.NavNetworkID = v.NetworkID.String()
@@ -65,7 +65,7 @@ func (tab *Tab) InterceptRequest(v *fetch.EventRequestPaused) {
         tab.AddResultRequest(req)
         return
     }
-
+    
     req.Source = config.FromXHR
     tab.AddResultRequest(req)
     _ = fetch.ContinueRequest(v.RequestID).Do(ctx)
@@ -97,7 +97,7 @@ func (tab *Tab) HandleNavigationReq(req *model.Request, v *fetch.EventRequestPau
     tCtx, cancel := context.WithTimeout(ctx, time.Second*5)
     defer cancel()
     overrideReq := fetch.ContinueRequest(v.RequestID).WithURL(req.URL.String())
-
+    
     // 处理后端重定向请求
     if tab.FoundRedirection && tab.IsTopFrame(v.FrameID.String()) {
         // logging.Logger.Debug("redirect navigation req: " + req.URL.String())
@@ -159,7 +159,7 @@ func (tab *Tab) HandleHostBinding(req *model.Request) {
             urlObj, _ := model.GetUrl(strings.Replace(req.URL.String(), "://"+url.Hostname(), "://"+navUrl.Hostname(), -1), *navUrl)
             req.URL = urlObj
             req.Headers["Host"] = host
-
+            
         } else if navUrl.Hostname() != host && url.Host == navUrl.Host {
             req.Headers["Host"] = host
         }
@@ -184,18 +184,18 @@ func (tab *Tab) IsTopFrame(FrameID string) bool {
 func (tab *Tab) ParseResponseURL(target string, v *network.EventResponseReceived) {
     defer tab.WG.Done()
     ctx := tab.GetExecutor()
-
+    
     res, err := network.GetResponseBody(v.RequestID).Do(ctx)
     if err != nil {
         // logging.Logger.Debug("ParseResponseURL ", err, target)
         return
     }
-
+    
     resStr := string(res)
-
+    
     // 这里获取了 body, 这里进行敏感信息检测
     go sensitive.Detection(target, "", resStr)
-
+    
     urlRegex := regexp.MustCompile(config.SuspectURLRegex)
     urlList := urlRegex.FindAllString(resStr, -1)
     for _, url := range urlList {
@@ -204,7 +204,7 @@ func (tab *Tab) ParseResponseURL(target string, v *network.EventResponseReceived
         if strings.HasPrefix(url_lower, "image/x-icon") || strings.HasPrefix(url_lower, "text/css") || strings.HasPrefix(url_lower, "text/javascript") {
             continue
         }
-
+        
         tab.AddResultUrl(config.GET, url, config.FromJSFile)
     }
 }
@@ -264,7 +264,7 @@ func MergeHeaders(navHeaders map[string]interface{}, headers map[string]interfac
             mergedHeaders = append(mergedHeaders, &header)
         }
     }
-
+    
     for key, value := range headers {
         var header fetch.HeaderEntry
         header.Name = key

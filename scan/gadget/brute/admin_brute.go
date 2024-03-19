@@ -3,11 +3,11 @@ package brute
 import (
     "crypto/md5"
     "fmt"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/pkg/protocols/httpx"
     "github.com/yhy0/Jie/pkg/util"
     "github.com/yhy0/logging"
     "net/url"
-    "regexp"
     "strings"
 )
 
@@ -123,7 +123,7 @@ func Admin_brute(u string, client *httpx.Client) (username string, password stri
     } else {
         falseis500 = true
     }
-
+    
     if testfalseurl, err := client.Request(loginurl, "POST", testfalsedata, nil); err == nil {
         code := testfalseurl.StatusCode
         switch code {

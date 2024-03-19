@@ -18,13 +18,13 @@ import (
     "bytes"
     "encoding/binary"
     "fmt"
+    regexp "github.com/wasilibs/go-re2"
     "math/big"
     "net"
-    "regexp"
     "strconv"
     "strings"
     "time"
-
+    
     "github.com/yhy0/Jie/lib/fingerprintx/pkg/plugins"
     utils "github.com/yhy0/Jie/lib/fingerprintx/pkg/plugins/pluginutils"
 )
@@ -127,7 +127,7 @@ func checkForOracle(host string, port string) []byte {
     tnsHeaderPktType := [1]byte{0x01}       // Connect type
     tnsHeaderReservedByte := [1]byte{0x00}
     tnsHeaderChecksum := [2]byte{0x00, 0x00}
-
+    
     connectVersion := [2]byte{0x01, 0x3c}
     connectVersionCompat := [2]byte{0x01, 0x2c}
     connectServiceOpts := [2]byte{0x00, 0x00}
@@ -178,13 +178,13 @@ func checkForOracle(host string, port string) []byte {
         magicBytes[:],
         connectData,
     }
-
+    
     fullRequest := make([]byte, len(connectData)+58)
     index := 0
     for _, s := range combine {
         index += copy(fullRequest[index:], s)
     }
-
+    
     return fullRequest
 }
 
@@ -195,19 +195,19 @@ func isOracleDBRunning(response []byte) bool {
         0x50, 0x3d, 0x29, 0x28, 0x56, 0x53, 0x4e, 0x4e,
         0x55, 0x4d, 0x3d,
     }
-
+    
     if len(response) < 27 {
         return false
     }
-
+    
     responseCode := int(response[4])
-
+    
     // This should always be a response code of 4 (rejection),
     // however I have included resend and accept response codes as well
     if responseCode != 4 && responseCode != 2 && responseCode != 11 {
         return false
     }
-
+    
     // When making a request with the function above, every oracle version should return a variation of:
     // (DESCRIPTION=(TMP=)(VSNNUM=318767104)(ERR=1189)(ERROR_STACK=(ERROR=(CODE=1189)(EMFI=4))))
     // VSNUM and ERR will change based on the version of oracle used
@@ -243,7 +243,7 @@ func (p *ORACLEPlugin) Run(conn net.Conn, timeout time.Duration, target plugins.
     addr := strings.Split(conn.RemoteAddr().String(), ":")
     ip, port := addr[0], addr[1]
     request := checkForOracle(ip, port)
-
+    
     response, err := utils.SendRecv(conn, request, timeout)
     if err != nil {
         return nil, err
@@ -251,7 +251,7 @@ func (p *ORACLEPlugin) Run(conn net.Conn, timeout time.Duration, target plugins.
     if len(response) == 0 {
         return nil, nil
     }
-
+    
     if isOracleDBRunning(response) {
         oracleInfo := fmt.Sprintf("%s", parseInfo(response))
         payload := plugins.ServiceOracle{

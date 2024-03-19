@@ -3,6 +3,7 @@ package task
 import (
     "fmt"
     "github.com/remeh/sizedwaitgroup"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/conf"
     "github.com/yhy0/Jie/fingprints"
     "github.com/yhy0/Jie/pkg/input"
@@ -16,7 +17,6 @@ import (
     scan_util "github.com/yhy0/Jie/scan/util"
     "github.com/yhy0/logging"
     "net/url"
-    "regexp"
     "strconv"
     "strings"
     "sync"

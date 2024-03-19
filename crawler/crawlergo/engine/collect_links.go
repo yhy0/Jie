@@ -3,10 +3,10 @@ package engine
 import (
     "context"
     "fmt"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/crawler/crawlergo/config"
-    "regexp"
     "time"
-
+    
     "github.com/chromedp/cdproto/cdp"
     "github.com/chromedp/chromedp"
 )

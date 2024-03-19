@@ -2,9 +2,9 @@ package brute
 
 import (
     "github.com/thoas/go-funk"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/pkg/protocols/httpx"
     "net/url"
-    "regexp"
     "strings"
 )
 
@@ -41,7 +41,7 @@ func CheckLoginPage(inputurl string, body string, client *httpx.Client) bool {
                 }
             }
         }
-
+        
         return false
     }
     return false

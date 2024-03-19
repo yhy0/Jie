@@ -6,6 +6,7 @@ import (
     "github.com/projectdiscovery/katana/pkg/output"
     "github.com/remeh/sizedwaitgroup"
     "github.com/thoas/go-funk"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/conf"
     "github.com/yhy0/Jie/crawler"
     "github.com/yhy0/Jie/crawler/crawlergo"
@@ -21,7 +22,6 @@ import (
     "github.com/yhy0/logging"
     "net/url"
     "path"
-    "regexp"
     "strings"
     "time"
 )

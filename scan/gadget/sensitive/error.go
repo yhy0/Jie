@@ -1,9 +1,9 @@
 package sensitive
 
 import (
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/pkg/output"
     "github.com/yhy0/logging"
-    "regexp"
     "strings"
     "sync"
     "time"
@@ -71,7 +71,7 @@ func PageErrorMessageCheck(url, req, body string) []ErrorMessage {
         return nil
     }
     seenRequests.Store(url, true)
-
+    
     var results []ErrorMessage
     for _, errorMsg := range errors {
         re := regexp.MustCompile(errorMsg.Text)
@@ -81,12 +81,12 @@ func PageErrorMessageCheck(url, req, body string) []ErrorMessage {
             if "([A-Za-z]+[.])+[A-Za-z]*Exception: " == errorMsg.Text && strings.Contains(body, ".java") {
                 continue
             }
-
+            
             results = append(results, ErrorMessage{
                 Text: result,
                 Type: errorMsg.Type,
             })
-
+            
             output.OutChannel <- output.VulMessage{
                 DataType: "web_vul",
                 Plugin:   "Sensitive error",
@@ -103,6 +103,6 @@ func PageErrorMessageCheck(url, req, body string) []ErrorMessage {
             logging.Logger.Infoln("[Sensitive]", url, errorMsg.Type, result)
         }
     }
-
+    
     return results
 }

@@ -1,12 +1,12 @@
 package filter
 
 import (
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/crawler/crawlergo/config"
     "github.com/yhy0/Jie/crawler/crawlergo/model"
     "github.com/yhy0/Jie/crawler/crawlergo/tools"
     "github.com/yhy0/logging"
     "go/types"
-    "regexp"
     "sort"
     "strings"
     "sync"

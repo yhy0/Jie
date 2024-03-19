@@ -2,9 +2,9 @@ package dom
 
 import (
     "fmt"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/pkg/output"
     "github.com/yhy0/logging"
-    "regexp"
     "strings"
     "time"
 )
@@ -20,7 +20,7 @@ func Dom(u, response string) {
     var highlighted []string
     sources := regexp.MustCompile(`\b(?:document\.(URL|documentURI|URLUnencoded|baseURI|cookie|referrer)|location\.(href|search|hash|pathname)|window\.name|history\.(pushState|replaceState)(local|session)Storage)\b`)
     sinks := regexp.MustCompile(`\b(?:eval|evaluate|execCommand|assign|navigate|getResponseHeaderopen|showModalDialog|Function|set(Timeout|Interval|Immediate)|execScript|crypto.generateCRMFRequest|ScriptElement\.(src|text|textContent|innerText)|.*?\.onEventName|document\.(write|writeln)|.*?\.innerHTML|Range\.createContextualFragment|(document|window)\.location)\b`)
-
+    
     scripts := regexp.MustCompile(`(?i)(?s)<script[^>]*>(.*?)</script>`).FindAllStringSubmatch(response, -1)
     sinkFound, sourceFound := false, false
     for _, script := range scripts {
@@ -30,7 +30,7 @@ func Dom(u, response string) {
         for _, newLine := range lines {
             line := newLine
             parts := strings.Split(line, "var ")
-
+            
             controlledVariables := make(map[string]bool)
             if len(parts) > 1 {
                 for _, part := range parts {
@@ -42,7 +42,7 @@ func Dom(u, response string) {
                 }
             }
             pattern := sources.FindAllStringIndex(newLine, -1)
-
+            
             // 寻找 source
             for _, grp := range pattern {
                 if grp != nil {
@@ -59,11 +59,11 @@ func Dom(u, response string) {
                     }
                 }
             }
-
+            
             for controlledVariable := range controlledVariables {
                 allControlledVariables[controlledVariable] = true
             }
-
+            
             for controlledVariable := range allControlledVariables {
                 matches := regexp.MustCompile(`\b`+controlledVariable+`\b`).FindAllStringIndex(line, -1)
                 if len(matches) > 0 {
@@ -71,10 +71,10 @@ func Dom(u, response string) {
                     line = regexp.MustCompile(`\b`+controlledVariable+`\b`).ReplaceAllString(line, "**"+controlledVariable+"**")
                 }
             }
-
+            
             // 寻找 sink
             pattern = sinks.FindAllStringIndex(newLine, -1)
-
+            
             for _, grp := range pattern {
                 if grp != nil {
                     sink := strings.ReplaceAll(newLine[grp[0]:grp[1]], " ", "")
@@ -90,7 +90,7 @@ func Dom(u, response string) {
             num += 1
         }
     }
-
+    
     if sinkFound || sourceFound {
         output.OutChannel <- output.VulMessage{
             DataType: "web_vul",

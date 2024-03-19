@@ -3,6 +3,7 @@ package collection
 import (
     "github.com/BishopFox/jsluice"
     "github.com/thoas/go-funk"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/conf"
     "github.com/yhy0/Jie/pkg/output"
     "github.com/yhy0/Jie/pkg/util"
@@ -10,7 +11,6 @@ import (
     "golang.org/x/net/publicsuffix"
     "net"
     "net/url"
-    "regexp"
     "strings"
 )
 

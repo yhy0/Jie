@@ -2,7 +2,7 @@ package wappalyzergo
 
 import (
     "github.com/thoas/go-funk"
-    "regexp"
+    regexp "github.com/wasilibs/go-re2"
     "strings"
 )
 
@@ -26,9 +26,9 @@ import (
 
 func Honeypot(body string) bool {
     regex := regexp.MustCompile(`<script>\w+\s*=\s*\[(.+)\];`)
-
+    
     sensitiveStr := regex.FindAllString(body, -1)
-
+    
     for _, i := range sensitiveStr {
         if len(strings.Split(i, "','")) > 30 && strings.Count(i, "0x") > 30 && funk.Contains(body, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=") && funk.Contains(body, "fromCharCode") {
             return true

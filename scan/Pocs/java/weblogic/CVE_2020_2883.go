@@ -3,10 +3,10 @@ package weblogic
 import (
     "encoding/hex"
     "fmt"
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/logging"
     "net"
     "net/url"
-    "regexp"
     "strconv"
     "time"
 )

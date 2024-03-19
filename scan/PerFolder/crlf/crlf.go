@@ -1,10 +1,10 @@
 package crlf
 
 import (
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/pkg/input"
     "github.com/yhy0/Jie/pkg/output"
     "github.com/yhy0/Jie/pkg/protocols/httpx"
-    "regexp"
     "strings"
     "sync"
     "time"
@@ -55,18 +55,18 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
         if strings.ToUpper(in.Method) == "GET" {
             npl := target + pl
             res, err := client.Request(npl, in.Method, "", in.Headers)
-
+            
             if err != nil {
                 logging.Logger.Debugf("Request error: %v", err)
                 return
             }
-
+            
             r, err := regexp.Compile(RegexRule)
             if err != nil {
                 logging.Logger.Debugf("%s", err.Error())
                 return
             }
-
+            
             C := r.FindAllStringSubmatch(httpx.Header(res.Header), -1)
             if len(C) != 0 {
                 output.OutChannel <- output.VulMessage{
@@ -86,7 +86,7 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
                 }
                 return
             }
-
+            
         } else {
             res, err := client.Request(target, in.Method, in.Resp.Body+pl, in.Headers)
             if err != nil {

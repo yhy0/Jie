@@ -76,6 +76,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/tidwall/match v1.1.1
 	github.com/tomatome/grdp v0.1.1-0.20230622130233-b1e80faa1cf2
+	github.com/wasilibs/go-re2 v1.5.0
 	github.com/weppos/publicsuffix-go v0.30.2-0.20230730094716-a20f9abcc222
 	github.com/yaklang/yaklang v1.3.1
 	github.com/yhy0/logging v0.0.0-20231128014545-22711cccc3b0
@@ -265,6 +266,7 @@ require (
 	github.com/lukasbob/srcset v0.0.0-20190730101422-86b742e617f3 // indirect
 	github.com/lunixbochs/struc v0.0.0-20200707160740-784aaebc1d40 // indirect
 	github.com/mackerelio/go-osstat v0.2.4 // indirect
+	github.com/magefile/mage v1.14.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
@@ -350,6 +352,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
+	github.com/tetratelabs/wazero v1.7.0 // indirect
 	github.com/tidwall/btree v1.7.0 // indirect
 	github.com/tidwall/buntdb v1.3.0 // indirect
 	github.com/tidwall/gjson v1.17.1 // indirect

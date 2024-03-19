@@ -1,8 +1,8 @@
 package util
 
 import (
+    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/pkg/util"
-    "regexp"
     "strings"
 )
 
@@ -38,13 +38,13 @@ func IsBlackHtml(str string, contentType []string) bool {
             }
         }
     }
-
+    
     if len(str) < 250 && util.InSliceCaseFold("application/json", contentType) {
         reg, _ := regexp.Compile(`(?i)("(status|code|statusCode)"(\s+)?:(\s+)?(400|401|404|502)|"(message|msg)"(\s+)?:(\s+)?.*?(not exist|not found|请求非法)|not found)`)
         if len(reg.FindStringSubmatch(str)) > 0 {
             return true
         }
     }
-
+    
     return false
 }

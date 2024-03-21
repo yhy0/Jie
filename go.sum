@@ -1027,6 +1027,8 @@ github.com/projectdiscovery/networkpolicy v0.0.8 h1:XvfBaBwSDNTesSfNQP9VLk3HX9I7
 github.com/projectdiscovery/networkpolicy v0.0.8/go.mod h1:xnjNqhemxUPxU+UD5Jgsc3+K8IVmcqT1SJeo6UzMtkI=
 github.com/projectdiscovery/nuclei/v3 v3.2.1 h1:p4Cg1i/rFysMeXnYBY28s6AWb1eZj6pXkWTNREFcaPA=
 github.com/projectdiscovery/nuclei/v3 v3.2.1/go.mod h1:LkKLQeiQRavbZAnpDCP1LWOC7854OmNwRn2Z+YwH/ME=
+github.com/projectdiscovery/nuclei/v3 v3.2.2 h1:bCa0pW2EKVHxdx+2kKMJOlGftPzH0JCSrt1a0oh6H60=
+github.com/projectdiscovery/nuclei/v3 v3.2.2/go.mod h1:LkKLQeiQRavbZAnpDCP1LWOC7854OmNwRn2Z+YwH/ME=
 github.com/projectdiscovery/ratelimit v0.0.33 h1:MT8Oa0VVBBI5w6ZMUJCIIQkjdTVNbzhGRDMrNqV1BQ4=
 github.com/projectdiscovery/ratelimit v0.0.33/go.mod h1:Mdbm5Olxd0zddUO3Khy330H1Ei7377/DFIuY9nRZuGM=
 github.com/projectdiscovery/rawhttp v0.1.41 h1:0n6CohOf0Aq7dsXv+ozznhlYr4ANDKLwvPmdzTet3qU=

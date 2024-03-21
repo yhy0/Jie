@@ -65,6 +65,24 @@ var errors = []ErrorMessage{
 
 var seenRequests sync.Map // 这里主要是为了一些返回包检测类的判断是否识别过，减小开销，扫描类内部会判断是否扫描过
 
+type Regexp struct {
+    Re  *regexp.Regexp
+    Msg ErrorMessage
+}
+
+var errorCompiled map[string]*Regexp
+
+func init() {
+    // 只编译一次编译正则
+    errorCompiled = make(map[string]*Regexp, len(errors))
+    for _, errorMsg := range errors {
+        errorCompiled[errorMsg.Text] = &Regexp{
+            Re:  regexp.MustCompile(errorMsg.Text),
+            Msg: errorMsg,
+        }
+    }
+}
+
 func PageErrorMessageCheck(url, req, body string) []ErrorMessage {
     // 因为放到了 httpx.Request 中，所以会有很多重复，这里检验一下 url 是否已经检测过了
     if _, ok := seenRequests.Load(url); ok {
@@ -73,18 +91,18 @@ func PageErrorMessageCheck(url, req, body string) []ErrorMessage {
     seenRequests.Store(url, true)
     
     var results []ErrorMessage
-    for _, errorMsg := range errors {
-        re := regexp.MustCompile(errorMsg.Text)
+    for _, errorMsg := range errorCompiled {
+        re := errorMsg.Re
         result := re.FindString(body)
         if result != "" {
             // org.springframework.web.HttpRequestMethodNotSupportedException 这种也会匹配到，java 这样的会误报混淆
-            if "([A-Za-z]+[.])+[A-Za-z]*Exception: " == errorMsg.Text && strings.Contains(body, ".java") {
+            if "([A-Za-z]+[.])+[A-Za-z]*Exception: " == errorMsg.Msg.Text && strings.Contains(body, ".java") {
                 continue
             }
             
             results = append(results, ErrorMessage{
                 Text: result,
-                Type: errorMsg.Type,
+                Type: errorMsg.Msg.Type,
             })
             
             output.OutChannel <- output.VulMessage{
@@ -92,7 +110,7 @@ func PageErrorMessageCheck(url, req, body string) []ErrorMessage {
                 Plugin:   "Sensitive error",
                 VulnData: output.VulnData{
                     CreateTime: time.Now().Format("2006-01-02 15:04:05"),
-                    VulnType:   errorMsg.Text,
+                    VulnType:   errorMsg.Msg.Text,
                     Target:     url,
                     Payload:    result,
                     Request:    req,
@@ -100,7 +118,7 @@ func PageErrorMessageCheck(url, req, body string) []ErrorMessage {
                 },
                 Level: output.Low,
             }
-            logging.Logger.Infoln("[Sensitive]", url, errorMsg.Type, result)
+            logging.Logger.Infoln("[Sensitive]", url, errorMsg.Msg.Type, result)
         }
     }
     

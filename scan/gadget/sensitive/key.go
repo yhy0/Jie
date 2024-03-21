@@ -17,7 +17,7 @@ import (
   @desc: 提取 https://github.com/projectdiscovery/nuclei-templates/tree/main/file/keys 中的规则
 **/
 
-//go:embed rules/*
+//go:embed keys/*
 var ruleFiles embed.FS
 var rules []templates.Template
 

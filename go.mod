@@ -65,7 +65,7 @@ require (
 	github.com/projectdiscovery/gologger v1.1.12
 	github.com/projectdiscovery/katana v1.0.6-0.20240313185050-24c31f49c050
 	github.com/projectdiscovery/naabu/v2 v2.3.0
-	github.com/projectdiscovery/nuclei/v3 v3.2.1
+	github.com/projectdiscovery/nuclei/v3 v3.2.2
 	github.com/projectdiscovery/retryabledns v1.0.58
 	github.com/samber/lo v1.39.0
 	github.com/sergi/go-diff v1.3.1

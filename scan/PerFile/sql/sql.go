@@ -30,16 +30,16 @@ var (
     SimilarityRatio = 0.9  // 页面相似度
     UpperRatioBound = 0.98 // 上边界
     LowerRatioBound = 0.02 // 下边界
-
+    
     DiffTolerance = 0.05 // 容差
-
+    
     // MaxDifflibSequenceLength 用于检测页面相似度的最大长度
     MaxDifflibSequenceLength = 10 * 1024 * 1024
-
+    
     CloseType = map[int]string{0: `'`, 1: `"`, 2: ``, 3: `')`, 4: `")`}
-
+    
     // CloseType = map[int]string{0: `'`}
-
+    
     // FormatExceptionStrings 用于检测格式错误的字符串
     FormatExceptionStrings = []string{
         "Type mismatch", "Error converting", "Please enter a", "Conversion failed",
@@ -53,13 +53,13 @@ var (
         "String was not recognized as a valid", "Convert.ToInt", "cannot be converted to a ",
         "InvalidDataException", "Arguments are of the wrong type",
     }
-
+    
     // DummyNonSqliCheckAppendix String used for dummy non-SQLi (e.g. XSS) heuristic checks of a tested parameter value
     DummyNonSqliCheckAppendix = "<'\">"
-
+    
     // FiErrorRegex Regular expression used for recognition of file inclusion errors
     FiErrorRegex = `(?i)[^\n]{0,100}(no such file|failed (to )?open)[^\n]{0,100}`
-
+    
     // DbmsErrors 用于报错检查的字典
     DbmsErrors = map[string][]string{}
 )
@@ -72,7 +72,7 @@ type Sqlmap struct {
     Client      *httpx.Client
     ContentType string
     Variations  *httpx.Variations
-
+    
     OriginalBody    string // 原始请求页面
     TemplateBody    string // 经过处理去除动态部分的模板页面
     TemplateCode    int
@@ -85,7 +85,7 @@ func init() {
     // error based 生成字典
     DbmsErrors = make(map[string][]string)
     doc := etree.NewDocument()
-
+    
     if err := doc.ReadFromString(errorsXml); err != nil {
         logging.Logger.Errorln(err)
     } else {
@@ -117,21 +117,21 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
         logging.Logger.Debugln(in.Url, "请求方法不支持检测")
         return
     }
-
+    
     // waf 只判断作为提示信息 不做进一步操作 如果检出存在注入 则可以考虑附加信息
     if len(in.Waf) > 0 {
         logging.Logger.Warnf("heuristics detected that the target is protected by some kind of WAF/IPS(%+v)", in.Waf)
     }
-
+    
     // 做一些前置检查 避免无意义的后续检测
     // 这里不能这么搞，有的搜索不存在的就是给你返回 404，导致后续不会继续检测
     // if in.Resp.StatusCode == 404 {
     //    logging.Logger.Warnln(in.Url, " 原始请求资源不存在(404) ")
     //    return
     // }
-
+    
     logging.Logger.Debugln("["+in.Method+"]", in.Url, "\t", in.RequestBody)
-
+    
     sql := &Sqlmap{
         Url:          in.Url,
         OriginalBody: in.Resp.Body,
@@ -147,9 +147,9 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
             "suffix": "",
         },
     }
-
+    
     sql.TemplateCode = in.Resp.StatusCode
-
+    
     variations, err := httpx.ParseUri(sql.Url, []byte(sql.RequestBody), sql.Method, sql.ContentType, sql.Headers)
     if err != nil || variations == nil {
         if strings.Contains(err.Error(), "data is empty") {
@@ -159,20 +159,20 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
         }
         return
     }
-
+    
     sql.Variations = variations
-
+    
     logging.Logger.Debugf("%s总共测试参数共%d个 %+v", in.Url, len(variations.Params), variations.Params)
-
+    
     // 参数预处理，动态参数检测，模板页面
     if !check(sql) {
         logging.Logger.Infoln(in.Url, " 动态页面检测失败")
         return
     }
-
+    
     // 开始启发式、sql注入检测
     sql.HeuristicCheckSqlInjection()
-    logging.Logger.Errorln(fmt.Sprintf("[%s] %s sql 注入检测完成", in.UniqueId, in.Url))
+    logging.Logger.Infof("[%s] %s sql 注入检测完成", in.UniqueId, in.Url)
 }
 
 func (p *Plugin) IsScanned(key string) bool {
@@ -193,11 +193,11 @@ func (p *Plugin) Name() string {
 // check 检测动态页面，参数
 func check(sql *Sqlmap) bool {
     res, err := sql.Client.Request(sql.Url, sql.Method, sql.RequestBody, sql.Headers)
-
+    
     if err != nil {
         return false
     }
-
+    
     if len(res.Body) < MaxDifflibSequenceLength && len(sql.OriginalBody) < MaxDifflibSequenceLength {
         // todo 没有经过大量测试，有待优化
         sim := strsim.Compare(res.Body, sql.OriginalBody)
@@ -206,12 +206,12 @@ func check(sql *Sqlmap) bool {
             prefix, suffix := findDynamicContent(sql.OriginalBody, res.Body)
             sql.DynamicMarkings["prefix"] = prefix
             sql.DynamicMarkings["suffix"] = suffix
-
+            
             // 去除请求页面的动态内容，设置模板页面
             sql.TemplateBody = sql.removeDynamicContent(sql.OriginalBody)
         }
     }
-
+    
     // 动态参数检测
     for _, p := range sql.Variations.Params {
         payload := sql.Variations.SetPayloadByIndex(p.Index, sql.Url, strconv.Itoa(util.RandomNumber(0, 9999)), sql.Method)
@@ -219,25 +219,25 @@ func check(sql *Sqlmap) bool {
             continue
         }
         logging.Logger.Debugln(sql.Url, payload)
-
+        
         if sql.Method == "GET" {
             res, err = sql.Client.Request(payload, sql.Method, "", sql.Headers)
         } else {
             res, err = sql.Client.Request(sql.Url, sql.Method, payload, sql.Headers)
         }
-
+        
         if err != nil {
             continue
         }
-
+        
         res.Body = sql.removeDynamicContent(res.Body)
-
+        
         if strsim.Compare(res.Body, sql.TemplateBody) < SimilarityRatio {
             sql.DynamicPara = append(sql.DynamicPara, p.Name)
             logging.Logger.Debugln(sql.Url, "检测到动态参数 ", p.Name)
         }
         time.Sleep(time.Millisecond * 500)
     }
-
+    
     return true
 }

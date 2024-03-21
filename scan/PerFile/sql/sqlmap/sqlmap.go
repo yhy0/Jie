@@ -29,6 +29,11 @@ type Plugin struct {
 }
 
 func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client *httpx.Client) {
+    if conf.GlobalConfig.SqlmapApi.Url == "" {
+        logging.Logger.Warnln("sqlmap api 未配置")
+        return
+    }
+    
     if p.IsScanned(in.UniqueId) {
         return
     }
@@ -36,11 +41,6 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
     params := util.ExtractParameters(in.Url, in.Method, in.RequestBody, in.Headers)
     
     if len(params) == 0 {
-        return
-    }
-    
-    if conf.GlobalConfig.SqlmapApi.Url == "" {
-        logging.Logger.Errorln("sql api 未配置")
         return
     }
     

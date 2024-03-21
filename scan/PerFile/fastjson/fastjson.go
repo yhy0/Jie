@@ -32,13 +32,13 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
     if !funk.Contains(in.ContentType, "json") {
         return
     }
-
+    
     if p.IsScanned(in.UniqueId) {
         return
     }
-
+    
     results := Scan(in.Url, client)
-
+    
     if results.Type != "" {
         output.OutChannel <- output.VulMessage{
             DataType: "web_vul",
@@ -48,6 +48,8 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
                 Target:      in.Url,
                 Method:      in.Method,
                 Payload:     results.Payload,
+                Request:     results.Request,
+                Response:    results.Response,
                 Description: fmt.Sprintf("Type: %s,Version: %s, AutoType: %v, Netout: %v, Dependency: %v", results.Type, results.Version, results.AutoType, results.Netout, results.Dependency),
             },
             Level: output.Medium,

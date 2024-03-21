@@ -6,40 +6,33 @@ import (
     "github.com/yhy0/Jie/pkg/reverse"
     "github.com/yhy0/Jie/scan/PerFile/fastjson/Utils"
     "github.com/yhy0/logging"
-    "log"
     "net/http"
     "net/http/httptrace"
     "strings"
     "time"
 )
 
-/**
-***    识别fastjson(主要通过报错回显的方式)
-**/
-
-func Fastjson(url string, client *httpx.Client) (bool, string) {
+// Fastjson 识别fastjson(主要通过报错回显的方式)
+func Fastjson(url string, client *httpx.Client) (bool, string, *httpx.Response) {
     logging.Logger.Debugln("[" + url + "] :" + "[+] 正在进行报错识别")
-    jsonType := ErrDetectVersion(url, Utils.FS_ERR_DETECT, client)
+    jsonType, resp := ErrDetectVersion(url, Utils.FS_ERR_DETECT, client)
     if jsonType == "jackson" {
-        return false, Utils.NOT_FS
+        return false, Utils.NOT_FS, resp
     }
     if jsonType != "" {
-        return true, jsonType
+        return true, jsonType, resp
     }
-    return false, jsonType
+    return false, jsonType, resp
 }
 
-/**
-***    探测fastjson版本，目前包括:报错探测，DNS探测和延迟探测
-**/
-
+// Version 探测fastjson版本，目前包括:报错探测，DNS探测和延迟探测
 func Version(url string, client *httpx.Client) Utils.Result {
     var result Utils.Result
-    Utils.InitResult(result)
+    
     logging.Logger.Debugln("开始检测 " + url)
     result.Url = url
     var payloads Utils.DNSPayloads
-    isFastjson, jsonType := Fastjson(url, client)
+    isFastjson, jsonType, resp := Fastjson(url, client)
     
     if jsonType == "jackson" {
         result.Type = jsonType
@@ -49,7 +42,7 @@ func Version(url string, client *httpx.Client) Utils.Result {
     // 出网探测
     logging.Logger.Debugln("[" + result.Url + "] :" + "[+] 正在进行出网探测")
     payload, session := Utils.NET_DETECT_FACTORY()
-    record := DnslogDetect(url, payload, session, client)
+    record, resp := DnslogDetect(url, payload, session, client)
     if record != "" {
         if record != Utils.NETWORK_NOT_ACCESS {
             // 出网
@@ -57,47 +50,54 @@ func Version(url string, client *httpx.Client) Utils.Result {
             result.Netout = true
             result.Type = "Fastjson"
             logging.Logger.Debugln("[" + result.Url + "] :" + "[+] 正在进行 AutoType状态 探测")
-            result.AutoType = AutoType(url, client)
+            result.AutoType, resp = AutoType(url, client)
             result.Dependency = Dependency(url)
             if isFastjson && jsonType != Utils.NOT_FS && jsonType != "" {
                 logging.Logger.Debugln("[" + result.Url + "] :" + "[+] Fastjson版本为 " + jsonType)
                 result.Version = jsonType
                 result.Payload = payload
+                result.Request = resp.RequestDump
                 return result
             }
             logging.Logger.Debugln("[" + result.Url + "] :" + "[+] 正在进行版本探测")
             payloads, session = Utils.DNS_DETECT_FACTORY()
-            version := DnslogDetect(url, payloads.Dns_48, session, client)
+            version, resp := DnslogDetect(url, payloads.Dns_48, session, client)
             if version == "48" {
                 result.Version = Utils.FJ_UNDER_48
                 result.Payload = payloads.Dns_80
+                result.Request = resp.RequestDump
                 return result
             }
-            version = DnslogDetect(url, payloads.Dns_68, session, client)
+            version, resp = DnslogDetect(url, payloads.Dns_68, session, client)
             if version == "68" {
                 if result.AutoType {
                     result.Version = Utils.FJ_BEYOND_48
                     result.Payload = payloads.Dns_68
+                    result.Request = resp.RequestDump
                     return result
                 }
                 result.Version = Utils.FJ_BETWEEN_48_68
                 result.Payload = payloads.Dns_68
+                result.Request = resp.RequestDump
                 return result
             }
-            version = DnslogDetect(url, payloads.Dns_80, session, client)
+            version, resp = DnslogDetect(url, payloads.Dns_80, session, client)
             if version == "80" {
                 result.Version = Utils.FJ_BETWEEN_69_80
                 result.Payload = payloads.Dns_80
+                result.Request = resp.RequestDump
                 return result
             }
-            version = DnslogDetect(url, payloads.Dns_80, session, client)
+            version, resp = DnslogDetect(url, payloads.Dns_80, session, client)
             if version == "83" {
                 result.Version = Utils.FS_BEYOND_80
                 result.Payload = payloads.Dns_80
+                result.Request = resp.RequestDump
                 return result
             }
             result.Payload = payloads.Dns_48 + " | " + payloads.Dns_68 + " | " + payloads.Dns_80
             result.Version = version
+            result.Request = resp.RequestDump
             return result
         } else {
             logging.Logger.Debugln("客户端与dnslog平台网络不可达")
@@ -148,19 +148,15 @@ func Dependency(target string) []string {
     return results
 }
 
-/**
-*** Autotype 开启检测，需出网
-*** return  True 为 开启 ; False 为 关闭
-**/
-
-func AutoType(url string, client *httpx.Client) bool {
+// AutoType 开启检测，需出网  True 为 开启 ; False 为 关闭
+func AutoType(url string, client *httpx.Client) (bool, *httpx.Response) {
     dnslog := reverse.GetDnslogUrl()
     if dnslog == nil {
-        return false
+        return false, nil
     }
     var autoTypeStatus bool
     payload := Utils.AUTOTYPE_DETECT_FACTORY(dnslog.Domain)
-    record := DnslogDetect(url, payload, dnslog.Session, client)
+    record, resp := DnslogDetect(url, payload, dnslog.Session, client)
     if record == "" || record == Utils.NETWORK_NOT_ACCESS {
         logging.Logger.Debugln("[" + url + "] :" + "[-] 目标没有开启 AutoType")
         autoTypeStatus = false
@@ -168,24 +164,24 @@ func AutoType(url string, client *httpx.Client) bool {
         logging.Logger.Debugln("[" + url + "] :" + "[*] 目标开启了 AutoType ")
         autoTypeStatus = true
     }
-    return autoTypeStatus
+    return autoTypeStatus, resp
 }
 
-func DnslogDetect(target string, payload string, session string, client *httpx.Client) string {
+func DnslogDetect(target string, payload string, session string, client *httpx.Client) (string, *httpx.Response) {
     header := map[string]string{
         "Content-Type": "application/json",
     }
     httpRsp, err := client.Request(target, "POST", payload, header)
     if err != nil {
         logging.Logger.Debugln("与dns平台网络不可达,请检查网络", err)
-        return Utils.NETWORK_NOT_ACCESS
+        return Utils.NETWORK_NOT_ACCESS, nil
     }
     
     reg := regexp.MustCompile(`fastjson-version\s\d.\d.[0-9]+`)
     var version string
     version = reg.FindString(httpRsp.Body)
     if version != "" {
-        return version[17:]
+        return version[17:], httpRsp
     }
     
     time.Sleep(3 * time.Second) // 等3秒钟，防止由于网络原因误报
@@ -193,7 +189,7 @@ func DnslogDetect(target string, payload string, session string, client *httpx.C
     
     body := reverse.GetDnslogRecord(session)
     if body == "" {
-        return ""
+        return "", nil
     }
     dns_48 := regexp.MustCompile(`48_.`)
     dns_68 := regexp.MustCompile(`68_.`)
@@ -201,25 +197,22 @@ func DnslogDetect(target string, payload string, session string, client *httpx.C
     dns_83 := regexp.MustCompile(`83_.`)
     
     if dns_48.FindString(body) != "" {
-        return "48"
+        return "48", httpRsp
     }
     if dns_68.FindString(body) != "" {
-        return "68"
+        return "68", httpRsp
     }
     if dns_83.FindString(body) != "" {
-        return "83"
+        return "83", httpRsp
     }
     if dns_80.FindString(body) != "" {
-        return "80"
+        return "80", httpRsp
     }
-    return "Recorded"
+    return "Recorded", httpRsp
 }
 
-/**
-*** 报错探测
-**/
-
-func ErrDetectVersion(target string, payload string, client *httpx.Client) string {
+// ErrDetectVersion 报错探测
+func ErrDetectVersion(target string, payload string, client *httpx.Client) (string, *httpx.Response) {
     var version string
     header := map[string]string{
         "Content-Type": "application/json",
@@ -227,7 +220,7 @@ func ErrDetectVersion(target string, payload string, client *httpx.Client) strin
     httpRsp, err := client.Request(target, "POST", payload, header)
     if err != nil {
         logging.Logger.Debugln("与dns平台网络不可达,请检查网络", err)
-        return Utils.NETWORK_NOT_ACCESS
+        return Utils.NETWORK_NOT_ACCESS, nil
     }
     
     reg := regexp.MustCompile(`fastjson-version\s\d.\d.[0-9]+`)
@@ -236,9 +229,9 @@ func ErrDetectVersion(target string, payload string, client *httpx.Client) strin
     if version == "" {
         reg = regexp.MustCompile(`jackson`)
         version = reg.FindString(httpRsp.Body)
-        return version
+        return version, httpRsp
     } else {
-        return version[17:]
+        return version[17:], httpRsp
     }
 }
 
@@ -304,7 +297,7 @@ func TimeGet(url string, payload string) int64 {
     req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
     start = time.Now()
     if _, err := http.DefaultTransport.RoundTrip(req); err != nil {
-        log.Fatal(err)
+        logging.Logger.Debugln(err)
     }
     // fmt.Printf("Total time: %v\n", time.Since(start))
     return int64(time.Since(start))

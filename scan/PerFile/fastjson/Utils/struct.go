@@ -54,13 +54,7 @@ type Result struct {
     Payload    string
     AutoType   bool
     Netout     bool
+    Request    string
+    Response   string
     Dependency []string
-}
-
-func InitResult(result Result) {
-    result.Url = ""
-    result.Type = ""
-    result.Version = ""
-    result.AutoType = false
-    result.Netout = false
 }

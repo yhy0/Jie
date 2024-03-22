@@ -69,7 +69,9 @@ After hanging the scanner, go through the website once. Even if there are no vul
 
 ### Certificate Download
 
-HTTPS websites under passive proxy require installing certificates. The HTTPS certificate-related logic is compatible with [mitmproxy](https://mitmproxy.org/), and it is saved in the ~/.mitmproxy folder.
+HTTPS websites under passive proxy require installing certificates. The HTTPS certificate-related logic is compatible with [mitmproxy](https://mitmproxy.org/), 
+
+and The certificate is automatically generated after the command is started for the first time, and the path is ~/.mitmproxy/mitmproxy-ca-cert.pem.
 
 Install the root certificate. Installation steps can be found in the Python mitmproxy documentation: [About Certificates](https://docs.mitmproxy.org/stable/concepts-certificates/).
 

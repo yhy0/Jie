@@ -65,7 +65,9 @@
 
 ### 证书下载
 
-被动代理下HTTPS 网站需要安装证书，HTTPS 证书相关逻辑与 [mitmproxy](https://mitmproxy.org/) 兼容，并保存在 ~/.mitmproxy 文件夹中。
+被动代理下HTTPS 网站需要安装证书，HTTPS 证书相关逻辑与 [mitmproxy](https://mitmproxy.org/) 兼容，
+
+证书会在首次启动命令后自动生成，路径为 ~/.mitmproxy/mitmproxy-ca-cert.pem。
 
 安装信任根证书, 安装步骤可参考 Python mitmproxy 文档：[About Certificates](https://docs.mitmproxy.org/stable/concepts-certificates/)。
 

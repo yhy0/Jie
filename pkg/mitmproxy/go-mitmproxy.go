@@ -7,11 +7,11 @@ package mitmproxy
 **/
 
 import (
-    "github.com/remeh/sizedwaitgroup"
     "github.com/yhy0/Jie/conf"
     "github.com/yhy0/Jie/pkg/mitmproxy/go-mitmproxy/proxy"
     "github.com/yhy0/Jie/pkg/task"
     "github.com/yhy0/logging"
+    "github.com/yhy0/sizedwaitgroup"
 )
 
 var t *task.Task
@@ -27,23 +27,23 @@ func NewMitmproxy() {
         StreamLargeBodies: 1024 * 1024 * 5,
         SslInsecure:       true,
     }
-
+    
     t = &task.Task{
         Parallelism: conf.Parallelism + 1,
         ScanTask:    make(map[string]*task.ScanTask),
     }
-
+    
     t.Wg = sizedwaitgroup.New(t.Parallelism)
-
+    
     // 先加一，这里会一直阻塞，这样就不会马上退出, 这里要的就是一直阻塞，所以不使用 wg.Done()
     t.Wg.Add()
-
+    
     var err error
     PassiveProxy, err = proxy.NewProxy(opts)
     if err != nil {
         logging.Logger.Fatal(err)
     }
-
+    
     // 添加一个插件用来获取流量信息
     PassiveProxy.AddAddon(&PassiveAddon{})
     go func() {
@@ -52,6 +52,6 @@ func NewMitmproxy() {
             logging.Logger.Fatal(err)
         }
     }()
-
+    
     t.Wg.Wait()
 }

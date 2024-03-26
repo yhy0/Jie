@@ -803,8 +803,6 @@ github.com/lunixbochs/struc v0.0.0-20200707160740-784aaebc1d40/go.mod h1:vy1vK6w
 github.com/lyft/protoc-gen-validate v0.0.13/go.mod h1:XbGvPuh87YZc5TdIa2/I4pLk0QoUACkjt2znoq26NVQ=
 github.com/mackerelio/go-osstat v0.2.4 h1:qxGbdPkFo65PXOb/F/nhDKpF2nGmGaCFDLXoZjJTtUs=
 github.com/mackerelio/go-osstat v0.2.4/go.mod h1:Zy+qzGdZs3A9cuIqmgbJvwbmLQH9dJvtio5ZjJTbdlQ=
-github.com/magefile/mage v1.14.0 h1:6QDX3g6z1YvJ4olPhT1wksUcSa/V0a1B+pJb73fBjyo=
-github.com/magefile/mage v1.14.0/go.mod h1:z5UZb/iS3GoOSn0JgWuiw7dxlurVYTu+/jHXqQg881A=
 github.com/magefile/mage v1.15.0 h1:BvGheCMAsG3bWUDbZ8AyXXpCNwU9u5CB6sM+HNb9HYg=
 github.com/magefile/mage v1.15.0/go.mod h1:z5UZb/iS3GoOSn0JgWuiw7dxlurVYTu+/jHXqQg881A=
 github.com/magiconair/properties v1.8.7 h1:IeQXZAiQcpL9mgcAe1Nu6cX9LLw6ExEHKjN0VQdvPDY=
@@ -1025,8 +1023,6 @@ github.com/projectdiscovery/naabu/v2 v2.3.0 h1:nSwo7EdIBL5il6+gfeiQs/lgQ8lBipPUl
 github.com/projectdiscovery/naabu/v2 v2.3.0/go.mod h1:efC2NRkWrXO7Ia0CjojIPMrvsQLhK6ZJfGsD+rCxx3E=
 github.com/projectdiscovery/networkpolicy v0.0.8 h1:XvfBaBwSDNTesSfNQP9VLk3HX9I7x7gHm028TJ5XwI8=
 github.com/projectdiscovery/networkpolicy v0.0.8/go.mod h1:xnjNqhemxUPxU+UD5Jgsc3+K8IVmcqT1SJeo6UzMtkI=
-github.com/projectdiscovery/nuclei/v3 v3.2.1 h1:p4Cg1i/rFysMeXnYBY28s6AWb1eZj6pXkWTNREFcaPA=
-github.com/projectdiscovery/nuclei/v3 v3.2.1/go.mod h1:LkKLQeiQRavbZAnpDCP1LWOC7854OmNwRn2Z+YwH/ME=
 github.com/projectdiscovery/nuclei/v3 v3.2.2 h1:bCa0pW2EKVHxdx+2kKMJOlGftPzH0JCSrt1a0oh6H60=
 github.com/projectdiscovery/nuclei/v3 v3.2.2/go.mod h1:LkKLQeiQRavbZAnpDCP1LWOC7854OmNwRn2Z+YwH/ME=
 github.com/projectdiscovery/ratelimit v0.0.33 h1:MT8Oa0VVBBI5w6ZMUJCIIQkjdTVNbzhGRDMrNqV1BQ4=
@@ -1271,10 +1267,6 @@ github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6Kllzaw
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/valyala/fasttemplate v1.2.2 h1:lxLXG0uE3Qnshl9QyaK6XJxMXlQZELvChBOCmQD0Loo=
 github.com/valyala/fasttemplate v1.2.2/go.mod h1:KHLXt3tVN2HBp8eijSv/kGJopbvo7S+qRAEEKiv+SiQ=
-github.com/wasilibs/go-re2 v1.5.0 h1:4i6RzaSx26ZbzDWpVmiqQwWUKTSnewCv6qyVYjiDouI=
-github.com/wasilibs/go-re2 v1.5.0/go.mod h1:UqqxQ1O99boQUm1r61H/IYGiGQOS/P88K7hU5nLNkEg=
-github.com/wasilibs/go-re2 v1.5.1-0.20240320035604-9f8aa894048a h1:2HOE+nE/vnO4ApIeY3jOI22Ky6nvEM06dA3RRXLOwiw=
-github.com/wasilibs/go-re2 v1.5.1-0.20240320035604-9f8aa894048a/go.mod h1:UqqxQ1O99boQUm1r61H/IYGiGQOS/P88K7hU5nLNkEg=
 github.com/wasilibs/go-re2 v1.5.1 h1:a+Gb1mx6Q7MmU4d+3BCnnN28U2/cnADmY1oRRanQi10=
 github.com/wasilibs/go-re2 v1.5.1/go.mod h1:UqqxQ1O99boQUm1r61H/IYGiGQOS/P88K7hU5nLNkEg=
 github.com/wasilibs/nottinygc v0.4.0 h1:h1TJMihMC4neN6Zq+WKpLxgd9xCFMw7O9ETLwY2exJQ=
@@ -1306,6 +1298,8 @@ github.com/yaklang/yaklang v1.3.1 h1:6lQAtynd6sfFB2EKgd8RqDOhL9IfzA9G5YvCnZMsV9c
 github.com/yaklang/yaklang v1.3.1/go.mod h1:rXEQ3hwgTqtkuTPMHPg05PLCfrYOlF9J4HBoOkCE6Yc=
 github.com/yhy0/logging v0.0.0-20231128014545-22711cccc3b0 h1:ANZZm1sR5FKK/0x/AV+842HFHA3EJYJaTVpFM9X/qHI=
 github.com/yhy0/logging v0.0.0-20231128014545-22711cccc3b0/go.mod h1:DjdElPsDqf4IhYGiBtUKGT8i75RBZSwl+KgsaMJlZpU=
+github.com/yhy0/sizedwaitgroup v1.0.1 h1:3Q0GsMlPd6XMIMRBY768uD81shNiU2rMjk3vmGICMdc=
+github.com/yhy0/sizedwaitgroup v1.0.1/go.mod h1:HkGFc8V97BlG9xHMtAIxe4r9+mKD0jpHBlkoEL0UpkI=
 github.com/yl2chen/cidranger v1.0.2 h1:lbOWZVCG1tCRX4u24kuM1Tb4nHqWkDxwLdoS+SevawU=
 github.com/yl2chen/cidranger v1.0.2/go.mod h1:9U1yz7WPYDwf0vpNWFaeRh0bjwz5RVgRy/9UEQfHl0g=
 github.com/ysmood/fetchup v0.2.3/go.mod h1:xhibcRKziSvol0H1/pj33dnKrYyI2ebIvz5cOOkYGns=

@@ -2,7 +2,6 @@ package task
 
 import (
     "fmt"
-    "github.com/remeh/sizedwaitgroup"
     regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/conf"
     "github.com/yhy0/Jie/fingprints"
@@ -16,6 +15,7 @@ import (
     "github.com/yhy0/Jie/scan/gadget/sensitive"
     scan_util "github.com/yhy0/Jie/scan/util"
     "github.com/yhy0/logging"
+    "github.com/yhy0/sizedwaitgroup"
     "net/url"
     "strconv"
     "strings"
@@ -35,9 +35,9 @@ import (
 var lock sync.Mutex
 
 type Task struct {
-    Fingerprints []string                      // 这个只有主动会使用，被动只会新建一个 task，所以不会用到
-    Parallelism  int                           // 一个网站同时扫描的最大 url 个数
-    Wg           sizedwaitgroup.SizedWaitGroup // 限制同时运行的任务数量
+    Fingerprints []string                       // 这个只有主动会使用，被动只会新建一个 task，所以不会用到
+    Parallelism  int                            // 一个网站同时扫描的最大 url 个数
+    Wg           *sizedwaitgroup.SizedWaitGroup // 限制同时运行的任务数量
     ScanTask     map[string]*ScanTask
 }
 
@@ -48,7 +48,7 @@ type ScanTask struct {
     Client    *httpx.Client   // 用来进行请求的 client
     Archive   bool            // 用来判断是否扫描过
     // 限制每个扫描任务同时运行的扫描插件个数
-    Wg sizedwaitgroup.SizedWaitGroup
+    Wg *sizedwaitgroup.SizedWaitGroup
 }
 
 var rex = regexp.MustCompile(`//#\s+sourceMappingURL=(.*\.map)`)

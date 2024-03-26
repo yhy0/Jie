@@ -21,7 +21,7 @@ require (
 	github.com/projectdiscovery/ratelimit v0.0.33
 	github.com/projectdiscovery/retryablehttp-go v1.0.52
 	github.com/projectdiscovery/utils v0.0.84
-	github.com/remeh/sizedwaitgroup v1.0.0
+	github.com/remeh/sizedwaitgroup v1.0.0 // indirect
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5 // indirect
 	github.com/rs/xid v1.5.0 // indirect
 	github.com/shirou/gopsutil/v3 v3.24.2 // indirect
@@ -80,6 +80,7 @@ require (
 	github.com/weppos/publicsuffix-go v0.30.2-0.20230730094716-a20f9abcc222
 	github.com/yaklang/yaklang v1.3.1
 	github.com/yhy0/logging v0.0.0-20231128014545-22711cccc3b0
+	github.com/yhy0/sizedwaitgroup v1.0.1
 	github.com/yl2chen/cidranger v1.0.2
 	golang.org/x/crypto v0.21.0
 	golang.org/x/term v0.18.0

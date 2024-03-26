@@ -9,8 +9,8 @@ import (
     "encoding/hex"
     "errors"
     "github.com/golang-jwt/jwt"
-    "github.com/remeh/sizedwaitgroup"
     "github.com/yhy0/Jie/pkg/util"
+    "github.com/yhy0/sizedwaitgroup"
     "strings"
 )
 
@@ -33,7 +33,7 @@ func init() {
     if err != nil {
         panic(err)
     }
-
+    
     Secrets = strings.Split(string(f), "\n")
 }
 
@@ -64,7 +64,7 @@ func ParseJWT(input string) (*Jwt, error) {
             return nil, err
         }
     }
-
+    
     Twj = &Jwt{
         Header:       string(decodedParts[0]),
         Payload:      string(decodedParts[1]),
@@ -72,7 +72,7 @@ func ParseJWT(input string) (*Jwt, error) {
         message:      []byte(parts[0] + "." + parts[1]),
         SignatureStr: hex.EncodeToString(decodedParts[2]),
     }
-
+    
     return Twj, nil
 }
 
@@ -80,13 +80,13 @@ func Verify(jwtString string, secret string) (*Claims, error) {
     tokenClaims, err := jwt.ParseWithClaims(jwtString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
         return []byte(secret), nil
     })
-
+    
     if tokenClaims != nil {
         if claims, ok := tokenClaims.Claims.(*Claims); ok && tokenClaims.Valid {
             return claims, nil
         }
     }
-
+    
     return nil, err
 }
 
@@ -95,7 +95,7 @@ func GenerateSignature(pwds ...string) string {
     var res = ""
     wg := sizedwaitgroup.New(20)
     secrets := util.RemoveDuplicateElement(append(Secrets, pwds...))
-
+    
     var stop = false
     for _, s := range secrets {
         if stop {
@@ -111,10 +111,10 @@ func GenerateSignature(pwds ...string) string {
                 res = s
                 stop = true
             }
-
+            
         }(s)
     }
-
+    
     wg.Wait()
     return res
 }

@@ -95,6 +95,11 @@ func (sql *Sqlmap) HeuristicCheckSqlInjection() {
                     res, err = sql.Client.Request(sql.Url, sql.Method, payload, sql.Headers)
                 }
                 
+                if err != nil {
+                    logging.Logger.Errorln(sql.Url, "宽字节注入出现错误", err)
+                    continue
+                }
+                
                 time.Sleep(time.Millisecond * 500)
                 sql.DBMS = checkDBMSError(sql.Url, p.Name, payload, res)
                 if sql.DBMS != "" {

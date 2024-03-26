@@ -15,12 +15,12 @@ require (
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible // indirect
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
-	github.com/projectdiscovery/fastdialer v0.0.63 // indirect
-	github.com/projectdiscovery/goflags v0.1.44
+	github.com/projectdiscovery/fastdialer v0.0.64 // indirect
+	github.com/projectdiscovery/goflags v0.1.45
 	github.com/projectdiscovery/hmap v0.0.41 // indirect
 	github.com/projectdiscovery/ratelimit v0.0.33
-	github.com/projectdiscovery/retryablehttp-go v1.0.52
-	github.com/projectdiscovery/utils v0.0.84
+	github.com/projectdiscovery/retryablehttp-go v1.0.53
+	github.com/projectdiscovery/utils v0.0.85
 	github.com/remeh/sizedwaitgroup v1.0.0 // indirect
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5 // indirect
 	github.com/rs/xid v1.5.0 // indirect
@@ -63,7 +63,7 @@ require (
 	github.com/panjf2000/ants/v2 v2.9.0
 	github.com/pkg/errors v0.9.1
 	github.com/projectdiscovery/gologger v1.1.12
-	github.com/projectdiscovery/katana v1.0.6-0.20240313185050-24c31f49c050
+	github.com/projectdiscovery/katana v1.1.0
 	github.com/projectdiscovery/naabu/v2 v2.3.0
 	github.com/projectdiscovery/nuclei/v3 v3.2.2
 	github.com/projectdiscovery/retryabledns v1.0.58
@@ -330,7 +330,7 @@ require (
 	github.com/projectdiscovery/tlsx v1.1.6 // indirect
 	github.com/projectdiscovery/uncover v1.0.7 // indirect
 	github.com/projectdiscovery/useragent v0.0.42 // indirect
-	github.com/projectdiscovery/wappalyzergo v0.0.113 // indirect
+	github.com/projectdiscovery/wappalyzergo v0.0.115 // indirect
 	github.com/projectdiscovery/yamldoc-go v1.0.4 // indirect
 	github.com/quic-go/qpack v0.4.0 // indirect
 	github.com/quic-go/quic-go v0.41.0 // indirect

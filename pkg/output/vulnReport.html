@@ -46,45 +46,46 @@
 <div class="container mt-5">
     <h3 class="text-center">Vulnerability Report - Jie</h3>
     <ul class="list-group">
-        {{range $index, $message := .VulnMessages}}
-            <li class="list-group-item">
-                <div class="vuln-card mb-3 {{.Level}}">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h4 class="plugin mb-0">{{.VulnData.VulnType}} - {{.VulnData.Target}} </h4>
-                        <span class="badge rounded-pill bg-danger"> {{ .VulnData.Plugin }}</span>
-                        <span class="toggle-switch btn btn-primary">Toggle Details</span>
-                    </div>
-                    <p >{{.Level}}</p>
-                    {{if .VulnData.Ip}}<p>IP: {{.VulnData.Ip}}</p>{{end}}
-                    {{if .VulnData.CreateTime}}<p>Create Time: {{.VulnData.CreateTime}}</p>{{end}}
-                    <div class="vuln-details collapse">
-                        {{if .VulnData.Method}}<p>Method: {{.VulnData.Method}}</p>{{end}}
-                        {{if .VulnData.Param}}<p>Parameter: {{.VulnData.Param}}</p>{{end}}
-                        {{if .VulnData.Payload}}<p>Payload: {{.VulnData.Payload}}</p>{{end}}
-                        {{if .VulnData.CURLCommand}}<p>CURL Command: {{.VulnData.CURLCommand}}</p>{{end}}
-                        {{if .VulnData.Description}}<p>Description: {{.VulnData.Description}}</p>{{end}}
-                        <!-- Nav tabs for Request and Response -->
-                        <ul class="nav nav-tabs" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <a class="nav-link active" data-bs-toggle="tab" href="#request{{$index}}" role="tab" aria-controls="request{{$index}}" aria-selected="true" >Request</a>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <a class="nav-link" data-bs-toggle="tab" href="#response{{$index}}" role="tab" aria-controls="response{{$index}}" aria-selected="false" >Response</a>
-                            </li>
-                        </ul>
-                        <!-- Tab panes for Request and Response -->
-                        <div class="tab-content">
-                            <div class="tab-pane fade show active" id="request{{$index}}" role="tabpanel" aria-labelledby="request-tab{{$index}}">
-                                {{if .VulnData.Request}}<pre class="card-text">{{.VulnData.Request}}</pre>{{end}}
-                            </div>
-                            <div class="tab-pane fade" id="response{{$index}}" role="tabpanel" aria-labelledby="response-tab{{$index}}">
-                                {{if .VulnData.Response}}<pre class="card-text">{{.VulnData.Response}}</pre>{{end}}
-                            </div>
+        {{ range $index, $message := .VulMessages }}
+        <li class="list-group-item">
+            <div class="vuln-card mb-3 {{ $message.Level }}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="level mb-0">
+                        {{ if $message.VulnData.VulnType }} {{ $message.VulnData.VulnType }} - {{ end }}{{ $message.VulnData.Target }}
+                    </h4>
+                    <span class="toggle-switch btn btn-primary">Toggle Details</span>
+                </div>
+                <p class="level">{{ $message.Level }} <span class="badge rounded-pill bg-danger"> {{ $message.Plugin }}</span></p>
+                {{ if $message.VulnData.Ip }}<p>IP: {{ $message.VulnData.Ip }}</p>{{ end }}
+                {{ if $message.VulnData.CreateTime }}<p>Create Time: {{ $message.VulnData.CreateTime }}</p>{{ end }}
+                {{ if $message.VulnData.Payload }}<p class="level">Payload: {{ $message.VulnData.Payload }}</p>{{ end }}
+                <div class="vuln-details collapse">
+                    {{ if $message.VulnData.Method }}<p>Method: {{ $message.VulnData.Method }}</p>{{ end }}
+                    {{ if $message.VulnData.Param }}<p>Parameter: {{ $message.VulnData.Param }}</p>{{ end }}
+                    {{ if $message.VulnData.CURLCommand }}<p>CURL Command: {{ $message.VulnData.CURLCommand }}</p>{{ end }}
+                    {{ if $message.VulnData.Description }}<p>Description: {{ $message.VulnData.Description }}</p>{{ end }}
+                    <!-- Nav tabs for Request and Response -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#vuln-request{{$index}}" role="tab" aria-controls="vuln-request{{$index}}" aria-selected="true" >Request</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" data-bs-toggle="tab" href="#vuln-response{{$index}}" role="tab" aria-controls="vuln-response{{$index}}" aria-selected="false" >Response</a>
+                        </li>
+                    </ul>
+                    <!-- Tab panes for Request and Response -->
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="vuln-request{{$index}}" role="tabpanel" aria-labelledby="vuln-request-tab{{$index}}">
+                            {{ if $message.VulnData.Request}}<pre class="card-text">{{ $message.VulnData.Request}}</pre>{{ end }}
+                        </div>
+                        <div class="tab-pane fade" id="vuln-response{{$index}}" role="tabpanel" aria-labelledby="vuln-response-tab{{$index}}">
+                            {{ if $message.VulnData.Response }}<pre class="card-text">{{ $message.VulnData.Response }}</pre>{{ end }}
                         </div>
                     </div>
                 </div>
-            </li>
-        {{end}}
+            </div>
+        </li>
+        {{ end }}
     </ul>
     <div class="footer mt-5 pt-3 text-center">
         © 2023 Copyright: <a class="text-dark" href="https://github.com/yhy0/Jie" target="_blank">yhy</a>

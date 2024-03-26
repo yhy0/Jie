@@ -114,7 +114,7 @@ func PageErrorMessageCheck(url, req, body string) []ErrorMessage {
                     Target:     url,
                     Payload:    result,
                     Request:    req,
-                    Response:   body,
+                    // Response:   body,
                 },
                 Level: output.Low,
             }

@@ -1,6 +1,7 @@
 package sql
 
 import (
+    "context"
     _ "embed"
     "fmt"
     "github.com/antlabs/strsim"
@@ -117,7 +118,7 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
         logging.Logger.Debugln(in.Url, "请求方法不支持检测")
         return
     }
-    
+    start := time.Now()
     // waf 只判断作为提示信息 不做进一步操作 如果检出存在注入 则可以考虑附加信息
     if len(in.Waf) > 0 {
         logging.Logger.Warnf("heuristics detected that the target is protected by some kind of WAF/IPS(%+v)", in.Waf)
@@ -170,9 +171,25 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
         return
     }
     
-    // 开始启发式、sql注入检测
-    sql.HeuristicCheckSqlInjection()
-    logging.Logger.Infof("[%s] %s sql 注入检测完成", in.UniqueId, in.Url)
+    // 超时控制，有的链接会检测几十分钟，乃至一个多小时，神经病吧，哪里有点问题(百度贴吧会出现这种问题)
+    ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+    defer cancel()
+    
+    doneCh := make(chan bool, 1)
+    
+    go func() {
+        // 开始启发式、sql注入检测
+        sql.HeuristicCheckSqlInjection()
+        doneCh <- true
+    }()
+    
+    select {
+    case <-ctx.Done():
+        // 如果超过3分钟，将会接收到这个信号
+        logging.Logger.Debugf("[%s] %s sql 注入检测超时, 用时: %v", in.UniqueId, in.Url, time.Now().Sub(start))
+    case <-doneCh:
+        logging.Logger.Debugf("[%s] %s sql 注入检测完成, 用时: %v", in.UniqueId, in.Url, time.Now().Sub(start))
+    }
 }
 
 func (p *Plugin) IsScanned(key string) bool {

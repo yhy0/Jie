@@ -5,6 +5,7 @@ import (
     "github.com/antlabs/strsim"
     "github.com/sergi/go-diff/diffmatchpatch"
     regexp "github.com/wasilibs/go-re2"
+    "github.com/yhy0/logging"
     "math"
     "math/rand"
     "strings"
@@ -115,7 +116,11 @@ func findDynamicContent(s1, s2 string) (prefix, suffix string) {
         }
         
         prefix = s1[startIndex:index]
-        suffix = s1[index+len(diffString) : endIndex]
+        if len(s1) > index+len(diffString) {
+            suffix = s1[index+len(diffString) : endIndex]
+        } else {
+            logging.Logger.Debugln("findDynamicContent err:", s1, " -- ", s2)
+        }
     }
     
     return

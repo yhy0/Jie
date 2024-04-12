@@ -8,7 +8,7 @@ import (
     "os"
     "strings"
     "unicode"
-
+    
     log "github.com/sirupsen/logrus"
     "github.com/yhy0/Jie/pkg/mitmproxy/go-mitmproxy/proxy"
 )
@@ -44,7 +44,7 @@ func (d *Dumper) Requestheaders(f *proxy.Flow) {
 // call when <-f.Done()
 func (d *Dumper) dump(f *proxy.Flow) {
     // 参考 httputil.DumpRequest
-
+    
     buf := bytes.NewBuffer(make([]byte, 0))
     fmt.Fprintf(buf, "%s %s %s\r\n", f.Request.Method, f.Request.URL.RequestURI(), f.Request.Proto)
     fmt.Fprintf(buf, "Host: %s\r\n", f.Request.URL.Host)
@@ -54,18 +54,18 @@ func (d *Dumper) dump(f *proxy.Flow) {
     if f.Request.Raw().Close {
         fmt.Fprintf(buf, "Connection: close\r\n")
     }
-
+    
     err := f.Request.Header.WriteSubset(buf, nil)
     if err != nil {
         log.Error(err)
     }
     buf.WriteString("\r\n")
-
+    
     if d.level == 1 && f.Request.Body != nil && len(f.Request.Body) > 0 && canPrint(f.Request.Body) {
         buf.Write(f.Request.Body)
         buf.WriteString("\r\n\r\n")
     }
-
+    
     if f.Response != nil {
         fmt.Fprintf(buf, "%v %v %v\r\n", f.Request.Proto, f.Response.StatusCode, http.StatusText(f.Response.StatusCode))
         err = f.Response.Header.WriteSubset(buf, nil)
@@ -73,7 +73,7 @@ func (d *Dumper) dump(f *proxy.Flow) {
             log.Error(err)
         }
         buf.WriteString("\r\n")
-
+        
         if d.level == 1 && f.Response.Body != nil && len(f.Response.Body) > 0 && f.Response.IsTextContentType() {
             body, err := f.Response.DecodedBody()
             if err == nil && body != nil && len(body) > 0 {
@@ -82,9 +82,9 @@ func (d *Dumper) dump(f *proxy.Flow) {
             }
         }
     }
-
+    
     buf.WriteString("\r\n\r\n")
-
+    
     _, err = d.out.Write(buf.Bytes())
     if err != nil {
         log.Error(err)

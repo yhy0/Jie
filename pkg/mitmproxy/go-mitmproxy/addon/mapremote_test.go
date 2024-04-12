@@ -3,7 +3,7 @@ package addon
 import (
     "net/url"
     "testing"
-
+    
     "github.com/yhy0/Jie/pkg/mitmproxy/go-mitmproxy/proxy"
 )
 
@@ -16,9 +16,9 @@ func TestMapItemMatch(t *testing.T) {
             Path:   "/path/to/resource",
         },
     }
-
+    
     // test match
-
+    
     item := &mapRemoteItem{
         From: &mapFrom{
             Protocol: "https",
@@ -33,7 +33,7 @@ func TestMapItemMatch(t *testing.T) {
     if !result {
         t.Errorf("Expected true, but got false")
     }
-
+    
     // empty Protocol and empty Method match
     item.From = &mapFrom{
         Protocol: "",
@@ -45,7 +45,7 @@ func TestMapItemMatch(t *testing.T) {
     if !result {
         t.Errorf("Expected true, but got false")
     }
-
+    
     // empty Host match
     item.From = &mapFrom{
         Protocol: "",
@@ -57,7 +57,7 @@ func TestMapItemMatch(t *testing.T) {
     if !result {
         t.Errorf("Expected true, but got false")
     }
-
+    
     // all empty match
     item.From = &mapFrom{
         Protocol: "",
@@ -69,9 +69,9 @@ func TestMapItemMatch(t *testing.T) {
     if !result {
         t.Errorf("Expected true, but got false")
     }
-
+    
     // test not match
-
+    
     // diff Protocol
     item.From = &mapFrom{
         Protocol: "http",
@@ -83,7 +83,7 @@ func TestMapItemMatch(t *testing.T) {
     if result {
         t.Errorf("Expected true, but got false")
     }
-
+    
     // diff Host
     item.From = &mapFrom{
         Protocol: "https",
@@ -95,7 +95,7 @@ func TestMapItemMatch(t *testing.T) {
     if result {
         t.Errorf("Expected true, but got false")
     }
-
+    
     // diff Method
     item.From = &mapFrom{
         Protocol: "https",
@@ -107,7 +107,7 @@ func TestMapItemMatch(t *testing.T) {
     if result {
         t.Errorf("Expected true, but got false")
     }
-
+    
     // diff Path
     item.From = &mapFrom{
         Protocol: "http",
@@ -132,7 +132,7 @@ func TestMapItemReplace(t *testing.T) {
             },
         }
     }
-
+    
     item := &mapRemoteItem{
         From: &mapFrom{
             Protocol: "https",
@@ -152,7 +152,7 @@ func TestMapItemReplace(t *testing.T) {
     if req.URL.String() != should {
         t.Errorf("Expected %v, but got %v", should, req.URL.String())
     }
-
+    
     item = &mapRemoteItem{
         From: &mapFrom{
             Protocol: "https",
@@ -172,7 +172,7 @@ func TestMapItemReplace(t *testing.T) {
     if req.URL.String() != should {
         t.Errorf("Expected %v, but got %v", should, req.URL.String())
     }
-
+    
     item = &mapRemoteItem{
         From: &mapFrom{
             Protocol: "https",
@@ -192,7 +192,7 @@ func TestMapItemReplace(t *testing.T) {
     if req.URL.String() != should {
         t.Errorf("Expected %v, but got %v", should, req.URL.String())
     }
-
+    
     item = &mapRemoteItem{
         From: &mapFrom{
             Protocol: "https",
@@ -212,7 +212,7 @@ func TestMapItemReplace(t *testing.T) {
     if req.URL.String() != should {
         t.Errorf("Expected %v, but got %v", should, req.URL.String())
     }
-
+    
     item = &mapRemoteItem{
         From: &mapFrom{
             Protocol: "https",

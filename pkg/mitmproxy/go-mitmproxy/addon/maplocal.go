@@ -6,8 +6,9 @@ import (
     "os"
     "path"
     "strings"
-
+    
     log "github.com/sirupsen/logrus"
+    "github.com/yhy0/Jie/pkg/mitmproxy/go-mitmproxy/helper"
     "github.com/yhy0/Jie/pkg/mitmproxy/go-mitmproxy/proxy"
 )
 
@@ -44,7 +45,7 @@ func (item *mapLocalItem) response(req *proxy.Request) (string, *proxy.Response)
         }
         return stat, nil
     }
-
+    
     respFile := func(filepath string) *proxy.Response {
         file, err := os.Open(filepath)
         if err != nil {
@@ -58,28 +59,28 @@ func (item *mapLocalItem) response(req *proxy.Request) (string, *proxy.Response)
             BodyReader: file,
         }
     }
-
+    
     stat, resp := getStat(item.To.Path)
     if resp != nil {
         return item.To.Path, resp
     }
-
+    
     if !stat.IsDir() {
         return item.To.Path, respFile(item.To.Path)
     }
-
+    
     // is dir
     subPath := req.URL.Path
     if item.From.Path != "" && strings.HasSuffix(item.From.Path, "/*") {
         subPath = req.URL.Path[len(item.From.Path)-2:]
     }
     filepath := path.Join(item.To.Path, subPath)
-
+    
     stat, resp = getStat(filepath)
     if resp != nil {
         return filepath, resp
     }
-
+    
     if !stat.IsDir() {
         return filepath, respFile(filepath)
     } else {
@@ -130,12 +131,12 @@ func (ml *MapLocal) validate() error {
 }
 
 func NewMapLocalFromFile(filename string) (*MapLocal, error) {
-    mapLocal, err := proxy.NewStructFromFile[MapLocal](filename)
-    if err != nil {
+    var mapLocal MapLocal
+    if err := helper.NewStructFromFile(filename, &mapLocal); err != nil {
         return nil, err
     }
     if err := mapLocal.validate(); err != nil {
         return nil, err
     }
-    return mapLocal, nil
+    return &mapLocal, nil
 }

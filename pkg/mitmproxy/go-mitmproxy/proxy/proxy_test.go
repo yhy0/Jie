@@ -4,7 +4,6 @@ import (
     "context"
     "crypto/tls"
     "io"
-    "io/ioutil"
     "net"
     "net/http"
     "net/url"
@@ -13,7 +12,7 @@ import (
     "sync"
     "testing"
     "time"
-
+    
     "github.com/yhy0/Jie/pkg/mitmproxy/go-mitmproxy/cert"
 )
 
@@ -34,7 +33,7 @@ func testSendRequest(t *testing.T, endpoint string, client *http.Client, bodyWan
     resp, err := client.Do(req)
     handleError(t, err)
     defer resp.Body.Close()
-    body, err := ioutil.ReadAll(resp.Body)
+    body, err := io.ReadAll(resp.Body)
     handleError(t, err)
     if string(body) != bodyWant {
         t.Fatalf("expected %s, but got %s", bodyWant, body)
@@ -44,7 +43,7 @@ func testSendRequest(t *testing.T, endpoint string, client *http.Client, bodyWan
 type testProxyHelper struct {
     server    *http.Server
     proxyAddr string
-
+    
     ln                     net.Listener
     tlsPlainLn             net.Listener
     tlsLn                  net.Listener
@@ -57,18 +56,18 @@ type testProxyHelper struct {
 
 func (helper *testProxyHelper) init(t *testing.T) {
     t.Helper()
-
+    
     mux := http.NewServeMux()
     mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
         w.Write([]byte("ok"))
     })
     helper.server.Handler = mux
-
+    
     // start http server
     ln, err := net.Listen("tcp", "127.0.0.1:0")
     handleError(t, err)
     helper.ln = ln
-
+    
     // start https server
     tlsPlainLn, err := net.Listen("tcp", "127.0.0.1:0")
     handleError(t, err)
@@ -80,14 +79,15 @@ func (helper *testProxyHelper) init(t *testing.T) {
     tlsConfig := &tls.Config{
         Certificates: []tls.Certificate{*cert},
     }
+    helper.server.TLSConfig = tlsConfig
     helper.tlsLn = tls.NewListener(tlsPlainLn, tlsConfig)
-
+    
     httpEndpoint := "http://" + ln.Addr().String() + "/"
     httpsPort := tlsPlainLn.Addr().(*net.TCPAddr).Port
     httpsEndpoint := "https://localhost:" + strconv.Itoa(httpsPort) + "/"
     helper.httpEndpoint = httpEndpoint
     helper.httpsEndpoint = httpsEndpoint
-
+    
     // start proxy
     testProxy, err := NewProxy(&Options{
         Addr:        helper.proxyAddr, // some random port
@@ -101,7 +101,7 @@ func (helper *testProxyHelper) init(t *testing.T) {
     testProxy.AddAddon(testOrderAddonInstance)
     helper.testOrderAddonInstance = testOrderAddonInstance
     helper.testProxy = testProxy
-
+    
     getProxyClient := func() *http.Client {
         return &http.Client{
             Transport: &http.Transport{
@@ -264,11 +264,11 @@ func TestProxy(t *testing.T) {
     go helper.server.Serve(helper.tlsLn)
     go testProxy.Start()
     time.Sleep(time.Millisecond * 10) // wait for test proxy startup
-
+    
     t.Run("test http server", func(t *testing.T) {
         testSendRequest(t, httpEndpoint, nil, "ok")
     })
-
+    
     t.Run("test https server", func(t *testing.T) {
         t.Run("should generate not trusted error", func(t *testing.T) {
             _, err := http.Get(httpsEndpoint)
@@ -279,7 +279,7 @@ func TestProxy(t *testing.T) {
                 t.Fatal("should get not trusted error, but got", err.Error())
             }
         })
-
+        
         t.Run("should get ok when InsecureSkipVerify", func(t *testing.T) {
             client := &http.Client{
                 Transport: &http.Transport{
@@ -291,18 +291,18 @@ func TestProxy(t *testing.T) {
             testSendRequest(t, httpsEndpoint, client, "ok")
         })
     })
-
+    
     t.Run("test proxy", func(t *testing.T) {
         proxyClient := getProxyClient()
-
+        
         t.Run("can proxy http", func(t *testing.T) {
             testSendRequest(t, httpEndpoint, proxyClient, "ok")
         })
-
+        
         t.Run("can proxy https", func(t *testing.T) {
             testSendRequest(t, httpsEndpoint, proxyClient, "ok")
         })
-
+        
         t.Run("can intercept request", func(t *testing.T) {
             t.Run("http", func(t *testing.T) {
                 testSendRequest(t, httpEndpoint+"intercept-request", proxyClient, "intercept-request")
@@ -311,7 +311,7 @@ func TestProxy(t *testing.T) {
                 testSendRequest(t, httpsEndpoint+"intercept-request", proxyClient, "intercept-request")
             })
         })
-
+        
         t.Run("can intercept request with wrong host", func(t *testing.T) {
             t.Run("http", func(t *testing.T) {
                 httpEndpoint := "http://some-wrong-host/"
@@ -328,7 +328,7 @@ func TestProxy(t *testing.T) {
                 }
             })
         })
-
+        
         t.Run("can intercept response", func(t *testing.T) {
             t.Run("http", func(t *testing.T) {
                 testSendRequest(t, httpEndpoint+"intercept-response", proxyClient, "intercept-response")
@@ -338,24 +338,24 @@ func TestProxy(t *testing.T) {
             })
         })
     })
-
+    
     t.Run("test proxy when DisableKeepAlives", func(t *testing.T) {
         proxyClient := getProxyClient()
         proxyClient.Transport.(*http.Transport).DisableKeepAlives = true
-
+        
         t.Run("http", func(t *testing.T) {
             testSendRequest(t, httpEndpoint, proxyClient, "ok")
         })
-
+        
         t.Run("https", func(t *testing.T) {
             testSendRequest(t, httpsEndpoint, proxyClient, "ok")
         })
     })
-
+    
     t.Run("should trigger disconnect functions when DisableKeepAlives", func(t *testing.T) {
         proxyClient := getProxyClient()
         proxyClient.Transport.(*http.Transport).DisableKeepAlives = true
-
+        
         t.Run("http", func(t *testing.T) {
             time.Sleep(time.Millisecond * 10)
             testOrderAddonInstance.reset()
@@ -364,7 +364,7 @@ func TestProxy(t *testing.T) {
             testOrderAddonInstance.contains(t, "ClientDisconnected")
             testOrderAddonInstance.contains(t, "ServerDisconnected")
         })
-
+        
         t.Run("https", func(t *testing.T) {
             time.Sleep(time.Millisecond * 10)
             testOrderAddonInstance.reset()
@@ -374,7 +374,7 @@ func TestProxy(t *testing.T) {
             testOrderAddonInstance.contains(t, "ServerDisconnected")
         })
     })
-
+    
     t.Run("should not have eof error when DisableKeepAlives", func(t *testing.T) {
         proxyClient := getProxyClient()
         proxyClient.Transport.(*http.Transport).DisableKeepAlives = true
@@ -389,7 +389,7 @@ func TestProxy(t *testing.T) {
             }
         })
     })
-
+    
     t.Run("should trigger disconnect functions when client side trigger off", func(t *testing.T) {
         proxyClient := getProxyClient()
         var clientConn net.Conn
@@ -398,7 +398,7 @@ func TestProxy(t *testing.T) {
             clientConn = c
             return c, err
         }
-
+        
         t.Run("http", func(t *testing.T) {
             time.Sleep(time.Millisecond * 10)
             testOrderAddonInstance.reset()
@@ -409,7 +409,7 @@ func TestProxy(t *testing.T) {
             testOrderAddonInstance.contains(t, "ServerDisconnected")
             testOrderAddonInstance.before(t, "ClientDisconnected", "ServerDisconnected")
         })
-
+        
         t.Run("https", func(t *testing.T) {
             time.Sleep(time.Millisecond * 10)
             testOrderAddonInstance.reset()
@@ -442,7 +442,7 @@ func TestProxyWhenServerNotKeepAlive(t *testing.T) {
     go helper.server.Serve(helper.tlsLn)
     go testProxy.Start()
     time.Sleep(time.Millisecond * 10) // wait for test proxy startup
-
+    
     t.Run("should not have eof error when server side DisableKeepAlives", func(t *testing.T) {
         proxyClient := getProxyClient()
         t.Run("http", func(t *testing.T) {
@@ -456,10 +456,10 @@ func TestProxyWhenServerNotKeepAlive(t *testing.T) {
             }
         })
     })
-
+    
     t.Run("should trigger disconnect functions when server DisableKeepAlives", func(t *testing.T) {
         proxyClient := getProxyClient()
-
+        
         t.Run("http", func(t *testing.T) {
             time.Sleep(time.Millisecond * 10)
             testOrderAddonInstance.reset()
@@ -469,7 +469,7 @@ func TestProxyWhenServerNotKeepAlive(t *testing.T) {
             testOrderAddonInstance.contains(t, "ServerDisconnected")
             testOrderAddonInstance.before(t, "ServerDisconnected", "ClientDisconnected")
         })
-
+        
         t.Run("https", func(t *testing.T) {
             time.Sleep(time.Millisecond * 10)
             testOrderAddonInstance.reset()
@@ -501,7 +501,7 @@ func TestProxyWhenServerKeepAliveButCloseImmediately(t *testing.T) {
     go helper.server.Serve(helper.tlsLn)
     go testProxy.Start()
     time.Sleep(time.Millisecond * 10) // wait for test proxy startup
-
+    
     t.Run("should not have eof error when server close connection immediately", func(t *testing.T) {
         proxyClient := getProxyClient()
         t.Run("http", func(t *testing.T) {
@@ -527,10 +527,10 @@ func TestProxyWhenServerKeepAliveButCloseImmediately(t *testing.T) {
             }
         })
     })
-
+    
     t.Run("should trigger disconnect functions when server close connection immediately", func(t *testing.T) {
         proxyClient := getProxyClient()
-
+        
         t.Run("http", func(t *testing.T) {
             time.Sleep(time.Millisecond * 10)
             testOrderAddonInstance.reset()
@@ -540,7 +540,7 @@ func TestProxyWhenServerKeepAliveButCloseImmediately(t *testing.T) {
             testOrderAddonInstance.contains(t, "ServerDisconnected")
             testOrderAddonInstance.before(t, "ServerDisconnected", "ClientDisconnected")
         })
-
+        
         t.Run("https", func(t *testing.T) {
             time.Sleep(time.Millisecond * 10)
             testOrderAddonInstance.reset()
@@ -567,23 +567,23 @@ func TestProxyClose(t *testing.T) {
     go helper.server.Serve(helper.ln)
     defer helper.tlsPlainLn.Close()
     go helper.server.Serve(helper.tlsLn)
-
+    
     errCh := make(chan error)
     go func() {
         err := testProxy.Start()
         errCh <- err
     }()
-
+    
     time.Sleep(time.Millisecond * 10) // wait for test proxy startup
-
+    
     proxyClient := getProxyClient()
     testSendRequest(t, httpEndpoint, proxyClient, "ok")
     testSendRequest(t, httpsEndpoint, proxyClient, "ok")
-
+    
     if err := testProxy.Close(); err != nil {
         t.Fatalf("close got error %v", err)
     }
-
+    
     select {
     case err := <-errCh:
         if err != http.ErrServerClosed {
@@ -608,23 +608,23 @@ func TestProxyShutdown(t *testing.T) {
     go helper.server.Serve(helper.ln)
     defer helper.tlsPlainLn.Close()
     go helper.server.Serve(helper.tlsLn)
-
+    
     errCh := make(chan error)
     go func() {
         err := testProxy.Start()
         errCh <- err
     }()
-
+    
     time.Sleep(time.Millisecond * 10) // wait for test proxy startup
-
+    
     proxyClient := getProxyClient()
     testSendRequest(t, httpEndpoint, proxyClient, "ok")
     testSendRequest(t, httpsEndpoint, proxyClient, "ok")
-
-    if err := testProxy.Shutdown(context.TODO()); err != nil {
+    
+    if err := testProxy.Shutdown(context.Background()); err != nil {
         t.Fatalf("shutdown got error %v", err)
     }
-
+    
     select {
     case err := <-errCh:
         if err != http.ErrServerClosed {
@@ -633,15 +633,6 @@ func TestProxyShutdown(t *testing.T) {
     case <-time.After(time.Millisecond * 10):
         t.Fatal("shutdown timeout")
     }
-}
-
-// addon for test off UpstreamCert
-type upstreamCertAddon struct {
-    BaseAddon
-}
-
-func (addon *upstreamCertAddon) ClientConnected(conn *ClientConn) {
-    conn.UpstreamCert = false
 }
 
 func TestOnUpstreamCert(t *testing.T) {
@@ -661,9 +652,9 @@ func TestOnUpstreamCert(t *testing.T) {
     go helper.server.Serve(helper.tlsLn)
     go testProxy.Start()
     time.Sleep(time.Millisecond * 10) // wait for test proxy startup
-
+    
     proxyClient := getProxyClient()
-
+    
     t.Run("http", func(t *testing.T) {
         time.Sleep(time.Millisecond * 10)
         testOrderAddonInstance.reset()
@@ -671,7 +662,7 @@ func TestOnUpstreamCert(t *testing.T) {
         time.Sleep(time.Millisecond * 10)
         testOrderAddonInstance.before(t, "Requestheaders", "ServerConnected")
     })
-
+    
     t.Run("https", func(t *testing.T) {
         time.Sleep(time.Millisecond * 10)
         testOrderAddonInstance.reset()
@@ -680,7 +671,7 @@ func TestOnUpstreamCert(t *testing.T) {
         testOrderAddonInstance.before(t, "ServerConnected", "Requestheaders")
         testOrderAddonInstance.contains(t, "TlsEstablishedServer")
     })
-
+    
 }
 
 func TestOffUpstreamCert(t *testing.T) {
@@ -693,7 +684,7 @@ func TestOffUpstreamCert(t *testing.T) {
     httpsEndpoint := helper.httpsEndpoint
     testOrderAddonInstance := helper.testOrderAddonInstance
     testProxy := helper.testProxy
-    testProxy.AddAddon(&upstreamCertAddon{})
+    testProxy.AddAddon(NewUpstreamCertAddon(false))
     getProxyClient := helper.getProxyClient
     defer helper.ln.Close()
     go helper.server.Serve(helper.ln)
@@ -701,9 +692,9 @@ func TestOffUpstreamCert(t *testing.T) {
     go helper.server.Serve(helper.tlsLn)
     go testProxy.Start()
     time.Sleep(time.Millisecond * 10) // wait for test proxy startup
-
+    
     proxyClient := getProxyClient()
-
+    
     t.Run("http", func(t *testing.T) {
         time.Sleep(time.Millisecond * 10)
         testOrderAddonInstance.reset()
@@ -711,7 +702,7 @@ func TestOffUpstreamCert(t *testing.T) {
         time.Sleep(time.Millisecond * 10)
         testOrderAddonInstance.before(t, "Requestheaders", "ServerConnected")
     })
-
+    
     t.Run("https", func(t *testing.T) {
         time.Sleep(time.Millisecond * 10)
         testOrderAddonInstance.reset()

@@ -31,7 +31,7 @@ func init() {
     Dict = make(map[string][]string)
     // 返回[]fs.DirEntry
     entries, _ := bypass403.ReadDir("dict")
-
+    
     for _, entry := range entries {
         content, err := bypass403.ReadFile("dict/" + entry.Name())
         if err != nil {
@@ -56,11 +56,11 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
     if in.Resp.StatusCode != 403 {
         return
     }
-
+    
     if p.IsScanned(in.UniqueId) {
         return
     }
-
+    
     Bypass403(in.Url, in.Method, client)
 }
 
@@ -83,13 +83,13 @@ func Bypass403(uri, m string, client *httpx.Client) {
     if !strings.HasSuffix(uri, "/") {
         uri += "/"
     }
-
+    
     if m == "" {
         m = "GET"
     } else {
         m = strings.ToUpper(m)
     }
-
+    
     result := method(uri, m, client)
     if result != nil {
         output.OutChannel <- output.VulMessage{
@@ -106,7 +106,7 @@ func Bypass403(uri, m string, client *httpx.Client) {
         }
         return
     }
-
+    
     result = headers(uri, m, client)
     if result != nil {
         output.OutChannel <- output.VulMessage{
@@ -123,7 +123,7 @@ func Bypass403(uri, m string, client *httpx.Client) {
         }
         return
     }
-
+    
     result = endPaths(uri, m, client)
     if result != nil {
         output.OutChannel <- output.VulMessage{
@@ -140,7 +140,7 @@ func Bypass403(uri, m string, client *httpx.Client) {
         }
         return
     }
-
+    
     result = midPaths(uri, m, client)
     if result != nil {
         output.OutChannel <- output.VulMessage{
@@ -157,7 +157,7 @@ func Bypass403(uri, m string, client *httpx.Client) {
         }
         return
     }
-
+    
     result = capital(uri, m, client)
     if result != nil {
         output.OutChannel <- output.VulMessage{
@@ -174,7 +174,7 @@ func Bypass403(uri, m string, client *httpx.Client) {
         }
         return
     }
-
+    
     result = http10(uri, m)
     if result != nil {
         output.OutChannel <- output.VulMessage{
@@ -191,7 +191,7 @@ func Bypass403(uri, m string, client *httpx.Client) {
         }
         return
     }
-
+    
     return
 }
 
@@ -243,7 +243,7 @@ func headers(uri, m string, client *httpx.Client) *Result {
     ch := make(chan struct{}, 10)
     result := &Result{}
     var flag = false
-
+    
     for _, ip := range Dict["ips.txt"] {
         for _, line := range Dict["headers.txt"] {
             if flag {
@@ -271,13 +271,13 @@ func headers(uri, m string, client *httpx.Client) *Result {
                 }
             }(ip, line)
         }
-
+        
     }
-
+    
     if flag {
         return result
     }
-
+    
     for _, line := range Dict["simpleheaders.txt"] {
         if flag {
             break
@@ -305,7 +305,7 @@ func headers(uri, m string, client *httpx.Client) *Result {
             }
         }(line)
     }
-
+    
     if flag {
         return result
     }
@@ -354,19 +354,19 @@ func midPaths(uri, m string, client *httpx.Client) *Result {
     ch := make(chan struct{}, 5)
     result := &Result{}
     var flag = false
-
+    
     x := strings.Split(uri, "/")
     var uripath string
-
+    
     if uri[len(uri)-1:] == "/" {
         uripath = x[len(x)-2]
     } else {
         uripath = x[len(x)-1]
     }
-
+    
     baseuri := strings.ReplaceAll(uri, uripath, "")
     baseuri = baseuri[:len(baseuri)-1]
-
+    
     for _, line := range Dict["midpaths.txt"] {
         if flag {
             break
@@ -379,7 +379,7 @@ func midPaths(uri, m string, client *httpx.Client) *Result {
             } else {
                 fullpath = baseuri + "/" + line + uripath
             }
-
+            
             resp, err := client.Request(fullpath, m, "", nil)
             if err != nil {
                 <-ch
@@ -412,7 +412,7 @@ func capital(uri, m string, client *httpx.Client) *Result {
     var flag = false
     x := strings.Split(uri, "/")
     var uripath string
-
+    
     if uri[len(uri)-1:] == "/" {
         uripath = x[len(x)-2]
     } else {
@@ -420,7 +420,7 @@ func capital(uri, m string, client *httpx.Client) *Result {
     }
     baseuri := strings.ReplaceAll(uri, uripath, "")
     baseuri = baseuri[:len(baseuri)-1]
-
+    
     for _, z := range uripath {
         if flag {
             break
@@ -434,14 +434,14 @@ func capital(uri, m string, client *httpx.Client) *Result {
                     return r
                 }
             }, uripath)
-
+            
             var fullpath string
             if uri[len(uri)-1:] == "/" {
                 fullpath = baseuri + newpath + "/"
             } else {
                 fullpath = baseuri + "/" + newpath
             }
-
+            
             resp, err := client.Request(fullpath, m, "", nil)
             if err != nil {
                 <-ch
@@ -477,7 +477,7 @@ func http10(uri, m string) *Result {
     raw := fmt.Sprintf("GET %s HTTP/1.0\r\n"+
         "\r\n"+
         "\r\n", u.Path+"?"+u.RawQuery)
-
+    
     resp, err := httpx.Request10(u.Host, raw)
     if err != nil {
         logging.Logger.Errorln(err)
@@ -491,6 +491,6 @@ func http10(uri, m string) *Result {
             Response: resp.ResponseDump,
         }
     }
-
+    
     return nil
 }

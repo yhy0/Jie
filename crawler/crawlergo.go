@@ -38,6 +38,7 @@ func NewCrawlergo(noHeadless bool) {
         MaxTabsCount:            8,
         MaxRunTime:              60 * 60 * 999,
         FilterMode:              "smart",
+        ChromiumPath:            conf.ChromePath,
         MaxCrawlCount:           config.MaxCrawlCount,
         TabRunTimeout:           config.TabRunTimeout,
         DomContentLoadedTimeout: config.DomContentLoadedTimeout,
@@ -63,11 +64,11 @@ func getJsonSerialize(result *crawlergo.Result) []byte {
         req.Headers = _req.Headers
         reqList = append(reqList, req)
     }
-
+    
     res.ReqList = reqList
     res.AllDomainList = result.AllDomainList
     res.SubDomainList = result.SubDomainList
-
+    
     resBytes, err := json.Marshal(res)
     if err != nil {
         logging.Logger.Fatal("Marshal result error")

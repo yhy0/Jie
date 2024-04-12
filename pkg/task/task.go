@@ -95,8 +95,6 @@ func (t *Task) Distribution(in *input.CrawlResult) {
         hostNoPort = in.Host
     }
     
-    in.Ip = hostNoPort
-    
     if t.ScanTask[in.Host] == nil {
         t.ScanTask[in.Host] = &ScanTask{
             PerServer: make(map[string]bool),
@@ -117,9 +115,16 @@ func (t *Task) Distribution(in *input.CrawlResult) {
             matched, value, itemType, dnsData := util.CheckCdn(hostNoPort)
             var ip string
             var allRecords []string
+            var cdn bool
             if dnsData != nil {
                 ip = strings.Join(dnsData.A, " ")
+                if len(dnsData.A) > 1 { // 解析出多个 ip ，认为是 cdn
+                    cdn = true
+                }
                 allRecords = dnsData.AllRecords
+                in.Ip = ip
+            } else { // 这里说明传入的就是 ip
+                in.Ip = hostNoPort
             }
             output.IPInfoList[hostNoPort] = &output.IPInfo{
                 Ip:         ip,
@@ -128,7 +133,10 @@ func (t *Task) Distribution(in *input.CrawlResult) {
                 Value:      value,
                 Cdn:        matched,
             }
-            in.Cdn = matched
+            if itemType == "cdn" || cdn {
+                in.Cdn = true
+            }
+            
         }
     }
     

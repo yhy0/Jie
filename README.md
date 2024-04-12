@@ -7,7 +7,7 @@
     <img alt="Release" src="https://img.shields.io/github/license/yhy0/Jie"/>
   </a>
   <a href="https://github.com/yhy0/Jie">
-    <img alt="Release" src="https://img.shields.io/badge/release-v1.0.8-brightgreen"/>
+    <img alt="Release" src="https://img.shields.io/badge/release-v1.1.0-brightgreen"/>
   </a>
   <a href="https://github.com/yhy0/Jie">
     <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/yhy0/Jie?color=9cf"/>
@@ -34,6 +34,13 @@
 Analyze and scan traffic by using [active crawler mode](https://github.com/Qianlitp/crawlergo) or [passive proxy](https://github.com/lqqyt2423/go-mitmproxy).
 
 **Please read the documentation carefully before using**
+
+## Pre-requisites for use
+- nmap
+- masscan
+- chromium
+
+You should check whether the above programs exist on your machine before using them
 
 ## Active Mode
 

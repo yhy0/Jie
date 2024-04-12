@@ -27,6 +27,8 @@ func lib() {
     conf.GlobalConfig.Passive.WebUser = "yhy"
     conf.GlobalConfig.Passive.WebPass = "123456" // 注意修改为强口令
     
+    conf.Preparations()
+    
     // 全部插件开启
     for k := range conf.Plugin {
         // if k == "nuclei" || k == "poc" {

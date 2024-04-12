@@ -77,10 +77,10 @@ type SCopilotList struct {
 }
 
 type IPInfo struct {
-    Ip          string            `json:"ip"`
-    AllRecords  []string          `json:"all_records"`
-    PortService map[string]string `json:"port_service"`
-    Type        string            `json:"type"` // cdn 、waf、cloud
-    Value       string            `json:"value"`
-    Cdn         bool              `json:"cdn"`
+    Ip          string         `json:"ip"`
+    AllRecords  []string       `json:"all_records"`
+    PortService map[int]string `json:"port_service"`
+    Type        string         `json:"type"` // cdn 、waf、cloud
+    Value       string         `json:"value"`
+    Cdn         bool           `json:"cdn"`
 }

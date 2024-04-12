@@ -71,7 +71,7 @@ var webScanCmd = &cobra.Command{
             }
             go SCopilot.Init()
         }
-        
+        conf.Preparations()
         if conf.GlobalConfig.Passive.ProxyPort != "" {
             crawler.NewCrawlergo(false)
             // 被动扫描

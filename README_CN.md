@@ -7,7 +7,7 @@
     <img alt="Release" src="https://img.shields.io/github/license/yhy0/Jie"/>
   </a>
   <a href="https://github.com/yhy0/Jie">
-    <img alt="Release" src="https://img.shields.io/badge/release-v1.0.8-brightgreen"/>
+    <img alt="Release" src="https://img.shields.io/badge/release-v1.1.0-brightgreen"/>
   </a>
   <a href="https://github.com/yhy0/Jie">
     <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/yhy0/Jie?color=9cf"/>
@@ -30,6 +30,13 @@
 通过[主动爬虫模式](https://github.com/Qianlitp/crawlergo)或[被动代理](https://github.com/lqqyt2423/go-mitmproxy)获取流量，对流量进行分析、扫描。
 
 **使用前请详细阅读文档** 
+
+## 前提条件
+- nmap
+- masscan
+- chromium
+
+检查机器上是否存在以上程序
 
 ## 主动模式
 

@@ -25,9 +25,10 @@ func PocCheck(technologies []string, target string, finalURL string, ip string, 
         plugin  string
         payload string
     )
-
+    
     for _, wt := range technologies {
-        if strings.EqualFold(wt, "shiro") && check["shiro"] == false {
+        wt = strings.ToLower(wt)
+        if strings.Contains(wt, "shiro") && check["shiro"] == false {
             check["shiro"] = true
             key, mode := shiro.CVE_2016_4437(finalURL, "", client)
             if key != "" {
@@ -35,7 +36,7 @@ func PocCheck(technologies []string, target string, finalURL string, ip string, 
                 plugin = "Shiro"
                 payload = mode + ": " + key
             }
-        } else if strings.EqualFold(wt, "tomcat") && check["tomcat"] == false {
+        } else if strings.Contains(wt, "tomcat") && check["tomcat"] == false {
             check["tomcat"] = true
             username, password := brute.TomcatBrute(target, client)
             if username != "" {
@@ -47,7 +48,7 @@ func PocCheck(technologies []string, target string, finalURL string, ip string, 
             if host, err := url.Parse(target); err == nil {
                 HOST = host.Host
             }
-
+            
             if tomcat.CVE_2020_1938(HOST) {
                 vulnerability = true
                 plugin = "Apache Tomcat"
@@ -58,7 +59,7 @@ func PocCheck(technologies []string, target string, finalURL string, ip string, 
                 plugin = "Apache Tomcat"
                 payload += "exp-Tomcat|CVE_2017_12615 \n"
             }
-        } else if strings.EqualFold(wt, "basic") && check["basic"] == false { // todo 这里还没有匹配到
+        } else if strings.Contains(wt, "basic") && check["basic"] == false { // todo 这里还没有匹配到
             check["basic"] = true
             username, password, _ := brute.BasicBrute(target, client)
             if username != "" {
@@ -66,7 +67,7 @@ func PocCheck(technologies []string, target string, finalURL string, ip string, 
                 plugin = "Basic"
                 payload = fmt.Sprintf("brute-basic|%s:%s", username, password)
             }
-        } else if strings.EqualFold(wt, "WebLogic") && check["WebLogic"] == false {
+        } else if strings.Contains(wt, "weblogic") && check["WebLogic"] == false {
             check["WebLogic"] = true
             username, password := brute.WeblogicBrute(target, client)
             if username != "" {
@@ -124,7 +125,7 @@ func PocCheck(technologies []string, target string, finalURL string, ip string, 
                 plugin = "WebLogic"
                 payload += "exp-WebLogic|CVE_2021_2109\n"
             }
-        } else if strings.EqualFold(wt, "Jboss") && check["Jboss"] == false {
+        } else if strings.Contains(wt, "jboss") && check["Jboss"] == false {
             check["Jboss"] = true
             if jboss.CVE_2017_12149(target, client) {
                 vulnerability = true
@@ -137,7 +138,7 @@ func PocCheck(technologies []string, target string, finalURL string, ip string, 
                 plugin = "Jboss"
                 payload += fmt.Sprintf("brute-Jboss|%s:%s", username, password)
             }
-        } else if strings.EqualFold(wt, "Jenkins") && check["Jenkins"] == false {
+        } else if strings.Contains(wt, "jenkins") && check["Jenkins"] == false {
             check["Jenkins"] = true
             if jenkins.Unauthorized(target, client) {
                 vulnerability = true
@@ -159,21 +160,21 @@ func PocCheck(technologies []string, target string, finalURL string, ip string, 
                 plugin = "Jenkins"
                 payload += "exp-Jenkins|CVE_2019_10003000 \n"
             }
-        } else if strings.EqualFold(wt, "ThinkPHP") && check["ThinkPHP"] == false {
+        } else if strings.Contains(wt, "thinkphp") && check["ThinkPHP"] == false {
             check["ThinkPHP"] = true
             if ThinkPHP.RCE(target, client) {
                 vulnerability = true
                 plugin = "ThinkPHP"
                 payload = "exp-ThinkPHP \n"
             }
-        } else if strings.EqualFold(wt, "phpunit") && check["phpunit"] == false {
+        } else if strings.Contains(wt, "phpunit") && check["phpunit"] == false {
             check["phpunit"] = true
             if phpunit.CVE_2017_9841(target, client) {
                 vulnerability = true
                 plugin = "phpunit"
                 payload = "exp-phpunit|CVE_2017_9841 \n"
             }
-        } else if strings.EqualFold(wt, "seeyon") && check["seeyon"] == false {
+        } else if strings.Contains(wt, "seeyon") && check["seeyon"] == false {
             check["seeyon"] = true
             if seeyon.SeeyonFastjson(target, client) {
                 vulnerability = true
@@ -230,7 +231,7 @@ func PocCheck(technologies []string, target string, finalURL string, ip string, 
                 plugin = "seeyon"
                 payload += "exp-seeyon|Backdoor \n"
             }
-        } else if (strings.EqualFold(wt, "loginPage") || strings.Contains(wt, "登录")) && check["loginPage"] == false {
+        } else if (strings.Contains(wt, "loginPage") || strings.Contains(wt, "登录")) && check["loginPage"] == false {
             check["loginPage"] = true
             username, password, loginurl := brute.Admin_brute(finalURL, client)
             if loginurl != "" {
@@ -238,14 +239,14 @@ func PocCheck(technologies []string, target string, finalURL string, ip string, 
                 plugin = "LoginPage"
                 payload += fmt.Sprintf("brute-admin|%s:%s", username, password)
             }
-        } else if strings.EqualFold(wt, "用友NC") && check["YongYouNc"] == false {
+        } else if strings.Contains(wt, "用友NC") && check["YongYouNc"] == false {
             check["YongYouNc"] = true
             if nc.Scan(target, client) {
                 vulnerability = true
                 plugin = "用友 NC"
                 payload = "用友 NC|反序列化"
             }
-            // } else if strings.EqualFold(wt, "shiro") {
+            // } else if strings.Contains(wt, "shiro") {
             // case "sunlogin":
             //    if sunlogin.SunloginRCE(target) {
             //        technologies = append(technologies, "exp-Sunlogin|RCE")
@@ -268,7 +269,7 @@ func PocCheck(technologies []string, target string, finalURL string, ip string, 
             //    }
         }
     }
-
+    
     if vulnerability {
         output.OutChannel <- output.VulMessage{
             DataType: "web_vul",
@@ -282,6 +283,6 @@ func PocCheck(technologies []string, target string, finalURL string, ip string, 
             Level: output.Critical,
         }
     }
-
+    
     return check
 }

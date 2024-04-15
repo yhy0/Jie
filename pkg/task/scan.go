@@ -139,7 +139,8 @@ func (t *Task) DoneWg(host string) {
 
 func (t *Task) WaitWg(host string) {
     t.WgLock.Lock() // 保护对ScanTask映射的访问
-    defer t.WgLock.Unlock()
+    wg := t.ScanTask[host].Wg
+    t.WgLock.Unlock() // 解锁，以便其他goroutine可以操作WaitGroup
     
-    t.ScanTask[host].Wg.Wait()
+    wg.Wait() // 现在可以安全地等待，而不会持有锁
 }

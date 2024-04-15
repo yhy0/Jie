@@ -26,7 +26,7 @@ func Preparations() {
     // 检查 masscan 是否已安装
     masscanInstalled := commandExists("masscan")
     if !masscanInstalled {
-        fmt.Println("nmap does not follow, please install")
+        fmt.Println("masscan does not follow, please install")
         os.Exit(1)
     }
     

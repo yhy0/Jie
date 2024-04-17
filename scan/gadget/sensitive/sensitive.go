@@ -10,4 +10,5 @@ package sensitive
 func Detection(url, req, body string) {
     go KeyDetection(url, body)
     go PageErrorMessageCheck(url, req, body)
+    go Wih(url, req, body)
 }

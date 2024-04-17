@@ -417,6 +417,7 @@ https://github.com/veo/vscan
 
 https://github.com/mazen160/secrets-patterns-db
 https://github.com/pingc0y/URLFinder
+https://github.com/1c3z/arl_files/tree/master/wih
 
 #### Fastjson
 

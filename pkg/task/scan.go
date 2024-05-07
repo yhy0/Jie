@@ -18,9 +18,6 @@ import (
 **/
 
 func (t *Task) Run(in *input.CrawlResult) {
-    // 加锁，防止 panic: sync: WaitGroup is reused before previous Wait has returned，不知道为啥还会出现这个错误
-    // 知道原因了：只要这里的 goroutine 的执行够快，ScanTask 中的 wg.Add(1) 还来不及运行的时候，就被wg.Done()抢先一步，自然wg.Wait()就完成了。
-    
     t.AddWg(in.Host)
     go t.PerServer(in)
     t.AddWg(in.Host)
@@ -39,13 +36,13 @@ func (t *Task) PerServer(in *input.CrawlResult) {
     target := in.ParseUrl.Scheme + "://" + strings.TrimRight(strings.TrimRight(in.ParseUrl.Host, ":443"), ":80")
     
     for _, plugin := range scan.PerServerPlugins {
-        if t.ScanTask[in.Host].PerServer[plugin.Name()] {
-            continue
-        }
-        t.Lock.Lock()
-        t.ScanTask[in.Host].PerServer[plugin.Name()] = true
-        t.Lock.Unlock()
         if conf.Plugin[plugin.Name()] {
+            if t.ScanTask[in.Host].PerServer[plugin.Name()] {
+                continue
+            }
+            t.Lock.Lock()
+            t.ScanTask[in.Host].PerServer[plugin.Name()] = true
+            t.Lock.Unlock()
             t.AddWg(in.Host)
             go func(p scan.Addon) {
                 defer t.DoneWg(in.Host)
@@ -82,21 +79,22 @@ func (t *Task) PerFolder(in *input.CrawlResult) {
         target := in.ParseUrl.Scheme + "://" + in.ParseUrl.Host + parentDir
         
         for _, plugin := range scan.PerFolderPlugins {
-            // 说明这个目录整体都扫描过了，跳过
-            if t.ScanTask[in.Host].PerFolder[plugin.Name()+"_"+parentDir] {
-                continue
-            }
-            t.Lock.Lock()
-            t.ScanTask[in.Host].PerFolder[plugin.Name()+"_"+parentDir] = true
-            t.Lock.Unlock()
-            // 说明拆分的目录扫描了，跳过
-            if t.ScanTask[in.Host].PerFolder[plugin.Name()+"_"+p] {
-                continue
-            }
-            t.Lock.Lock()
-            t.ScanTask[in.Host].PerFolder[plugin.Name()+"_"+p] = true
-            t.Lock.Unlock()
             if conf.Plugin[plugin.Name()] {
+                // 说明这个目录整体都扫描过了，跳过
+                if t.ScanTask[in.Host].PerFolder[plugin.Name()+"_"+parentDir] {
+                    continue
+                }
+                t.Lock.Lock()
+                t.ScanTask[in.Host].PerFolder[plugin.Name()+"_"+parentDir] = true
+                t.Lock.Unlock()
+                // 说明拆分的目录扫描了，跳过
+                if t.ScanTask[in.Host].PerFolder[plugin.Name()+"_"+p] {
+                    continue
+                }
+                t.Lock.Lock()
+                t.ScanTask[in.Host].PerFolder[plugin.Name()+"_"+p] = true
+                t.Lock.Unlock()
+                
                 t.AddWg(in.Host)
                 go func(a scan.Addon, targetUrl, path string) {
                     defer t.DoneWg(in.Host)
@@ -124,8 +122,12 @@ func (t *Task) PerFile(in *input.CrawlResult) {
 }
 
 func (t *Task) AddWg(host string) {
-    t.WgLock.Lock() // 保护对ScanTask映射的访问
-    defer t.WgLock.Unlock()
+    t.WgAddLock.Lock() // 保护对ScanTask映射的访问
+    defer t.WgAddLock.Unlock()
+    /*
+       Add() 时不能使用 t.WgLock 因为 sizedwaitgroup.SizedWaitGroup 中的逻辑是 当 add 满时，
+       再次 add 会阻塞住，所以这里就会发生阻塞，不会释放锁，又因为AddWg 和 DoneWg 同时使用一个锁，导致程序发生死锁
+    */
     
     t.ScanTask[host].Wg.Add()
 }
@@ -133,7 +135,6 @@ func (t *Task) AddWg(host string) {
 func (t *Task) DoneWg(host string) {
     t.WgLock.Lock() // 保护对ScanTask映射的访问
     defer t.WgLock.Unlock()
-    
     t.ScanTask[host].Wg.Done()
 }
 
@@ -142,5 +143,5 @@ func (t *Task) WaitWg(host string) {
     wg := t.ScanTask[host].Wg
     t.WgLock.Unlock() // 解锁，以便其他goroutine可以操作WaitGroup
     
-    wg.Wait() // 现在可以安全地等待，而不会持有锁
+    wg.Wait() // 现在可以安全地等待，而不会持有锁  这里会执行多次 Wait 但不影响
 }

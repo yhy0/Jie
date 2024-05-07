@@ -37,15 +37,17 @@ type VulnData struct {
 }
 
 type SCopilotData struct {
-    Target        string       `json:"target"`
-    Ip            string       `json:"ip"`
-    HostNoPort    string       `json:"host_no_port"`
-    SiteMap       []string     `json:"site_map"`
-    Fingerprints  []string     `json:"fingerprints"`
-    VulMessage    []VulMessage `json:"vul_message"`
-    InfoMsg       []PluginMsg  `json:"info_msg"`
-    PluginMsg     []PluginMsg  `json:"plugin_msg"`
-    CollectionMsg Collection   `json:"collection_msg"`
+    Target        string         `json:"target"`
+    Ip            string         `json:"ip"`
+    HostNoPort    string         `json:"host_no_port"`
+    SiteMap       []string       `json:"site_map"`
+    Fingerprints  []string       `json:"fingerprints"`
+    VulMessage    []VulMessage   `json:"vul_message"`
+    VulPlugin     map[string]int `json:"vul_plugin"`
+    InfoMsg       []PluginMsg    `json:"info_msg"`
+    InfoPlugin    map[string]int `json:"info_plugin"`
+    PluginMsg     []PluginMsg    `json:"plugin_msg"`
+    CollectionMsg Collection     `json:"collection_msg"`
 }
 
 type Collection struct {

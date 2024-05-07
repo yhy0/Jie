@@ -7,11 +7,11 @@ package mitmproxy
 **/
 
 import (
+    "github.com/panjf2000/ants/v2"
     "github.com/yhy0/Jie/conf"
     "github.com/yhy0/Jie/pkg/mitmproxy/go-mitmproxy/proxy"
     "github.com/yhy0/Jie/pkg/task"
     "github.com/yhy0/logging"
-    "github.com/yhy0/sizedwaitgroup"
 )
 
 var t *task.Task
@@ -33,10 +33,12 @@ func NewMitmproxy() {
         ScanTask:    make(map[string]*task.ScanTask),
     }
     
-    t.Wg = sizedwaitgroup.New(t.Parallelism)
+    pool, _ := ants.NewPool(t.Parallelism)
+    t.Pool = pool
+    defer t.Pool.Release() // 释放协程池
     
     // 先加一，这里会一直阻塞，这样就不会马上退出, 这里要的就是一直阻塞，所以不使用 wg.Done()
-    t.Wg.Add()
+    t.WG.Add(1)
     
     var err error
     PassiveProxy, err = proxy.NewProxy(opts)
@@ -53,5 +55,5 @@ func NewMitmproxy() {
         }
     }()
     
-    t.Wg.Wait()
+    t.WG.Wait()
 }

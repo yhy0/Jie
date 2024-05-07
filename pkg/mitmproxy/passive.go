@@ -44,7 +44,7 @@ func judge(f *proxy.Flow) {
                 flag = funk.Contains(conf.GlobalConfig.Mitmproxy.FilterSuffix, ext)
             }
             if !flag {
-                go distribution(f)
+                distribution(f)
             }
         }
     } else {
@@ -55,7 +55,7 @@ func judge(f *proxy.Flow) {
             flag = funk.Contains(conf.GlobalConfig.Mitmproxy.FilterSuffix, ext)
         }
         if !flag {
-            go distribution(f)
+            distribution(f)
         }
     }
 }

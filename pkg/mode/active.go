@@ -3,9 +3,9 @@ package mode
 import (
     "encoding/json"
     "fmt"
+    "github.com/panjf2000/ants/v2"
     "github.com/projectdiscovery/katana/pkg/output"
     "github.com/thoas/go-funk"
-    regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/conf"
     "github.com/yhy0/Jie/crawler"
     "github.com/yhy0/Jie/crawler/crawlergo"
@@ -22,6 +22,7 @@ import (
     "github.com/yhy0/sizedwaitgroup"
     "net/url"
     "path"
+    "regexp"
     "strings"
     "time"
 )
@@ -84,8 +85,9 @@ func Active(target string, fingerprint []string) ([]string, []string) {
         Wg: sizedwaitgroup.New(3 + 3),
     }
     
-    t.Wg = sizedwaitgroup.New(t.Parallelism)
-    
+    pool, _ := ants.NewPool(t.Parallelism)
+    t.Pool = pool
+    defer t.Pool.Release() // 释放协程池
     // 爬虫前，进行连接性、指纹识别、 waf 探测
     resp, err := client.Request(target, "GET", "", nil)
     if err != nil {
@@ -107,7 +109,7 @@ func Active(target string, fingerprint []string) ([]string, []string) {
         subdomains = Katana(target, wafs, t, fingerprint)
     }
     
-    t.Wg.Wait()
+    t.WG.Wait()
     
     logging.Logger.Debugln("Fingerprints: ", t.Fingerprints)
     
@@ -117,8 +119,6 @@ func Active(target string, fingerprint []string) ([]string, []string) {
 }
 
 func Katana(target string, waf []string, t *task.Task, fingerprint []string) []string {
-    t.Wg.Add()
-    defer t.Wg.Done()
     parseUrl, err := url.Parse(target)
     if err != nil {
         logging.Logger.Errorln(err)
@@ -132,7 +132,7 @@ func Katana(target string, waf []string, t *task.Task, fingerprint []string) []s
         curl := strings.ReplaceAll(result.Request.URL, "\\n", "")
         curl = strings.ReplaceAll(curl, "\\t", "")
         curl = strings.ReplaceAll(curl, "\\n", "")
-        parseUrl, err := url.Parse(curl)
+        parseUrl, err = url.Parse(curl)
         if err != nil {
             logging.Logger.Errorln(err)
             return
@@ -158,7 +158,8 @@ func Katana(target string, waf []string, t *task.Task, fingerprint []string) []s
         } else {
             host = parseUrl.Host
         }
-        resp, err := t.ScanTask[host].Client.Request(result.Request.URL, result.Request.Method, result.Request.Body, result.Request.Headers)
+        var resp *httpx.Response
+        resp, err = t.ScanTask[host].Client.Request(result.Request.URL, result.Request.Method, result.Request.Body, result.Request.Headers)
         if err != nil {
             logging.Logger.Errorln(err)
             return
@@ -200,7 +201,14 @@ func Katana(target string, waf []string, t *task.Task, fingerprint []string) []s
         }
         
         // 分发扫描任务
-        go t.Distribution(crawlResult)
+        t.WG.Add(1)
+        go func() {
+            err := t.Pool.Submit(t.Distribution(crawlResult))
+            if err != nil {
+                t.WG.Done()
+                logging.Logger.Errorf("add distribution err:%v, crawlResult:%v", err, crawlResult)
+            }
+        }()
     }
     
     if conf.GlobalConfig.WebScan.Craw == "k" {
@@ -216,8 +224,6 @@ func Katana(target string, waf []string, t *task.Task, fingerprint []string) []s
 
 // Crawlergo 运行爬虫, 对爬虫结果进行处理
 func Crawlergo(target string, waf []string, t *task.Task, fingerprint []string) []string {
-    t.Wg.Add()
-    defer t.Wg.Done()
     var targets []*model.Request
     
     var req model.Request
@@ -296,7 +302,14 @@ func Crawlergo(target string, waf []string, t *task.Task, fingerprint []string) 
         }
         
         // 分发扫描任务
-        go t.Distribution(crawlResult)
+        t.WG.Add(1)
+        go func() {
+            err := t.Pool.Submit(t.Distribution(crawlResult))
+            if err != nil {
+                t.WG.Done()
+                logging.Logger.Errorf("add distribution err:%v, crawlResult:%v", err, crawlResult)
+            }
+        }()
     }
     
     // 开始爬虫任务

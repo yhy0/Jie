@@ -6,7 +6,7 @@ import (
     "github.com/yhy0/logging"
     "net/url"
     "strings"
-
+    
     "github.com/yhy0/Jie/pkg/input"
     "github.com/yhy0/Jie/pkg/protocols/httpx"
     "strconv"
@@ -25,7 +25,7 @@ func distribution(f *proxy.Flow) {
         logging.Logger.Errorln(err)
         return
     }
-
+    
     var host string
     // 有的会带80、443端口号，导致    example.com 和 example.com:80、example.com:443被认为是不同的网站
     port := strings.Split(parseUrl.Host, ":")
@@ -34,14 +34,14 @@ func distribution(f *proxy.Flow) {
     } else {
         host = parseUrl.Host
     }
-
+    
     // 使用解码后的，不然有的 js f.Response.Body 直接乱码
     var body []byte
     body, err = f.Response.DecodedBody()
     if err != nil {
         body = f.Response.Body
     }
-
+    
     // TODO 将 http.Header 转换为 map[string]string 有的重复请求头，这里后面遇到了再优化吧
     headerMap := make(map[string]string)
     for key, values := range f.Request.Header {
@@ -50,11 +50,11 @@ func distribution(f *proxy.Flow) {
         if key == "Set-Cookie" {
             separator = ";"
         }
-
+        
         // 将多个值连接成一个字符串，用逗号分隔
         headerMap[key] = strings.Join(values, separator)
     }
-
+    
     in := &input.CrawlResult{
         Target:      f.Request.URL.Host,
         Url:         f.Request.URL.String(),
@@ -73,6 +73,14 @@ func distribution(f *proxy.Flow) {
         RawRequest:  requestDump(f.Request),
         RawResponse: responseDump(f),
     }
-
-    t.Distribution(in)
+    
+    t.WG.Add(1)
+    go func() {
+        err := t.Pool.Submit(t.Distribution(in))
+        if err != nil {
+            t.WG.Done()
+            logging.Logger.Errorf("add distribution err:%v, crawlResult:%v", err, in)
+        }
+    }()
+    // t.Distribution(in)
 }

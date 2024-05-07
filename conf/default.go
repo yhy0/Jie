@@ -52,5 +52,5 @@ var DangerHeaders = []string{
     "X-Api-Version",
 }
 
-// Parallelism 同时 10 插件运行
+// Parallelism 对一个网站同时扫描的最大 url 个数
 var Parallelism = 10

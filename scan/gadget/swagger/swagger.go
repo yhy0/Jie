@@ -441,6 +441,10 @@ func scanApi(method, baseUrl, path, queryParams, bodyParams string, header map[s
 }
 
 func scanSwagger(method, target, bodyParams string, header map[string]string, client *httpx.Client) {
+    parse, err := url.Parse(target)
+    if err != nil {
+        return
+    }
     // util.HttpProxy = "http://127.0.0.1:8080"
     if strings.EqualFold(method, "get") {
         res, err := client.Request(target, "GET", "", header)
@@ -448,9 +452,8 @@ func scanSwagger(method, target, bodyParams string, header map[string]string, cl
             logging.Logger.Errorf("scanApi(GET %s) err %v", target, err)
             return
         }
-        
         // 可能是未授权, 然后对 200 的进行ssrf、注入测试
-        if res.StatusCode == 200 && !util2.IsBlackHtml(res.Body, res.Header["Content-Type"]) {
+        if res.StatusCode == 200 && !util2.IsBlackHtml(res.Body, res.Header["Content-Type"], parse.Path) {
             logging.Logger.Infof("Possibly unauthorized access: GET %s", target)
             
             in := &input.CrawlResult{
@@ -523,7 +526,7 @@ func scanSwagger(method, target, bodyParams string, header map[string]string, cl
             return
         }
         
-        if res.StatusCode == 200 && !util2.IsBlackHtml(res.Body, res.Header["Content-Type"]) { // 可能是未授权
+        if res.StatusCode == 200 && !util2.IsBlackHtml(res.Body, res.Header["Content-Type"], parse.Path) { // 可能是未授权
             payload := fmt.Sprintf("%s %s %s", method, target, bodyParams)
             logging.Logger.Infof("Possibly unauthorized access: %s", payload)
             

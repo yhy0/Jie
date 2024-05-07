@@ -187,7 +187,6 @@
             const listItems = document.querySelectorAll('.list-item');
 
             if (searchTerm.length > 0) {
-                console.log("11")
                 listItems.forEach(function (item) {
                     const itemText = item.textContent || item.innerText;
                     console.log(itemText.toLowerCase(searchTerm.toLowerCase()))

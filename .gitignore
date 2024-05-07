@@ -3,6 +3,7 @@
 .idea
 logs
 data
+scan/bbscan/rules/personal_rules.txt
 .DS_Store
 test.go
 # Test binary, built with `go test -c`

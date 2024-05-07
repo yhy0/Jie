@@ -270,7 +270,7 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
         wg.Add(1)
         ch <- struct{}{}
         
-        go func(t string, r *Rule) {
+        go func(t string, _path string, r *Rule) {
             defer wg.Done()
             defer func() { <-ch }()
             <-time.After(time.Duration(100) * time.Millisecond)
@@ -285,7 +285,7 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
                 }
                 
                 // 黑名单，跳过
-                if scan_util.IsBlackHtml(res.Body, res.Header["Content-Type"]) {
+                if scan_util.IsBlackHtml(res.Body, res.Header["Content-Type"], _path) {
                     return
                 }
                 
@@ -377,7 +377,7 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
                     }
                 }
             }
-        }(target, rule)
+        }(target, path, rule)
         
     }
     
@@ -407,7 +407,7 @@ func SingleScan(targets []string, path string) {
                 return
             }
             // 黑名单，跳过
-            if scan_util.IsBlackHtml(res.Body, res.Header["Content-Type"]) {
+            if scan_util.IsBlackHtml(res.Body, res.Header["Content-Type"], path) {
                 return
             }
             

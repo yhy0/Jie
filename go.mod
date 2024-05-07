@@ -8,7 +8,7 @@ require (
 	github.com/beevik/etree v1.3.0
 	github.com/buger/jsonparser v1.1.1
 	github.com/gin-gonic/gin v1.9.1
-	github.com/go-rod/rod v0.114.8 // indirect
+	github.com/go-rod/rod v0.114.8
 	github.com/google/go-github v17.0.0+incompatible // indirect
 	github.com/google/uuid v1.6.0
 	github.com/json-iterator/go v1.1.12 // indirect

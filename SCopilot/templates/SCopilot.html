@@ -161,9 +161,19 @@
             </ul>
             <div class="p-3 tab-content" id="myTabContent">
                 <div class="tab-pane fade show active" id="contact-tab-pane" role="tabpanel" aria-labelledby="contact-tab" tabindex="0">
+                    {{ if .data.InfoPlugin }}
+                    <div class="card border-primary mb-3">
+                        <div class="card-body">
+                            {{ range $plugin, $cnt := .data.InfoPlugin }}
+                            <button id="msgPluginData" type="button" class="btn btn-outline-success btn-sm" data-plugin="{{ $plugin }}">{{ $plugin }}<span class="badge badge text-danger" style="font-size: 14px">{{ $cnt }}</span></button>
+                            {{ end }}
+                        </div>
+                    </div>
+                    {{ end }}
+
                     <ul class="list-group position-relative">
                         {{ range $index, $info := .data.InfoMsg }}
-                            <li class="list-group-item ">
+                            <li class="list-group-item msg-plugin-ul" data-plugin="{{ $info.Plugin }}">
                                 {{ $info.Url }}
                                 <span class="badge rounded-pill bg-primary"> {{ $info.Plugin }}</span>
                                 {{ if $info.Result }}<p><span class="badge bg-warning">{{ $info.Result }}</span></p>{{ end }}
@@ -198,16 +208,26 @@
                 </div>
 
                 <div class="tab-pane fade" id="vuln-tab-pane" role="tabpanel" aria-labelledby="vuln-tab" tabindex="0">
+                    {{ if .data.InfoPlugin }}
+                    <div class="card border-primary mb-3">
+                        <div class="card-body">
+                            {{ range $plugin, $cnt := .data.VulPlugin }}
+                            <button id="vulPluginData" type="button" class="btn btn-outline-success btn-sm" data-plugin="{{ $plugin }}">{{ $plugin }}<span class="badge badge text-danger" style="font-size: 14px">{{ $cnt }}</span></button>
+                            {{ end }}
+                        </div>
+                    </div>
+                    {{ end }}
+
                     <ul class="list-group">
                         {{ range $index, $message := .data.VulMessage }}
-                        <li class="list-group-item">
+                        <li class="list-group-item vul-plugin-ul" data-plugin="{{ $message.Plugin }}">
                             <div class="vuln-card mb-3 {{ $message.Level }}">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <h4 class="level mb-0">
                                         {{ if $message.VulnData.VulnType }} {{ $message.VulnData.VulnType }} - {{ end }}{{ $message.VulnData.Target }}
                                     </h4>
-                                    <span class="toggle-switch btn btn-primary">Toggle Details</span>
                                 </div>
+                                <span class="toggle-switch btn btn-primary btn-sm">Toggle Details</span>
                                 <p class="level">{{ $message.Level }} <span class="badge rounded-pill bg-danger"> {{ $message.Plugin }}</span></p>
                                 {{ if $message.VulnData.Ip }}<p>IP: {{ $message.VulnData.Ip }}</p>{{ end }}
                                 {{ if $message.VulnData.CreateTime }}<p>Create Time: {{ $message.VulnData.CreateTime }}</p>{{ end }}
@@ -424,11 +444,75 @@
     </script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            var toggleSwitches = document.querySelectorAll(".toggle-switch");
+            const toggleSwitches = document.querySelectorAll(".toggle-switch");
             toggleSwitches.forEach(function (toggleSwitch) {
                 toggleSwitch.addEventListener("click", function () {
-                    var vulnDetails = this.closest(".vuln-card").querySelector(".vuln-details");
+                    const vulnDetails = this.closest(".vuln-card").querySelector(".vuln-details");
                     vulnDetails.classList.toggle("show");
+                });
+            });
+
+            const msgs = document.querySelectorAll("#msgPluginData");
+            msgs.forEach(function(button) {
+                button.addEventListener("click", function() {
+                    const pluginName = button.getAttribute("data-plugin"); // 获取按钮上的 data-plugin 属性值
+                    // 获取所有的 ul
+                    const allUls = document.querySelectorAll(".msg-plugin-ul");
+
+                    // 判断是否已经显示了所有 ul
+                    const isAllDisplayed = Array.from(allUls).every(function(ul) {
+                        return ul.style.display === ""; // 检查是否所有 ul 都是显示状态
+                    });
+
+                    console.log(isAllDisplayed);
+                    // 切换显示状态
+                    if (isAllDisplayed) {
+                        // 如果所有 ul 都是显示状态，则只显示对应 plugin 的 ul
+                        allUls.forEach(function(ul) {
+                            if (ul.getAttribute("data-plugin") === pluginName) {
+                                ul.style.display = ""; // 显示对应 plugin 的 ul
+                            } else {
+                                ul.style.display = "none"; // 隐藏其他不相关的 ul
+                            }
+                        });
+                    } else {
+                        // 如果有 ul 是隐藏状态，则显示所有
+                        allUls.forEach(function(ul) {
+                            ul.style.display = "";
+                        });
+                    }
+                });
+            });
+
+            const vuls = document.querySelectorAll("#vulPluginData");
+            vuls.forEach(function(button) {
+                button.addEventListener("click", function() {
+                    const pluginName = button.getAttribute("data-plugin"); // 获取按钮上的 data-plugin 属性值
+                    // 获取所有的 ul
+                    const allUls = document.querySelectorAll(".vul-plugin-ul");
+
+                    // 判断是否已经显示了所有 ul
+                    const isAllDisplayed = Array.from(allUls).every(function(ul) {
+                        return ul.style.display === ""; // 检查是否所有 ul 都是显示状态
+                    });
+
+                    console.log(isAllDisplayed);
+                    // 切换显示状态
+                    if (isAllDisplayed) {
+                        // 如果所有 ul 都是显示状态，则只显示对应 plugin 的 ul
+                        allUls.forEach(function(ul) {
+                            if (ul.getAttribute("data-plugin") === pluginName) {
+                                ul.style.display = ""; // 显示对应 plugin 的 ul
+                            } else {
+                                ul.style.display = "none"; // 隐藏其他不相关的 ul
+                            }
+                        });
+                    } else {
+                        // 如果有 ul 是隐藏状态，则显示所有
+                        allUls.forEach(function(ul) {
+                            ul.style.display = "";
+                        });
+                    }
                 });
             });
         });

@@ -20,7 +20,7 @@ var FileName = "Jie_config.yaml"
 
 var defaultConfigYaml = []byte(`version: ` + Version + `
 
-parallel: 10                            #同时运行几个插件
+parallel: 10                            # 同时扫描的最大 url 个数
 
 # 全局 http 发包配置
 http:

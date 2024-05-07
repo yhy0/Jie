@@ -5,6 +5,7 @@ import (
     "github.com/yhy0/Jie/SCopilot"
     "github.com/yhy0/Jie/conf"
     "github.com/yhy0/Jie/crawler"
+    "github.com/yhy0/Jie/pkg/mode"
     "github.com/yhy0/Jie/pkg/output"
     "github.com/yhy0/logging"
     "net/url"
@@ -76,4 +77,6 @@ func lib() {
             logging.Logger.Infoln(aurora.Red(v.PrintScreen()).String())
         }
     }()
+    
+    mode.Active("http://testphp.vulnweb.com/", nil)
 }

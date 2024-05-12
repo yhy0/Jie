@@ -13,6 +13,7 @@ type Config struct {
     Http       Http       `json:"http"`
     Plugins    Plugins    `json:"plugins"`
     WebScan    WebScan    `json:"webScan"`
+    NoPortScan bool       `json:"no_port_scan"`
     Reverse    Reverse    `json:"reverse"`
     SqlmapApi  Sqlmap     `json:"sqlmapApi"`
     Mitmproxy  Mitmproxy  `json:"mitmproxy"`

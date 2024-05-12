@@ -107,6 +107,8 @@ func webScanCmdInit() {
     webScanCmd.Flags().StringSliceVar(&Poc, "poc", nil, "specify the nuclei poc to run, separated by ','(example: test.yml,./test/*).\r\n自定义的nuclei 漏洞模板地址")
     webScanCmd.Flags().StringVarP(&craw, "craw", "c", "k", "Select crawler:c or k or kh. (c:Crawlergo, k:Katana Standard Mode(default), kh:(Katana Headless Mode))\r\n选择哪一个爬虫，c:Crawlergo, k:Katana 标准模式(default),kh: Katana无头模式")
     
+    webScanCmd.Flags().BoolVar(&conf.GlobalConfig.NoPortScan, "nps", false, "No port scanning(false).\r\n不进行端口扫描就不会检测 nmap、masscan 是否存在，默认 false")
+    
     // 被动监听，收集流量 Security Copilot mode
     webScanCmd.Flags().StringVar(&conf.GlobalConfig.Passive.ProxyPort, "listen", "", "use proxy resource collector, value is proxy addr, (example: 127.0.0.1:9080).\r\n被动模式监听的代理地址，默认 127.0.0.1:9080")
     webScanCmd.Flags().StringVar(&conf.GlobalConfig.Passive.WebPort, "web", "9088", "Security Copilot web report port, (example: 9088)].\r\nweb页面端口，默认9088")

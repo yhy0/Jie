@@ -70,7 +70,7 @@ func Active(target string, fingerprint []string) ([]string, []string) {
     }
     
     t := &task.Task{
-        Parallelism: conf.Parallelism + 1,
+        Parallelism: conf.Parallelism,
         ScanTask:    make(map[string]*task.ScanTask),
     }
     

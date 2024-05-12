@@ -16,18 +16,21 @@ import (
 var ChromePath string
 
 func Preparations() {
-    // 检查 nmap 是否已安装
-    nmapInstalled := commandExists("nmap")
-    if !nmapInstalled {
-        fmt.Println("nmap does not follow, please install")
-        os.Exit(1)
-    }
-    
-    // 检查 masscan 是否已安装
-    masscanInstalled := commandExists("masscan")
-    if !masscanInstalled {
-        fmt.Println("masscan does not follow, please install")
-        os.Exit(1)
+    if GlobalConfig.NoPortScan { // 不进行端口扫描时，不检查这些
+        Plugin["portScan"] = false
+        // 检查 nmap 是否已安装
+        nmapInstalled := commandExists("nmap")
+        if !nmapInstalled {
+            fmt.Println("nmap not found, please install")
+            os.Exit(1)
+        }
+        
+        // 检查 masscan 是否已安装
+        masscanInstalled := commandExists("masscan")
+        if !masscanInstalled {
+            fmt.Println("masscan not found, please install")
+            os.Exit(1)
+        }
     }
     
     if GlobalConfig.WebScan.Craw == "c" {

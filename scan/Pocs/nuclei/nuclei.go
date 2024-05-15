@@ -177,7 +177,7 @@ func nuclei(target string, ft []string, tags []string, outputWriter *testutils.M
     }
     store.Load()
     
-    _ = engine.Execute(store.Templates(), provider.NewSimpleInputProviderWithUrls(target))
+    _ = engine.Execute(context.Background(), store.Templates(), provider.NewSimpleInputProviderWithUrls(target))
     engine.WorkPool().Wait() // Wait for the scan to finish
 }
 

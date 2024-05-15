@@ -7,7 +7,7 @@
     <img alt="Release" src="https://img.shields.io/github/license/yhy0/Jie"/>
   </a>
   <a href="https://github.com/yhy0/Jie">
-    <img alt="Release" src="https://img.shields.io/badge/release-v1.1.0-brightgreen"/>
+    <img alt="Release" src="https://img.shields.io/badge/release-v1.1.1-brightgreen"/>
   </a>
   <a href="https://github.com/yhy0/Jie">
     <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/yhy0/Jie?color=9cf"/>

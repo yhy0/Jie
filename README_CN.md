@@ -7,7 +7,7 @@
     <img alt="Release" src="https://img.shields.io/github/license/yhy0/Jie"/>
   </a>
   <a href="https://github.com/yhy0/Jie">
-    <img alt="Release" src="https://img.shields.io/badge/release-v1.1.0-brightgreen"/>
+    <img alt="Release" src="https://img.shields.io/badge/release-v1.1.1-brightgreen"/>
   </a>
   <a href="https://github.com/yhy0/Jie">
     <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/yhy0/Jie?color=9cf"/>
@@ -145,9 +145,10 @@ https://github.com/yhy0/Jie/releases/latest 中下载对应系统的程序，全
 执行`make`即可编译
 
 #### Windows
+安装 TDM-GCC
 
 ```bash
-export CGO_ENABLED=1;go build -ldflags "-s -w" -o Jie main.go
+export CGO_ENABLED=1;go build -ldflags "-s -w" -o Jie.exe main.go
 ```
 
 ### 与 Burp 联动

@@ -80,23 +80,25 @@
                     <h4 class="card-title">基本信息</h4>
                     <div class="card-body" >
                         <p>{{ .data.Target }} </p>
-                        {{ if .ipInfo.Cdn }}
-                        <span class="badge rounded-pill text-bg-primary">cdn</span>
-                        {{ end }}
+                        {{ if .ipInfo }}
+                            {{ if .ipInfo.Cdn }}
+                            <span class="badge rounded-pill text-bg-primary">cdn</span>
+                            {{ end }}
 
-                        {{ if .ipInfo.Value }}
-                        <span class="badge rounded-pill text-bg-primary">{{ .ipInfo.Value }} </span>
-                        <span class="badge rounded-pill text-bg-primary">{{ .ipInfo.Type }} </span>
-                        {{ end }}
-                        <p></p>
-                        {{ if .ipInfo.AllRecords }}
-                        <div class="col overflow-auto" style="max-height: 80px;">
-                            <ul class="list-group">
-                                {{ range $i, $records := .ipInfo.AllRecords }}
-                                    <li class="list-group-item text-danger-emphasis">{{ $records }}</li>
-                                {{ end }}
-                            </ul>
-                        </div>
+                            {{ if .ipInfo.Value }}
+                            <span class="badge rounded-pill text-bg-primary">{{ .ipInfo.Value }} </span>
+                            <span class="badge rounded-pill text-bg-primary">{{ .ipInfo.Type }} </span>
+                            {{ end }}
+                            <p></p>
+                            {{ if .ipInfo.AllRecords }}
+                            <div class="col overflow-auto" style="max-height: 80px;">
+                                <ul class="list-group">
+                                    {{ range $i, $records := .ipInfo.AllRecords }}
+                                        <li class="list-group-item text-danger-emphasis">{{ $records }}</li>
+                                    {{ end }}
+                                </ul>
+                            </div>
+                            {{ end }}
                         {{ end }}
                     </div>
                 </div>
@@ -120,11 +122,13 @@
                             </tr>
                             </thead>
                             <tbody>
-                            {{ range $port, $service := .ipInfo.PortService }}
-                                <tr>
-                                    <th scope="row">{{ $port }}</th>
-                                    <td>{{ $service }}</td>
-                                </tr>
+                            {{ if .ipInfo }}
+                                {{ range $port, $service := .ipInfo.PortService }}
+                                    <tr>
+                                        <th scope="row">{{ $port }}</th>
+                                        <td>{{ $service }}</td>
+                                    </tr>
+                                {{ end }}
                             {{ end }}
                             </tbody>
                         </table>
@@ -142,12 +146,9 @@
                 </li>
                 <li class="nav-item position-relative" role="presentation">
                     <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#siteMap-tab-pane" type="button" role="tab" aria-controls="siteMap-tab-pane" aria-selected="false">Site Map</button>
-<!--                    {{ $sl := len .data.SiteMap }}-->
-<!--                    {{ if gt $sl 0 }}-->
                     <span id="SiteMapTotal" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info">
                         {{ len .data.SiteMap }}
                     </span>
-<!--                    {{ end }}-->
                 </li>
                 <li class="nav-item position-relative" role="presentation">
                     <button class="nav-link" id="vuln-tab" data-bs-toggle="tab" data-bs-target="#vuln-tab-pane" type="button" role="tab" aria-controls="vuln-tab-pane" aria-selected="false">Vuln</button>
@@ -382,6 +383,25 @@
                         </div>
                         <div class="col mx-2 p-3 card border-success" style="width: 18rem;">
                             <div class="card-header d-flex justify-content-between">
+                                Parameter
+                                <button id="special-copy-btn" class="copy_btn btn btn-sm btn-outline-secondary" data-clipboard-target="#para-list">
+                                    <svg width="16" height="16" fill="currentColor" class="bi bi-clipboard">
+                                        <use xlink:href="#clipboard-icon"></use>
+                                    </svg>
+                                </button>
+                            </div>
+                            <ul id="para-list" class="list-group list-group-flush overflow-auto" style="max-height: 30rem;">
+                                {{ if .paras }}
+                                {{range $para := .paras }}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">{{ $para.Key }}
+                                        <span class="badge bg-success rounded-pill">{{ $para.Value }}</span>
+                                    </li>
+                                {{ end }}
+                                {{ end }}
+                            </ul>
+                        </div>
+                        <div class="col mx-2 p-3 card border-success" style="width: 18rem;">
+                            <div class="card-header d-flex justify-content-between">
                                 Urls
                                 <button class="copy_btn btn btn-sm btn-outline-secondary" data-clipboard-target="#url-list">
                                     <svg width="16" height="16" fill="currentColor" class="bi bi-clipboard">
@@ -437,10 +457,33 @@
             }, 3000);
         });
 
-        // Display an error message when copying fails
-        clipboard.on('error', function(e) {
-            console.error('Error copying:', e.text);
+        const specialClipboard = new ClipboardJS('#special-copy-btn', {
+            text: function(trigger) {
+                const keys = [...document.querySelectorAll('#para-list .list-group-item')].map(item => {
+                    // 对item的文本进行处理
+                    let parts = item.textContent.split("\n")
+                    if (parts.length === 0) {
+                        return item.textContent
+                    }
+                    return parts[0].trim();
+                });
+                return keys.join('\n');
+            }
         });
+
+        specialClipboard.on('success', function(e) {
+            console.log('特殊复制成功:', e.text);
+            e.clearSelection();
+            // Change the SVG icon to the checkmark
+            const svgIcon = e.trigger.querySelector('svg use');
+            svgIcon.setAttribute('xlink:href', '#checkmark-icon');
+
+            // Restore the original SVG icon after 3 seconds
+            setTimeout(() => {
+                svgIcon.setAttribute('xlink:href', '#clipboard-icon');
+            }, 3000);
+        });
+
     </script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {

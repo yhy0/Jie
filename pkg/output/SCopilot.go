@@ -100,6 +100,13 @@ func SCopilot(host string, data SCopilotData) {
         SCopilotMessage[host].CollectionMsg.Urls = funk.UniqString(append(SCopilotMessage[host].CollectionMsg.Urls, data.CollectionMsg.Urls...))
         SCopilotMessage[host].CollectionMsg.Api = funk.UniqString(append(SCopilotMessage[host].CollectionMsg.Api, data.CollectionMsg.Api...))
         
+        sort.SliceStable(SCopilotMessage[host].CollectionMsg.Api, func(i, j int) bool {
+            return compareApi(SCopilotMessage[host].CollectionMsg.Api[i], SCopilotMessage[host].CollectionMsg.Api[j])
+        })
+        
+        sort.SliceStable(SCopilotMessage[host].CollectionMsg.Urls, func(i, j int) bool {
+            return compareLinks(SCopilotMessage[host].CollectionMsg.Urls[i], SCopilotMessage[host].CollectionMsg.Urls[j])
+        })
     } else {
         SCopilotMessage[host] = &data
         SCopilotLists = append(SCopilotLists, &SCopilotList{
@@ -124,8 +131,28 @@ func compareLinks(a, b string) bool {
     if err != nil {
         return false
     }
+    // 预处理路径，去除末尾的斜杠
+    aURL.Path = strings.TrimRight(aURL.Path, "/")
+    aURL.Path = strings.TrimRight(aURL.Path, "/")
     aPathComponents := strings.Split(aURL.Path, "/")
     bPathComponents := strings.Split(bURL.Path, "/")
+    
+    for i := 0; i < len(aPathComponents) && i < len(bPathComponents); i++ {
+        if aPathComponents[i] != bPathComponents[i] {
+            return aPathComponents[i] < bPathComponents[i]
+        }
+    }
+    
+    return len(aPathComponents) < len(bPathComponents)
+}
+
+// 按照目录结构对链接进行排序的比较函数
+func compareApi(a, b string) bool {
+    // 预处理路径，去除末尾的斜杠
+    a = strings.TrimRight(a, "/")
+    b = strings.TrimRight(b, "/")
+    aPathComponents := strings.Split(a, "/")
+    bPathComponents := strings.Split(b, "/")
     
     for i := 0; i < len(aPathComponents) && i < len(bPathComponents); i++ {
         if aPathComponents[i] != bPathComponents[i] {

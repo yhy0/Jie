@@ -37,15 +37,15 @@ type Options struct {
 }
 
 type Http struct {
-    Proxy           string            `json:"proxy"`   // http/socks5 proxy to use
-    Timeout         int               `json:"timeout"` // Timeout is the seconds to wait for a response from the server.
-    MaxConnsPerHost int               `json:"maxConnsPerHost"`
-    RetryTimes      int               `json:"retryTimes"`
-    AllowRedirect   int               `json:"allowRedirect"`
-    VerifySSL       bool              `json:"verifySSL"`
-    MaxQps          int               `json:"maxQps"` // MaxQps is the maximum number of queries per second.
-    Headers         map[string]string `json:"headers"`
-    ForceHTTP1      bool              `json:"forceHTTP1"` // 强制指定使用 http/1.1
+    Proxy           string            `json:"proxy"`           // 漏洞扫描时使用的代理，如: http://127.0.0.1:8080
+    Timeout         int               `json:"timeout"`         // 建立 tcp 连接的超时时间
+    MaxConnsPerHost int               `json:"maxConnsPerHost"` // 每个 host 最大连接数
+    RetryTimes      int               `json:"retryTimes"`      // 请求失败的重试次数，0 则不重试
+    AllowRedirect   int               `json:"allowRedirect"`   // 单个请求最大允许的跳转数，0 则不跳转
+    VerifySSL       bool              `json:"verifySSL"`       // 是否验证 ssl 证书
+    MaxQps          int               `json:"maxQps"`          // 每秒最大请求数
+    Headers         map[string]string `json:"headers"`         // 指定 http 请求头
+    ForceHTTP1      bool              `json:"forceHTTP1"`      // 强制指定使用 http/1.1
 }
 
 type Passive struct {
@@ -175,15 +175,16 @@ type Sqlmap struct {
 
 // Collection 信息收集中的正则
 type Collection struct {
-    Domain    []string `json:"domain"`
-    IP        []string `json:"ip"`
-    Phone     []string `json:"phone"`
-    Email     []string `json:"email"`
-    IDCard    []string `json:"idCard"`
-    API       []string `json:"api"`
-    Url       []string `json:"url"`
-    UrlFilter []string `json:"urlFilter"`
-    Other     []string `json:"other"`
+    Domain              []string `json:"domain"`
+    IP                  []string `json:"ip"`
+    Phone               []string `json:"phone"`
+    Email               []string `json:"email"`
+    IDCard              []string `json:"idCard"`
+    API                 []string `json:"api"`
+    Url                 []string `json:"url"`
+    UrlFilter           []string `json:"urlFilter"`
+    Other               []string `json:"other"`
+    SensitiveParameters []string `json:"sensitive_parameters"`
 }
 
 type Mitmproxy struct {

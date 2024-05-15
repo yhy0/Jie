@@ -1,4 +1,4 @@
-version: 1.0.4
+version: 1.1.1
 
 parallel: 10                            # 同时扫描的最大 url 个数
 
@@ -11,7 +11,7 @@ http:
   allowRedirect: 0                      # 单个请求最大允许的跳转数，0 则不跳转
   verifySSL: false                      # 是否验证 ssl 证书
   maxQps: 50                            # 每秒最大请求数
-  headers:                              # 全局 http 请求头
+  headers:                              # 指定 http 请求头
   forceHTTP1: false                     # 强制指定使用 http/1.1, 不然会根据服务器选择，如果服务器支持 http2，默认会使用 http2
 
 # 漏洞探测的插件配置
@@ -153,3 +153,65 @@ collection:
   other:
     - "(access.{0,1}key|access.{0,1}Key|access.{0,1}Id|access.{0,1}id|.{0,8}密码|.{0,8}账号|默认.{0,8}|加密|解密|(password|pwd|pass|username|user|name|account):\\s+[\"'].{1,36}['\"])"
     - "['\"](ey[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9._-]{10,}|ey[A-Za-z0-9_\\/+-]{10,}\\.[A-Za-z0-9._\\/+-]{10,})['\"]"
+  sensitiveParameters: # 请求或者回显中一些可能可以利用的参数 不区分大小写
+    - url
+    - host
+    - href
+    - redirect
+    - u
+    - ip
+    - address
+    - addr
+    - file
+    - f
+    - dir
+    - directory
+    - path
+    - router
+    - callback
+    - conf
+    - cfg
+    - config
+    - jdbc
+    - db
+    - sql
+    - api
+    - apikey
+    - api_key
+    - access
+    - key
+    - token
+    - access_token
+    - accessToken
+    - stable_token
+    - authorizer
+    - authorizer_access_token
+    - authorizerAccessToken
+    - appid
+    - appSecret
+    - app_secret
+    - secret
+    - auth
+    - oauth
+    - oauth2
+    - corp
+    - admin
+    - pass
+    - pwd
+    - passwd
+    - password
+    - debug
+    - dbg
+    - exe
+    - exec
+    - execute
+    - load
+    - shell
+    - grant
+    - create
+    - k8s
+    - docker
+    - env
+    - _key  # 这种以 _ 开头的会不完全匹配，包含 _key 就会抛出来
+    - _token
+    - _secret

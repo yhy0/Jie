@@ -1,5 +1,7 @@
 package output
 
+import "github.com/iancoleman/orderedmap"
+
 /**
    @author yhy
    @since 2023/10/16
@@ -51,16 +53,17 @@ type SCopilotData struct {
 }
 
 type Collection struct {
-    Subdomain   []string `json:"subdomains"`
-    OtherDomain []string `json:"other_domains"`
-    PublicIp    []string `json:"public_ip"`
-    InnerIp     []string `json:"inner_ip"`
-    Phone       []string `json:"phone"`
-    Email       []string `json:"email"`
-    IdCard      []string `json:"id_card"`
-    Others      []string `json:"others"`
-    Urls        []string `json:"urls"`
-    Api         []string `json:"api"`
+    Subdomain   []string               `json:"subdomains"`
+    OtherDomain []string               `json:"other_domains"`
+    PublicIp    []string               `json:"public_ip"`
+    InnerIp     []string               `json:"inner_ip"`
+    Phone       []string               `json:"phone"`
+    Email       []string               `json:"email"`
+    IdCard      []string               `json:"id_card"`
+    Others      []string               `json:"others"`
+    Urls        []string               `json:"urls"`
+    Api         []string               `json:"api"`
+    Parameters  *orderedmap.OrderedMap `json:"parameters"`
 }
 
 type PluginMsg struct {

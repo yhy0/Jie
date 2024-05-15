@@ -73,6 +73,11 @@ func handleWebSocket(c *gin.Context) {
     }
 }
 
+type Para struct {
+    Key   string
+    Value interface{}
+}
+
 func Init() {
     logging.Logger.Infoln("Start SCopilot web service at :" + conf.GlobalConfig.Passive.WebPort)
     gin.SetMode("release")
@@ -110,11 +115,18 @@ func Init() {
     authorized.GET("/SCopilot", func(c *gin.Context) {
         host := c.Query("host")
         
+        var paras []Para
+        
+        for _, key := range output.SCopilotMessage[host].CollectionMsg.Parameters.Keys() {
+            value, _ := output.SCopilotMessage[host].CollectionMsg.Parameters.Get(key)
+            paras = append(paras, Para{Key: key, Value: value})
+        }
         c.HTML(http.StatusOK, "SCopilot.html", gin.H{
             "webPort": conf.GlobalConfig.Passive.WebPort,
             "data":    output.SCopilotMessage[host],
             "ipInfo":  output.IPInfoList[output.SCopilotMessage[host].HostNoPort],
             "year":    time.Now().Year(),
+            "paras":   paras,
         })
     })
     

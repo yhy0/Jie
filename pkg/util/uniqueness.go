@@ -3,8 +3,6 @@ package util
 import (
     "crypto/md5"
     "encoding/hex"
-    "encoding/json"
-    "encoding/xml"
     "github.com/yhy0/Jie/pkg/mitmproxy/go-mitmproxy/proxy"
     "github.com/yhy0/logging"
     "net/url"
@@ -53,43 +51,11 @@ func getRequestKey(req *proxy.Request) (string, error) {
     // 将请求方法和 URL（不包括查询参数）连接在一起
     data := req.Method + req.URL.Scheme + "://" + host + req.URL.Path
     
-    // 提取查询参数的名称  有的即使是 POST 请求，url请求路径中也会存在参数，所以这里全部都要提取
-    var paramNames []string
-    queryParams := req.URL.Query()
-    for paramName := range queryParams {
-        paramNames = append(paramNames, paramName)
-    }
+    // 提取查询参数名
+    paramNames, err := GetReqParameters(req.Method, req.Header.Get("Content-Type"), req.URL, req.Body)
     
-    if req.Method == "POST" {
-        contentType := req.Header.Get("Content-Type")
-        if strings.Contains(contentType, "application/x-www-form-urlencoded") {
-            // 解析 POST 请求的请求体
-            postParams, err := url.ParseQuery(string(req.Body))
-            if err != nil {
-                return "", err
-            }
-            for paramName := range postParams {
-                paramNames = append(paramNames, paramName)
-            }
-        } else if strings.Contains(contentType, "application/json") {
-            var jsonData map[string]interface{}
-            err := json.Unmarshal(req.Body, &jsonData)
-            if err != nil {
-                return "", err
-            }
-            for paramName := range jsonData {
-                paramNames = append(paramNames, paramName)
-            }
-        } else if strings.Contains(contentType, "application/xml") {
-            var xmlData map[string]interface{}
-            err := xml.Unmarshal(req.Body, &xmlData)
-            if err != nil {
-                return "", err
-            }
-            for paramName := range xmlData {
-                paramNames = append(paramNames, paramName)
-            }
-        }
+    if err != nil {
+        return "", err
     }
     
     // 对查询参数名称进行排序，以确保相同的参数集合具有相同的哈希值

@@ -55,6 +55,7 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/gorilla/websocket v1.5.1
+	github.com/iancoleman/orderedmap v0.3.0
 	github.com/imroc/req/v3 v3.43.2
 	github.com/ipinfo/go/v2 v2.10.0
 	github.com/jlaffaye/ftp v0.2.0

@@ -32,49 +32,6 @@ func Contains(stringA, stringB string) bool {
     return strings.Contains(strings.ToLower(stringA), strings.ToLower(stringB))
 }
 
-func Difference(slice1, slice2 []string) []string {
-    intersect := func(slice1, slice2 []string) []string {
-        m := make(map[string]int)
-        nn := make([]string, 0)
-        for _, v := range slice1 {
-            m[v]++
-        }
-
-        for _, v := range slice2 {
-            times, _ := m[v]
-            if times == 1 {
-                nn = append(nn, v)
-            }
-        }
-        return nn
-    }
-
-    m := make(map[string]int)
-    nn := make([]string, 0)
-    inter := intersect(slice1, slice2)
-    for _, v := range inter {
-        m[v]++
-    }
-
-    for _, value := range slice1 {
-        times, _ := m[value]
-        if times == 0 {
-            nn = append(nn, value)
-        }
-    }
-    return nn
-}
-
-func InMap(target string, strs map[string]string) bool {
-    for k, _ := range strs {
-        k = strings.TrimSpace(k)
-        if Contains(target, k) {
-            return true
-        }
-    }
-    return false
-}
-
 // SliceInCaseFold 判断一个字符串是否在另一个字符数组里面，存在返回true
 // target 中是否包含 strs 中的某一个
 // 这个是 target 范围大， element只是一个子串
@@ -100,6 +57,15 @@ func InSliceCaseFold(target string, strs []string) bool {
 func InSlice(slice []string, word string) bool {
     for _, element := range slice {
         if element == word {
+            return true
+        }
+    }
+    return false
+}
+
+func InCaseFoldSlice(slice []string, word string, ) bool {
+    for _, element := range slice {
+        if strings.ToLower(element) == strings.ToLower(word) {
             return true
         }
     }
@@ -149,12 +115,12 @@ func IsInnerIP(ip string) bool {
 // Cidr2IPs C段转ip
 func Cidr2IPs(cidr string) []string {
     var ips []string
-
+    
     ipAddr, ipNet, err := net.ParseCIDR(cidr)
     if err != nil {
         logging.Logger.Print(err)
     }
-
+    
     for ip := ipAddr.Mask(ipNet.Mask); ipNet.Contains(ip); increment(ip) {
         ips = append(ips, ip.String())
     }
@@ -172,27 +138,27 @@ func increment(ip net.IP) {
 
 func StructureIps(ipsTmp []string, num int) (ips []string) {
     ipMap := make(map[string]int)
-
+    
     for _, ip := range ipsTmp {
         front := ip[:strings.LastIndex(ip, ".")] + ".0"
-
+        
         if _, ok := ipMap[front]; ok {
             ipMap[front] += 1
         } else {
             ipMap[front] = 1
         }
     }
-
+    
     for k, v := range ipMap {
         if v > num { // 一个 ip 段大于 15 个ip，才会将此段加入检测列表中
             ips = append(ips, Cidr2IPs(k+"/24")...)
         }
     }
-
+    
     ipMap = nil
-
+    
     ips = append(ips, ipsTmp...)
-
+    
     return funk.UniqString(ips)
 }
 
@@ -206,7 +172,7 @@ func ToStringSlice(actual interface{}) ([]string, error) {
         res = append(res, value.Index(i).Interface().(string))
     }
     return res, nil
-
+    
 }
 
 func CheckErrs(err error) bool {
@@ -237,13 +203,13 @@ func Hostname(target string) string {
         logging.Logger.Errorln("Hostname: ", err)
         return target
     }
-
+    
     return u.Hostname()
 }
 
 func FormatTarget(target string) (targets []string) {
     targets_tmp := strings.Split(target, "\n")
-
+    
     if strings.Contains(target, ",") {
         for _, t := range targets_tmp {
             ts := strings.Split(t, ",")
@@ -252,7 +218,7 @@ func FormatTarget(target string) (targets []string) {
     } else {
         targets = targets_tmp
     }
-
+    
     return funk.UniqString(targets)
 }
 
@@ -281,6 +247,7 @@ func CvtUps(s string) []UserPass {
     }
     return aRst
 }
+
 func CvtLines(s string) []string {
     return strings.Split(s, "\n")
 }
@@ -349,6 +316,49 @@ func RemoveQuotation(str []string) []string {
         s = strings.TrimRight(s, `'`)
         res = append(res, s)
     }
-
+    
     return res
+}
+
+func Difference(slice1, slice2 []string) []string {
+    intersect := func(slice1, slice2 []string) []string {
+        m := make(map[string]int)
+        nn := make([]string, 0)
+        for _, v := range slice1 {
+            m[v]++
+        }
+        
+        for _, v := range slice2 {
+            times, _ := m[v]
+            if times == 1 {
+                nn = append(nn, v)
+            }
+        }
+        return nn
+    }
+    
+    m := make(map[string]int)
+    nn := make([]string, 0)
+    inter := intersect(slice1, slice2)
+    for _, v := range inter {
+        m[v]++
+    }
+    
+    for _, value := range slice1 {
+        times, _ := m[value]
+        if times == 0 {
+            nn = append(nn, value)
+        }
+    }
+    return nn
+}
+
+func InMap(target string, strs map[string]string) bool {
+    for k, _ := range strs {
+        k = strings.TrimSpace(k)
+        if Contains(target, k) {
+            return true
+        }
+    }
+    return false
 }

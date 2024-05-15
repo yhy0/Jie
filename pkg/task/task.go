@@ -2,6 +2,7 @@ package task
 
 import (
     "fmt"
+    "github.com/iancoleman/orderedmap"
     "github.com/panjf2000/ants/v2"
     regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/conf"
@@ -10,6 +11,7 @@ import (
     "github.com/yhy0/Jie/pkg/output"
     "github.com/yhy0/Jie/pkg/protocols/httpx"
     "github.com/yhy0/Jie/pkg/util"
+    "github.com/yhy0/Jie/scan"
     "github.com/yhy0/Jie/scan/Pocs/pocs_go"
     "github.com/yhy0/Jie/scan/gadget/collection"
     "github.com/yhy0/Jie/scan/gadget/jwt"
@@ -231,12 +233,42 @@ func (t *Task) Distribution(in *input.CrawlResult) DistributionTaskFunc {
         if !strings.HasSuffix(in.ParseUrl.Path, ".css") && !strings.HasSuffix(in.ParseUrl.Path, ".js") {
             // 插件扫描
             t.Run(in)
+            t.Lock.Lock()
+            // 收集参数
+            paramNames, err := util.GetReqParameters(in.Method, in.ContentType, in.ParseUrl, []byte(in.RequestBody))
+            
+            if err != nil {
+                logging.Logger.Errorln("GetReqParameters err:", err)
+            } else {
+                in.ParamNames = paramNames
+                // 看请求、返回包中的参数是否包含敏感参数
+                scan.PerFilePlugins["SensitiveParameters"].Scan("", "", in, nil)
+                
+                if output.SCopilotMessage[in.Host].CollectionMsg.Parameters == nil {
+                    output.SCopilotMessage[in.Host].CollectionMsg.Parameters = orderedmap.New()
+                }
+                resParamNames, _ := util.GetResParameters(strings.ToLower(in.Resp.Header.Get("Content-Type")), []byte(in.Resp.Body))
+                paramNames = append(paramNames, resParamNames...)
+                for _, _para := range paramNames {
+                    v, ok := output.SCopilotMessage[in.Host].CollectionMsg.Parameters.Get(_para)
+                    if ok {
+                        output.SCopilotMessage[in.Host].CollectionMsg.Parameters.Set(_para, v.(int)+1)
+                    } else {
+                        output.SCopilotMessage[in.Host].CollectionMsg.Parameters.Set(_para, 0)
+                    }
+                }
+                
+                // 按照value的字典序升序排序
+                output.SCopilotMessage[in.Host].CollectionMsg.Parameters.Sort(func(a *orderedmap.Pair, b *orderedmap.Pair) bool {
+                    return a.Value().(int) > b.Value().(int)
+                })
+            }
+            
             // poc 模块依托于指纹识别，只有识别到对应的指纹才会扫描，所以这里就不插件化了
             if conf.Plugin["poc"] {
-                t.Lock.Lock()
                 t.ScanTask[in.Host].PocPlugin = pocs_go.PocCheck(in.Fingerprints, in.Target, in.Url, in.Ip, t.ScanTask[in.Host].PocPlugin, t.ScanTask[in.Host].Client)
-                t.Lock.Unlock()
             }
+            t.Lock.Unlock()
         } else {
             // 下面这些使用去重逻辑，因为扫描结果不会被别的插件用到
             if isScanned(in.UniqueId) {

@@ -19,17 +19,17 @@ func Write(progress bool) {
     if progress {
         go Progress()
     }
-
+    
     if conf.GlobalConfig.Options.Output != "" {
         go GenerateVulnReport(conf.GlobalConfig.Options.Output)
     }
-
+    
     for v := range OutChannel {
         // 漏洞保存到文件
         if conf.GlobalConfig.Options.Output != "" {
             ReportMessageChan <- v
         }
-
+        
         // 被动模式下的 SCopilot 结果保存
         if conf.GlobalConfig.Passive.WebPort != "" {
             parse, err := url.Parse(v.VulnData.Target)
@@ -40,7 +40,7 @@ func Write(progress bool) {
             msg := SCopilotData{
                 Target: v.VulnData.Target,
             }
-
+            
             if v.Level == "Low" {
                 msg.InfoMsg = []PluginMsg{
                     {
@@ -54,9 +54,10 @@ func Write(progress bool) {
             } else {
                 msg.VulMessage = append(msg.VulMessage, v)
             }
-
+            
             SCopilot(parse.Host, msg)
-            logging.Logger.Infoln(aurora.Red(v.PrintScreen()).String())
         }
+        
+        logging.Logger.Infoln(aurora.Red(v.PrintScreen()).String())
     }
 }

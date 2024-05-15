@@ -16,6 +16,7 @@ import (
     "github.com/yhy0/Jie/scan/PerServer/portScan"
     "github.com/yhy0/Jie/scan/bbscan"
     "github.com/yhy0/Jie/scan/gadget/bypass403"
+    "github.com/yhy0/Jie/scan/gadget/collection"
 )
 
 /**
@@ -44,6 +45,8 @@ func init() {
     PerFilePlugins["xxe"] = &xxe.Plugin{}
     PerFilePlugins["fastjson"] = &fastjson.Plugin{}
     PerFilePlugins["bypass403"] = &bypass403.Plugin{}
+    
+    PerFilePlugins["SensitiveParameters"] = &collection.Plugin{} // 这个不受开关控制
     
     PerFolderPlugins["crlf"] = &crlf.Plugin{}
     PerFolderPlugins["iis"] = &crlf.Plugin{}

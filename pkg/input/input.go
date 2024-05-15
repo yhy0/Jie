@@ -31,8 +31,8 @@ type CrawlResult struct {
     Fingerprints []string          `json:"fingerprints"` // 指纹，有的扫描插件需要匹配到指纹才会进行扫描
     Source       string            `json:"source"`       // 来源
     File         string            `json:"file"`
-    Kv           string            `json:"kv"`      // 参数名和参数值  user=admin&password=admin
-    Param        []string          `json:"param"`   // 请求中的参数名  user,password，
-    Waf          []string          `json:"waf"`     // 是否存在 waf
-    Archive      map[string]string `json:"archive"` // 从 web.archive.org 获取到的历史 url
+    Kv           string            `json:"kv"`          // 参数名和参数值  user=admin&password=admin
+    ParamNames   []string          `json:"param_names"` // 请求中的参数名  user,password，
+    Waf          []string          `json:"waf"`         // 是否存在 waf
+    Archive      map[string]string `json:"archive"`     // 从 web.archive.org 获取到的历史 url
 }

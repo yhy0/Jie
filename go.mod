@@ -1,8 +1,6 @@
 module github.com/yhy0/Jie
 
-go 1.22.0
-
-toolchain go1.22.1
+go 1.22.3
 
 require (
 	github.com/PuerkitoBio/goquery v1.9.2
@@ -79,7 +77,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/tidwall/match v1.1.1
 	github.com/tomatome/grdp v0.1.1-0.20230622130233-b1e80faa1cf2
-	github.com/wasilibs/go-re2 v1.5.2
+	github.com/wasilibs/go-re2 v1.5.3
 	github.com/weppos/publicsuffix-go v0.30.2
 	github.com/yaklang/yaklang v1.3.2
 	github.com/yhy0/logging v0.0.0-20231128014545-22711cccc3b0

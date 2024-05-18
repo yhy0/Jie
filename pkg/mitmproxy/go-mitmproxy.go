@@ -9,9 +9,11 @@ package mitmproxy
 import (
     "github.com/panjf2000/ants/v2"
     "github.com/yhy0/Jie/conf"
+    "github.com/yhy0/Jie/pkg/mitmproxy/go-mitmproxy/helper"
     "github.com/yhy0/Jie/pkg/mitmproxy/go-mitmproxy/proxy"
     "github.com/yhy0/Jie/pkg/task"
     "github.com/yhy0/logging"
+    "net/http"
 )
 
 var t *task.Task
@@ -44,6 +46,18 @@ func NewMitmproxy() {
     PassiveProxy, err = proxy.NewProxy(opts)
     if err != nil {
         logging.Logger.Fatal(err)
+    }
+    
+    // 直接从这里限制走不走代理，之前那种方式也会走代理，只不过不会经过扫描流程
+    if len(conf.GlobalConfig.Mitmproxy.Exclude) > 0 || !(len(conf.GlobalConfig.Mitmproxy.Exclude) == 1 && conf.GlobalConfig.Mitmproxy.Exclude[0] == "") {
+        PassiveProxy.SetShouldInterceptRule(func(req *http.Request) bool {
+            return !helper.MatchHost(req.Host, conf.GlobalConfig.Mitmproxy.Exclude)
+        })
+    }
+    if len(conf.GlobalConfig.Mitmproxy.Include) > 0 && !(len(conf.GlobalConfig.Mitmproxy.Include) == 1 && conf.GlobalConfig.Mitmproxy.Include[0] == "") {
+        PassiveProxy.SetShouldInterceptRule(func(req *http.Request) bool {
+            return helper.MatchHost(req.Host, conf.GlobalConfig.Mitmproxy.Include)
+        })
     }
     
     // 添加一个插件用来获取流量信息

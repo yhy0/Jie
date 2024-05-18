@@ -174,7 +174,7 @@
 
                     <ul class="list-group position-relative">
                         {{ range $index, $info := .data.InfoMsg }}
-                            <li class="list-group-item msg-plugin-ul" data-plugin="{{ $info.Plugin }}">
+                            <li class="list-group-item msg-plugin-ul" data-plugin="{{ $info.Plugin }}" style="margin-top:10px;">
                                 {{ $info.Url }}
                                 <span class="badge rounded-pill bg-primary"> {{ $info.Plugin }}</span>
                                 {{ if $info.Result }}<p><span class="badge bg-warning">{{ $info.Result }}</span></p>{{ end }}

@@ -178,6 +178,7 @@ collection:
     - host
     - href
     - redirect
+    - referer
     - u
     - ip
     - address
@@ -232,9 +233,12 @@ collection:
     - k8s
     - docker
     - env
+    - ak
+    - sk
     - _key  # 这种以 _ 开头的会不完全匹配，包含 _key 就会抛出来
     - _token
     - _secret
+    - _uri
 `)
 
 // HotConf 使用 viper 对配置热加载

@@ -254,10 +254,9 @@ func (t *Task) Distribution(in *input.CrawlResult) DistributionTaskFunc {
                     if ok {
                         output.SCopilotMessage[in.Host].CollectionMsg.Parameters.Set(_para, v.(int)+1)
                     } else {
-                        output.SCopilotMessage[in.Host].CollectionMsg.Parameters.Set(_para, 0)
+                        output.SCopilotMessage[in.Host].CollectionMsg.Parameters.Set(_para, 1)
                     }
                 }
-                
                 // 按照value的字典序升序排序
                 output.SCopilotMessage[in.Host].CollectionMsg.Parameters.Sort(func(a *orderedmap.Pair, b *orderedmap.Pair) bool {
                     return a.Value().(int) > b.Value().(int)

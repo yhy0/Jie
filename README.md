@@ -42,6 +42,8 @@ Analyze and scan traffic by using [active crawler mode](https://github.com/Qianl
 
 You should check whether the above programs exist on your machine before using them
 
+> If you do not want to install nmap and masscan, you can use-nps to specify that port scanning will not be performed and turn off checking
+
 ## Active Mode
 
 Three built-in crawler modes are available:

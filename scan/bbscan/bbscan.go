@@ -207,6 +207,7 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
         }
         resContents = append(resContents, strings.ReplaceAll(url404res.Body, path404, ""))
     }
+    fingprints = util.RemoveDuplicateElement(append(fingprints, technologies...))
     
     pool, _ := ants.NewPool(20)
     defer pool.Release() // 释放协程池
@@ -351,15 +352,15 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
                     if strings.Contains(target, "swagger") {
                         swagger.Scan(target, client)
                     }
-                    if res.StatusCode == 401 {
-                        l.Lock()
-                        technologies = append(technologies, "Basic")
-                        l.Unlock()
-                    }
-                    
                     l.Lock()
+                    
+                    if res.StatusCode == 401 {
+                        technologies = append(technologies, "Basic")
+                    }
                     technologies = append(addFingerprintsnormal(target, technologies, res, client)) // 基于200页面文件扫描指纹添加
                     resContents = append(resContents, strings.ReplaceAll(res.Body, target, ""))
+                    fingprints = util.RemoveDuplicateElement(append(fingprints, technologies...))
+                    
                     l.Unlock()
                     
                     output.OutChannel <- output.VulMessage{

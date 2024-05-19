@@ -16,7 +16,7 @@ import (
 var ChromePath string
 
 func Preparations() {
-    if GlobalConfig.NoPortScan { // 不进行端口扫描时，不检查这些
+    if !GlobalConfig.NoPortScan { // 不进行端口扫描时，不检查这些
         Plugin["portScan"] = false
         // 检查 nmap 是否已安装
         nmapInstalled := commandExists("nmap")

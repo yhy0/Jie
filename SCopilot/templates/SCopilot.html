@@ -192,7 +192,7 @@
                                         <pre class="card-text">{{ $info.Request }}</pre>
                                     </div>
                                     <div class="tab-pane fade" id="response{{$index}}" role="tabpanel" aria-labelledby="response-tab{{$index}}">
-                                        <pre class="card-text">{{ $info.Response }}</pre>
+                                        <pre class="card-text">{{ $info.Response  | html }}</pre>
                                     </div>
                                 </div>
                             </li>
@@ -253,7 +253,7 @@
                                             {{ if $message.VulnData.Request}}<pre class="card-text">{{ $message.VulnData.Request}}</pre>{{ end }}
                                         </div>
                                         <div class="tab-pane fade" id="vuln-response{{$index}}" role="tabpanel" aria-labelledby="vuln-response-tab{{$index}}">
-                                            {{ if $message.VulnData.Response }}<pre class="card-text">{{ $message.VulnData.Response }}</pre>{{ end }}
+                                            {{ if $message.VulnData.Response }}<pre class="card-text">{{ $message.VulnData.Response | html }}</pre>{{ end }}
                                         </div>
                                     </div>
                                 </div>

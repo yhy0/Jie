@@ -2,6 +2,7 @@ package bbscan
 
 import (
     "github.com/antlabs/strsim"
+    "github.com/panjf2000/ants/v2"
     regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/pkg/input"
     "github.com/yhy0/Jie/pkg/output"
@@ -194,7 +195,6 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
     if strings.HasSuffix(u, "/") {
         u = u[:len(u)-1]
     }
-    
     var (
         technologies []string
         resContents  []string // 找到的页面返回集合，用来进行网页相似度比较，用来去除大量的返回一样的
@@ -208,8 +208,10 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
         resContents = append(resContents, strings.ReplaceAll(url404res.Body, path404, ""))
     }
     
+    pool, _ := ants.NewPool(20)
+    defer pool.Release() // 释放协程池
+    
     wg := sync.WaitGroup{}
-    ch := make(chan struct{}, 20)
     var l sync.Mutex
     count := 0
     
@@ -268,13 +270,11 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
         }
         
         wg.Add(1)
-        ch <- struct{}{}
         
-        go func(t string, _path string, r *Rule) {
+        _ = pool.Submit(func() {
             defer wg.Done()
-            defer func() { <-ch }()
             <-time.After(time.Duration(100) * time.Millisecond)
-            page, res, err := ReqPage(t, header, client)
+            page, res, err := ReqPage(target, header, client)
             
             if err == nil && res != nil {
                 if res.StatusCode >= 500 {
@@ -285,7 +285,7 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
                 }
                 
                 // 黑名单，跳过
-                if scan_util.IsBlackHtml(res.Body, res.Header["Content-Type"], _path) {
+                if scan_util.IsBlackHtml(res.Body, res.Header["Content-Type"], path) {
                     return
                 }
                 
@@ -300,11 +300,11 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
                     return
                 }
                 
-                if strings.HasSuffix(t, ".xml") {
+                if strings.HasSuffix(target, ".xml") {
                     if !util.Contains(contentType, "xml") {
                         return
                     }
-                } else if strings.HasSuffix(t, ".json") {
+                } else if strings.HasSuffix(target, ".json") {
                     if !util.Contains(contentType, "json") {
                         return
                     }
@@ -315,10 +315,10 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
                     if len(strings.TrimSpace(res.Body)) == 0 {
                         return
                     }
-                    if (r.Type != "" && !util.Contains(contentType, r.Type)) || (r.TypeNo != "" && util.Contains(contentType, r.TypeNo)) {
+                    if (rule.Type != "" && !util.Contains(contentType, rule.Type)) || (rule.TypeNo != "" && util.Contains(contentType, rule.TypeNo)) {
                         return
                     }
-                    if r.Status != "" && strconv.Itoa(res.StatusCode) != r.Status {
+                    if rule.Status != "" && strconv.Itoa(res.StatusCode) != rule.Status {
                         return
                     }
                 } else {
@@ -334,7 +334,7 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
                     
                 }
                 
-                if r.Tag != "" && !util.Contains(res.Body, r.Tag) {
+                if rule.Tag != "" && !util.Contains(res.Body, rule.Tag) {
                     return
                 }
                 
@@ -348,8 +348,8 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
                 
                 if !similar {
                     // 对扫到的 swagger 进行自动化测试
-                    if strings.Contains(t, "swagger") {
-                        swagger.Scan(t, client)
+                    if strings.Contains(target, "swagger") {
+                        swagger.Scan(target, client)
                     }
                     if res.StatusCode == 401 {
                         l.Lock()
@@ -358,8 +358,8 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
                     }
                     
                     l.Lock()
-                    technologies = append(addFingerprintsnormal(t, technologies, res, client)) // 基于200页面文件扫描指纹添加
-                    resContents = append(resContents, strings.ReplaceAll(res.Body, t, ""))
+                    technologies = append(addFingerprintsnormal(target, technologies, res, client)) // 基于200页面文件扫描指纹添加
+                    resContents = append(resContents, strings.ReplaceAll(res.Body, target, ""))
                     l.Unlock()
                     
                     output.OutChannel <- output.VulMessage{
@@ -368,7 +368,7 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
                         VulnData: output.VulnData{
                             CreateTime: time.Now().Format("2006-01-02 15:04:05"),
                             Target:     u,
-                            Payload:    t,
+                            Payload:    target,
                             Method:     "GET",
                             Request:    res.RequestDump,
                             Response:   res.ResponseDump,
@@ -377,7 +377,7 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
                     }
                 }
             }
-        }(target, path, rule)
+        })
         
     }
     

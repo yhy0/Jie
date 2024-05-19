@@ -3,6 +3,7 @@ package cmd
 import (
     "fmt"
     "github.com/logrusorgru/aurora"
+    "github.com/panjf2000/ants/v2"
     "github.com/spf13/cobra"
     "github.com/yhy0/Jie/conf"
     "github.com/yhy0/Jie/pkg/protocols/httpx"
@@ -10,6 +11,7 @@ import (
     "github.com/yhy0/Jie/scan/bbscan"
     "github.com/yhy0/Jie/scan/gadget/brute"
     "github.com/yhy0/Jie/scan/gadget/swagger"
+    "sync"
 )
 
 /**
@@ -23,21 +25,42 @@ var otherCmd = &cobra.Command{
     Short: "other scan && exp bb:BasicBrute、swagger:Swagger、nat:NginxAliasTraversal、dir:dir)",
     Run: func(cmd *cobra.Command, args []string) {
         client := httpx.NewClient(nil)
+        pool, _ := ants.NewPool(20)
+        defer pool.Release() // 释放协程池
+        
+        wg := sync.WaitGroup{}
+        
         for _, target := range conf.GlobalConfig.Options.Targets {
+            wg.Add(1)
             switch conf.GlobalConfig.Options.Mode {
             case "bb":
-                user, pwd, _ := brute.BasicBrute(target, client)
-                if user != "" {
-                    fmt.Println(aurora.Red(fmt.Sprintf("[Success] %v %v", user, pwd)))
-                }
+                _ = pool.Submit(func() {
+                    defer wg.Done()
+                    user, pwd, _ := brute.BasicBrute(target, client)
+                    if user != "" {
+                        fmt.Println(aurora.Red(fmt.Sprintf("[Success] %v %v", user, pwd)))
+                    }
+                })
             case "nat":
-                traversal.NginxAlias(target, "", "")
+                _ = pool.Submit(func() {
+                    defer wg.Done()
+                    traversal.NginxAlias(target, "", "")
+                })
+            
             case "swagger":
-                swagger.Scan(target, client)
+                _ = pool.Submit(func() {
+                    defer wg.Done()
+                    swagger.Scan(target, client)
+                })
             case "dir":
-                bbscan.BBscan(target, true, nil, nil, client)
+                _ = pool.Submit(func() {
+                    defer wg.Done()
+                    bbscan.BBscan(target, true, nil, nil, client)
+                })
             }
         }
+        
+        wg.Wait()
     },
 }
 

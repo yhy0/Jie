@@ -202,13 +202,7 @@ func Katana(target string, waf []string, t *task.Task, fingerprint []string) []s
         
         // 分发扫描任务
         t.WG.Add(1)
-        go func() {
-            err := t.Pool.Submit(t.Distribution(crawlResult))
-            if err != nil {
-                t.WG.Done()
-                logging.Logger.Errorf("add distribution err:%v, crawlResult:%v", err, crawlResult)
-            }
-        }()
+        _ = t.Pool.Submit(t.Distribution(crawlResult))
     }
     
     if conf.GlobalConfig.WebScan.Craw == "k" {
@@ -303,13 +297,7 @@ func Crawlergo(target string, waf []string, t *task.Task, fingerprint []string) 
         
         // 分发扫描任务
         t.WG.Add(1)
-        go func() {
-            err := t.Pool.Submit(t.Distribution(crawlResult))
-            if err != nil {
-                t.WG.Done()
-                logging.Logger.Errorf("add distribution err:%v, crawlResult:%v", err, crawlResult)
-            }
-        }()
+        _ = t.Pool.Submit(t.Distribution(crawlResult))
     }
     
     // 开始爬虫任务

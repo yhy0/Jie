@@ -76,10 +76,10 @@
                     <!-- Tab panes for Request and Response -->
                     <div class="tab-content">
                         <div class="tab-pane fade show active" id="vuln-request{{$index}}" role="tabpanel" aria-labelledby="vuln-request-tab{{$index}}">
-                            {{ if $message.VulnData.Request}}<pre class="card-text">{{ $message.VulnData.Request}}</pre>{{ end }}
+                            {{ if $message.VulnData.Request}}<pre class="card-text bg-light p-3 border">{{ $message.VulnData.Request}}</pre>{{ end }}
                         </div>
                         <div class="tab-pane fade" id="vuln-response{{$index}}" role="tabpanel" aria-labelledby="vuln-response-tab{{$index}}">
-                            {{ if $message.VulnData.Response }}<pre class="card-text">{{ $message.VulnData.Response }}</pre>{{ end }}
+                            {{ if $message.VulnData.Response }}<pre class="card-text bg-light p-3 border">{{ $message.VulnData.Response | html }}</pre>{{ end }}
                         </div>
                     </div>
                 </div>

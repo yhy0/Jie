@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vulnerability Report - Jie</title>
+    <!-- Include Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/lumen/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .vuln-card.Low {
+            border-color: #6c757d;
+        }
+        .vuln-card.Medium {
+            border-color: #ffc107;
+        }
+        .vuln-card.High {
+            border-color: #fd7e14;
+        }
+        .vuln-card.Critical {
+            border-color: #dc3545;
+        }
+        .vuln-card.Low .level, .vuln-card.Low .plugin {
+            color: #6c757d;
+        }
+        .vuln-card.Medium .level, .vuln-card.Medium .plugin {
+            color: #ffc107;
+        }
+        .vuln-card.High .level, .vuln-card.High .plugin {
+            color: #fd7e14;
+        }
+        .vuln-card.Critical .level, .vuln-card.Critical .plugin {
+            color: #dc3545;
+        }
+        .list-group-item {
+            padding: 0.5rem 1rem;
+        }
+        .vuln-card h4 {
+            font-size: 1.2rem;
+        }
+        p {
+            margin-bottom: 0.3rem;
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    <h3 class="text-center">Vulnerability Report - Jie</h3>
+    <ul class="list-group">
+        
+        <li class="list-group-item">
+            <div class="vuln-card mb-3 Low">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="level mb-0">
+                        http://testphp.vulnweb.com
+                    </h4>
+                    <span class="toggle-switch btn btn-primary">Toggle Details</span>
+                </div>
+                <p class="level">Low <span class="badge rounded-pill bg-danger"> BBscan</span></p>
+                
+                <p>Create Time: 2024-05-19 15:47:41</p>
+                <p class="level">Payload: http://testphp.vulnweb.com/.idea/workspace.xml</p>
+                <div class="vuln-details collapse">
+                    <p>Method: GET</p>
+                    
+                    
+                    
+                    <!-- Nav tabs for Request and Response -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#vuln-request0" role="tab" aria-controls="vuln-request0" aria-selected="true" >Request</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" data-bs-toggle="tab" href="#vuln-response0" role="tab" aria-controls="vuln-response0" aria-selected="false" >Response</a>
+                        </li>
+                    </ul>
+                    <!-- Tab panes for Request and Response -->
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="vuln-request0" role="tabpanel" aria-labelledby="vuln-request-tab0">
+                            <pre class="card-text bg-light p-3 border">GET /.idea/workspace.xml HTTP/1.1
+Host: testphp.vulnweb.com
+Pragma: no-cache
+Cache-Control: no-cache
+Sec-Ch-Ua: "Not_A Brand";v="99", "Google Chrome";v="109", "Chromium";v="109"
+Sec-Ch-Ua-Mobile: ?0
+Sec-Ch-Ua-Platform: "macOS"
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Accept-Encoding: gzip
+Accept-Language: zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7,it;q=0.6
+
+</pre>
+                        </div>
+                        <div class="tab-pane fade" id="vuln-response0" role="tabpanel" aria-labelledby="vuln-response-tab0">
+                            <pre class="card-text bg-light p-3 border">HTTP/1.1 200 OK
+Server: nginx/1.19.0
+Date: Sun, 19 May 2024 07:47:41 GMT
+Content-Type: text/xml
+Content-Length: 12473
+Last-Modified: Fri, 20 Apr 2012 08:23:07 GMT
+Connection: keep-alive
+ETag: &#34;4f911ceb-30b9&#34;
+Accept-Ranges: bytes
+
+&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;
+&lt;project version=&#34;4&#34;&gt;
+  &lt;component name=&#34;ChangeListManager&#34;&gt;
+    &lt;list default=&#34;true&#34; id=&#34;190e5f86-a42c-4cc9-a03a-80ac0d47d6d2&#34; name=&#34;Default&#34; comment=&#34;&#34; /&gt;
+    &lt;ignored path=&#34;acuart.iws&#34; /&gt;
+    &lt;ignored path=&#34;.idea/workspace.xml&#34; /&gt;
+    &lt;option name=&#34;TRACKING_ENABLED&#34; value=&#34;true&#34; /&gt;
+    &lt;option name=&#34;SHOW_DIALOG&#34; value=&#34;false&#34; /&gt;
+    &lt;option name=&#34;HIGHLIGHT_CONFLICTS&#34; value=&#34;true&#34; /&gt;
+    &lt;option name=&#34;HIGHLIGHT_NON_ACTIVE_CHANGELIST&#34; value=&#34;false&#34; /&gt;
+    &lt;option name=&#34;LAST_RESOLUTION&#34; value=&#34;IGNORE&#34; /&gt;
+  &lt;/component&gt;
+  &lt;component name=&#34;ChangesViewManager&#34; flattened_view=&#34;true&#34; show_ignored=&#34;false&#34; /&gt;
+  &lt;component name=&#34;CreatePatchCommitExecutor&#34;&gt;
+    &lt;option name=&#34;PATCH_PATH&#34; value=&#34;&#34; /&gt;
+  &lt;/component&gt;
+  &lt;component name=&#34;DaemonCodeAnalyzer&#34;&gt;
+    &lt;disable_hints /&gt;
+  &lt;/component&gt;
+  &lt;component name=&#34;FavoritesManager&#34;&gt;
+    &lt;favorites_list name=&#34;acuart&#34; /&gt;
+  &lt;/component&gt;
+  &lt;component name=&#34;FileEditorManager&#34;&gt;
+    &lt;leaf&gt;
+      &lt;file leaf-file-name=&#34;cart.php&#34; pinned=&#34;false&#34; current=&#34;true&#34; current-in-tab=&#34;true&#34;&gt;
+        &lt;entry file=&#34;file://$PROJECT_DIR$/cart.php&#34;&gt;
+          &lt;provider selected=&#34;true&#34; editor-type-id=&#34;text-editor&#34;&gt;
+            &lt;state line=&#34;60&#34; column=&#34;26&#34; selection-start=&#34;2336&#34; selection-end=&#34;2336&#34; vertical-scroll-proportion=&#34;-0.41645244&#34;&gt;
+              &lt;folding&gt;
+                &lt;marker date=&#34;1334906567000&#34; expanded=&#34;true&#34; signature=&#34;3702:3950&#34; placeholder=&#34;...&#34; /&gt;
+                &lt;marker date=&#34;1334906567000&#34; expanded=&#34;true&#34; signature=&#34;4948:5056&#34; placeholder=&#34;...&#34; /&gt;
+              &lt;/folding&gt;
+            &lt;/state&gt;
+          &lt;/provider&gt;
+        &lt;/entry&gt;
+      &lt;/file&gt;
+    &lt;/leaf&gt;
+  &lt;/component&gt;
+  &lt;component name=&#34;Git.Settings&#34;&gt;
+    &lt;option name=&#34;CHECKOUT_INCLUDE_TAGS&#34; value=&#34;false&#34; /&gt;
+    &lt;option name=&#34;UPDATE_CHANGES_POLICY&#34; value=&#34;STASH&#34; /&gt;
+    &lt;option name=&#34;LINE_SEPARATORS_CONVERSION&#34; value=&#34;ASK&#34; /&gt;
+  &lt;/component&gt;
+  &lt;component name=&#34;IdeDocumentHistory&#34;&gt;
+    &lt;option name=&#34;changedFiles&#34;&gt;
+      &lt;list&gt;
+        &lt;option value=&#34;$PROJECT_DIR$/.htaccess&#34; /&gt;
+        &lt;option value=&#34;$PROJECT_DIR$/cart.php&#34; /&gt;
+      &lt;/list&gt;
+    &lt;/option&gt;
+  &lt;/component&gt;
+  &lt;component name=&#34;PhpWorkspaceProjectConfiguration&#34; backward_compatibility_performed=&#34;true&#34; /&gt;
+  &lt;component name=&#34;ProjectFrameBounds&#34;&gt;
+    &lt;option name=&#34;x&#34; value=&#34;-8&#34; /&gt;
+    &lt;option name=&#34;y&#34; value=&#34;-8&#34; /&gt;
+    &lt;option name=&#34;width&#34; value=&#34;1296&#34; /&gt;
+    &lt;option name=&#34;height&#34; value=&#34;1000&#34; /&gt;
+  &lt;/component&gt;
+  &lt;component name=&#34;ProjectLevelVcsManager&#34; settingsEditedManually=&#34;false&#34;&gt;
+    &lt;OptionsSetting value=&#34;true&#34; id=&#34;Add&#34; /&gt;
+    &lt;OptionsSetting value=&#34;true&#34; id=&#34;Remove&#34; /&gt;
+    &lt;OptionsSetting value=&#34;true&#34; id=&#34;Checkout&#34; /&gt;
+    &lt;OptionsSetting value=&#34;true&#34; id=&#34;Update&#34; /&gt;
+    &lt;OptionsSetting value=&#34;true&#34; id=&#34;Status&#34; /&gt;
+    &lt;OptionsSetting value=&#34;true&#34; id=&#34;Edit&#34; /&gt;
+    &lt;ConfirmationsSetting value=&#34;0&#34; id=&#34;Add&#34; /&gt;
+    &lt;ConfirmationsSetting value=&#34;0&#34; id=&#34;Remove&#34; /&gt;
+  &lt;/component&gt;
+  &lt;component name=&#34;ProjectReloadState&#34;&gt;
+    &lt;option name=&#34;STATE&#34; value=&#34;0&#34; /&gt;
+  &lt;/component&gt;
+  &lt;component name=&#34;ProjectView&#34;&gt;
+    &lt;navigator currentView=&#34;ProjectPane&#34; proportions=&#34;&#34; version=&#34;1&#34; splitterProportion=&#34;0.5&#34;&gt;
+      &lt;flattenPackages /&gt;
+      &lt;showMembers /&gt;
+      &lt;showModules /&gt;
+      &lt;showLibraryContents ProjectPane=&#34;true&#34; /&gt;
+      &lt;hideEmptyPackages /&gt;
+      &lt;abbreviatePackageNames /&gt;
+      &lt;autoscrollToSource /&gt;
+      &lt;autoscrollFromSource /&gt;
+      &lt;sortByType /&gt;
+    &lt;/navigator&gt;
+    &lt;panes&gt;
+      &lt;pane id=&#34;ProjectPane&#34;&gt;
+        &lt;subPane&gt;
+          &lt;PATH&gt;
+            &lt;PATH_ELEMENT&gt;
+              &lt;option name=&#34;myItemId&#34; value=&#34;acuart&#34; /&gt;
+              &lt;option name=&#34;myItemType&#34; value=&#34;com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode&#34; /&gt;
+            &lt;/PATH_ELEMENT&gt;
+          &lt;/PATH&gt;
+          &lt;PATH&gt;
+            &lt;PATH_ELEMENT&gt;
+              &lt;option name=&#34;myItemId&#34; value=&#34;acuart&#34; /&gt;
+              &lt;option name=&#34;myItemType&#34; value=&#34;com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode&#34; /&gt;
+            &lt;/PATH_ELEMENT&gt;
+            &lt;PATH_ELEMENT&gt;
+              &lt;option name=&#34;myItemId&#34; value=&#34;acuart&#34; /&gt;
+              &lt;option name=&#34;myItemType&#34; value=&#34;com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode&#34; /&gt;
+            &lt;/PATH_ELEMENT&gt;
+          &lt;/PATH&gt;
+        &lt;/subPane&gt;
+      &lt;/pane&gt;
+      &lt;pane id=&#34;Scope&#34; /&gt;
+    &lt;/panes&gt;
+  &lt;/component&gt;
+  &lt;component name=&#34;PropertiesComponent&#34;&gt;
+    &lt;property name=&#34;WebServerToolWindowFactoryState&#34; value=&#34;false&#34; /&gt;
+  &lt;/component&gt;
+  &lt;component name=&#34;RunManager&#34;&gt;
+    &lt;list size=&#34;0&#34; /&gt;
+  &lt;/component&gt;
+  &lt;component name=&#34;ShelveChangesManager&#34; show_recycled=&#34;false&#34; /&gt;
+  &lt;component name=&#34;TaskManager&#34;&gt;
+    &lt;task active=&#34;true&#34; id=&#34;Default&#34; summary=&#34;Default task&#34;&gt;
+      &lt;created&gt;1334906472656&lt;/created&gt;
+      &lt;updated&gt;1334906472656&lt;/updated&gt;
+    &lt;/task&gt;
+    &lt;servers /&gt;
+  &lt;/component&gt;
+  &lt;component name=&#34;ToolWindowManager&#34;&gt;
+    &lt;frame x=&#34;-8&#34; y=&#34;-8&#34; width=&#34;1296&#34; height=&#34;1000&#34; extended-state=&#34;6&#34; /&gt;
+    &lt;editor active=&#34;true&#34; /&gt;
+    &lt;layout&gt;
+      &lt;window_info id=&#34;Data Sources&#34; active=&#34;false&#34; anchor=&#34;right&#34; auto_hide=&#34;false&#34; internal_type=&#34;DOCKED&#34; type=&#34;DOCKED&#34; visible=&#34;false&#34; weight=&#34;0.33&#34; sideWeight=&#34;0.5&#34; order=&#34;-1&#34; side_tool=&#34;false&#34; content_ui=&#34;tabs&#34; /&gt;
+      &lt;window_info id=&#34;Changes&#34; active=&#34;false&#34; anchor=&#34;bottom&#34; auto_hide=&#34;false&#34; internal_type=&#34;DOCKED&#34; type=&#34;DOCKED&#34; visible=&#34;false&#34; weight=&#34;0.33&#34; sideWeight=&#34;0.5&#34; order=&#34;-1&#34; side_tool=&#34;false&#34; content_ui=&#34;tabs&#34; /&gt;
+      &lt;window_info id=&#34;TODO&#34; active=&#34;false&#34; anchor=&#34;bottom&#34; auto_hide=&#34;false&#34; internal_type=&#34;DOCKED&#34; type=&#34;DOCKED&#34; visible=&#34;false&#34; weight=&#34;0.33&#34; sideWeight=&#34;0.5&#34; order=&#34;6&#34; side_tool=&#34;false&#34; content_ui=&#34;tabs&#34; /&gt;
+      &lt;window_info id=&#34;Structure&#34; active=&#34;false&#34; anchor=&#34;left&#34; auto_hide=&#34;false&#34; internal_type=&#34;DOCKED&#34; type=&#34;DOCKED&#34; visible=&#34;false&#34; weight=&#34;0.25&#34; sideWeight=&#34;0.5&#34; order=&#34;1&#34; side_tool=&#34;true&#34; content_ui=&#34;tabs&#34; /&gt;
+      &lt;window_info id=&#34;Project&#34; active=&#34;false&#34; anchor=&#34;left&#34; auto_hide=&#34;false&#34; internal_type=&#34;DOCKED&#34; type=&#34;DOCKED&#34; visible=&#34;true&#34; weight=&#34;0.20373377&#34; sideWeight=&#34;0.5&#34; order=&#34;0&#34; side_tool=&#34;false&#34; content_ui=&#34;tabs&#34; /&gt;
+      &lt;window_info id=&#34;Debug&#34; active=&#34;false&#34; anchor=&#34;bottom&#34; auto_hide=&#34;false&#34; internal_type=&#34;DOCKED&#34; type=&#34;DOCKED&#34; visible=&#34;false&#34; weight=&#34;0.4&#34; sideWeight=&#34;0.5&#34; order=&#34;3&#34; side_tool=&#34;false&#34; content_ui=&#34;tabs&#34; /&gt;
+      &lt;window_info id=&#34;Favorites&#34; active=&#34;false&#34; anchor=&#34;left&#34; auto_hide=&#34;false&#34; internal_type=&#34;DOCKED&#34; type=&#34;DOCKED&#34; visible=&#34;false&#34; weight=&#34;0.33&#34; sideWeight=&#34;0.5&#34; order=&#34;-1&#34; side_tool=&#34;true&#34; content_ui=&#34;tabs&#34; /&gt;
+      &lt;window_info id=&#34;Event Log&#34; active=&#34;false&#34; anchor=&#34;bottom&#34; auto_hide=&#34;false&#34; internal_type=&#34;DOCKED&#34; type=&#34;DOCKED&#34; visible=&#34;false&#34; weight=&#34;0.33&#34; sideWeight=&#34;0.5&#34; order=&#34;-1&#34; side_tool=&#34;true&#34; content_ui=&#34;tabs&#34; /&gt;
+      &lt;window_info id=&#34;Run&#34; active=&#34;false&#34; anchor=&#34;bottom&#34; auto_hide=&#34;false&#34; internal_type=&#34;DOCKED&#34; type=&#34;DOCKED&#34; visible=&#34;false&#34; weight=&#34;0.33&#34; sideWeight=&#34;0.5&#34; order=&#34;2&#34; side_tool=&#34;false&#34; content_ui=&#34;tabs&#34; /&gt;
+      &lt;window_info id=&#34;Version Control&#34; active=&#34;false&#34; anchor=&#34;bottom&#34; auto_hide=&#34;false&#34; internal_type=&#34;DOCKED&#34; type=&#34;DOCKED&#34; visible=&#34;false&#34; weight=&#34;0.33&#34; sideWeight=&#34;0.5&#34; order=&#34;-1&#34; side_tool=&#34;false&#34; content_ui=&#34;tabs&#34; /&gt;
+      &lt;window_info id=&#34;Cvs&#34; active=&#34;false&#34; anchor=&#34;bottom&#34; auto_hide=&#34;false&#34; internal_type=&#34;DOCKED&#34; type=&#34;DOCKED&#34; visible=&#34;false&#34; weight=&#34;0.25&#34; sideWeight=&#34;0.5&#34; order=&#34;4&#34; side_tool=&#34;false&#34; content_ui=&#34;tabs&#34; /&gt;
+      &lt;window_info id=&#34;Message&#34; active=&#34;false&#34; anchor=&#34;bottom&#34; auto_hide=&#34;false&#34; internal_type=&#34;DOCKED&#34; type=&#34;DOCKED&#34; visible=&#34;false&#34; weight=&#34;0.33&#34; sideWeight=&#34;0.5&#34; order=&#34;0&#34; side_tool=&#34;false&#34; content_ui=&#34;tabs&#34; /&gt;
+      &lt;window_info id=&#34;Find&#34; active=&#34;false&#34; anchor=&#34;bottom&#34; auto_hide=&#34;false&#34; internal_type=&#34;DOCKED&#34; type=&#34;DOCKED&#34; visible=&#34;false&#34; weight=&#34;0.33&#34; sideWeight=&#34;0.5&#34; order=&#34;1&#34; side_tool=&#34;false&#34; content_ui=&#34;tabs&#34; /&gt;
+      &lt;window_info id=&#34;Ant Build&#34; active=&#34;false&#34; anchor=&#34;right&#34; auto_hide=&#34;false&#34; internal_type=&#34;DOCKED&#34; type=&#34;DOCKED&#34; visible=&#34;false&#34; weight=&#34;0.25&#34; sideWeight=&#34;0.5&#34; order=&#34;1&#34; side_tool=&#34;false&#34; content_ui=&#34;tabs&#34; /&gt;
+      &lt;window_info id=&#34;Commander&#34; active=&#34;false&#34; anchor=&#34;right&#34; auto_hide=&#34;false&#34; internal_type=&#34;DOCKED&#34; type=&#34;DOCKED&#34; visible=&#34;false&#34; weight=&#34;0.4&#34; sideWeight=&#34;0.5&#34; order=&#34;0&#34; side_tool=&#34;false&#34; content_ui=&#34;tabs&#34; /&gt;
+      &lt;window_info id=&#34;Inspection&#34; active=&#34;false&#34; anchor=&#34;bottom&#34; auto_hide=&#34;false&#34; internal_type=&#34;DOCKED&#34; type=&#34;DOCKED&#34; visible=&#34;false&#34; weight=&#34;0.4&#34; sideWeight=&#34;0.5&#34; order=&#34;5&#34; side_tool=&#34;false&#34; content_ui=&#34;tabs&#34; /&gt;
+      &lt;window_info id=&#34;Hierarchy&#34; active=&#34;false&#34; anchor=&#34;right&#34; auto_hide=&#34;false&#34; internal_type=&#34;DOCKED&#34; type=&#34;DOCKED&#34; visible=&#34;false&#34; weight=&#34;0.25&#34; sideWeight=&#34;0.5&#34; order=&#34;2&#34; side_tool=&#34;false&#34; content_ui=&#34;combo&#34; /&gt;
+    &lt;/layout&gt;
+  &lt;/component&gt;
+  &lt;component name=&#34;VcsContentAnnotationSettings&#34;&gt;
+    &lt;option name=&#34;myLimit&#34; value=&#34;2678400000&#34; /&gt;
+  &lt;/component&gt;
+  &lt;component name=&#34;VcsManagerConfiguration&#34;&gt;
+    &lt;option name=&#34;OFFER_MOVE_TO_ANOTHER_CHANGELIST_ON_PARTIAL_COMMIT&#34; value=&#34;true&#34; /&gt;
+    &lt;option name=&#34;CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT&#34; value=&#34;true&#34; /&gt;
+    &lt;option name=&#34;CHECK_NEW_TODO&#34; value=&#34;true&#34; /&gt;
+    &lt;option name=&#34;myTodoPanelSettings&#34;&gt;
+      &lt;value&gt;
+        &lt;are-packages-shown value=&#34;false&#34; /&gt;
+        &lt;are-modules-shown value=&#34;false&#34; /&gt;
+        &lt;flatten-packages value=&#34;false&#34; /&gt;
+        &lt;is-autoscroll-to-source value=&#34;false&#34; /&gt;
+      &lt;/value&gt;
+    &lt;/option&gt;
+    &lt;option name=&#34;PERFORM_UPDATE_IN_BACKGROUND&#34; value=&#34;true&#34; /&gt;
+    &lt;option name=&#34;PERFORM_COMMIT_IN_BACKGROUND&#34; value=&#34;true&#34; /&gt;
+    &lt;option name=&#34;PERFORM_EDIT_IN_BACKGROUND&#34; value=&#34;true&#34; /&gt;
+    &lt;option name=&#34;PERFORM_CHECKOUT_IN_BACKGROUND&#34; value=&#34;true&#34; /&gt;
+    &lt;option name=&#34;PERFORM_ADD_REMOVE_IN_BACKGROUND&#34; value=&#34;true&#34; /&gt;
+    &lt;option name=&#34;PERFORM_ROLLBACK_IN_BACKGROUND&#34; value=&#34;false&#34; /&gt;
+    &lt;option name=&#34;CHECK_LOCALLY_CHANGED_CONFLICTS_IN_BACKGROUND&#34; value=&#34;false&#34; /&gt;
+    &lt;option name=&#34;ENABLE_BACKGROUND_PROCESSES&#34; value=&#34;false&#34; /&gt;
+    &lt;option name=&#34;CHANGED_ON_SERVER_INTERVAL&#34; value=&#34;60&#34; /&gt;
+    &lt;option name=&#34;SHOW_ONLY_CHANGED_IN_SELECTION_DIFF&#34; value=&#34;true&#34; /&gt;
+    &lt;option name=&#34;CHECK_COMMIT_MESSAGE_SPELLING&#34; value=&#34;true&#34; /&gt;
+    &lt;option name=&#34;DEFAULT_PATCH_EXTENSION&#34; value=&#34;patch&#34; /&gt;
+    &lt;option name=&#34;SHORT_DIFF_HORISONTALLY&#34; value=&#34;true&#34; /&gt;
+    &lt;option name=&#34;SHORT_DIFF_EXTRA_LINES&#34; value=&#34;2&#34; /&gt;
+    &lt;option name=&#34;SOFT_WRAPS_IN_SHORT_DIFF&#34; value=&#34;true&#34; /&gt;
+    &lt;option name=&#34;INCLUDE_TEXT_INTO_PATCH&#34; value=&#34;false&#34; /&gt;
+    &lt;option name=&#34;INCLUDE_TEXT_INTO_SHELF&#34; value=&#34;false&#34; /&gt;
+    &lt;option name=&#34;CREATE_PATCH_EXPAND_DETAILS_DEFAULT&#34; value=&#34;true&#34; /&gt;
+    &lt;option name=&#34;FORCE_NON_EMPTY_COMMENT&#34; value=&#34;false&#34; /&gt;
+    &lt;option name=&#34;LAST_COMMIT_MESSAGE&#34; /&gt;
+    &lt;option name=&#34;MAKE_NEW_CHANGELIST_ACTIVE&#34; value=&#34;true&#34; /&gt;
+    &lt;option name=&#34;OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT&#34; value=&#34;false&#34; /&gt;
+    &lt;option name=&#34;CHECK_FILES_UP_TO_DATE_BEFORE_COMMIT&#34; value=&#34;false&#34; /&gt;
+    &lt;option name=&#34;REFORMAT_BEFORE_PROJECT_COMMIT&#34; value=&#34;false&#34; /&gt;
+    &lt;option name=&#34;REFORMAT_BEFORE_FILE_COMMIT&#34; value=&#34;false&#34; /&gt;
+    &lt;option name=&#34;FILE_HISTORY_DIALOG_COMMENTS_SPLITTER_PROPORTION&#34; value=&#34;0.8&#34; /&gt;
+    &lt;option name=&#34;FILE_HISTORY_DIALOG_SPLITTER_PROPORTION&#34; value=&#34;0.5&#34; /&gt;
+    &lt;option name=&#34;ACTIVE_VCS_NAME&#34; /&gt;
+    &lt;option name=&#34;UPDATE_GROUP_BY_PACKAGES&#34; value=&#34;false&#34; /&gt;
+    &lt;option name=&#34;UPDATE_GROUP_BY_CHANGELIST&#34; value=&#34;false&#34; /&gt;
+    &lt;option name=&#34;SHOW_FILE_HISTORY_AS_TREE&#34; value=&#34;false&#34; /&gt;
+    &lt;option name=&#34;FILE_HISTORY_SPLITTER_PROPORTION&#34; value=&#34;0.6&#34; /&gt;
+  &lt;/component&gt;
+  &lt;component name=&#34;XDebuggerManager&#34;&gt;
+    &lt;breakpoint-manager /&gt;
+  &lt;/component&gt;
+  &lt;component name=&#34;editorHistoryManager&#34;&gt;
+    &lt;entry file=&#34;file://$PROJECT_DIR$/.htaccess&#34;&gt;
+      &lt;provider selected=&#34;true&#34; editor-type-id=&#34;text-editor&#34;&gt;
+        &lt;state line=&#34;6&#34; column=&#34;0&#34; selection-start=&#34;213&#34; selection-end=&#34;222&#34; vertical-scroll-proportion=&#34;0.124847&#34;&gt;
+          &lt;folding /&gt;
+        &lt;/state&gt;
+      &lt;/provider&gt;
+    &lt;/entry&gt;
+    &lt;entry file=&#34;file://$PROJECT_DIR$/cart.php&#34;&gt;
+      &lt;provider selected=&#34;true&#34; editor-type-id=&#34;text-editor&#34;&gt;
+        &lt;state line=&#34;60&#34; column=&#34;26&#34; selection-start=&#34;2336&#34; selection-end=&#34;2336&#34; vertical-scroll-proportion=&#34;-0.41645244&#34;&gt;
+          &lt;folding&gt;
+            &lt;marker date=&#34;1334906567000&#34; expanded=&#34;true&#34; signature=&#34;3702:3950&#34; placeholder=&#34;...&#34; /&gt;
+            &lt;marker date=&#34;1334906567000&#34; expanded=&#34;true&#34; signature=&#34;4948:5056&#34; placeholder=&#34;...&#34; /&gt;
+          &lt;/folding&gt;
+        &lt;/state&gt;
+      &lt;/provider&gt;
+    &lt;/entry&gt;
+  &lt;/component&gt;
+&lt;/project&gt;
+
+</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </li>
+        
+        <li class="list-group-item">
+            <div class="vuln-card mb-3 Low">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="level mb-0">
+                        http://testphp.vulnweb.com
+                    </h4>
+                    <span class="toggle-switch btn btn-primary">Toggle Details</span>
+                </div>
+                <p class="level">Low <span class="badge rounded-pill bg-danger"> BBscan</span></p>
+                
+                <p>Create Time: 2024-05-19 15:47:43</p>
+                <p class="level">Payload: http://testphp.vulnweb.com/index.bak</p>
+                <div class="vuln-details collapse">
+                    <p>Method: GET</p>
+                    
+                    
+                    
+                    <!-- Nav tabs for Request and Response -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#vuln-request1" role="tab" aria-controls="vuln-request1" aria-selected="true" >Request</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" data-bs-toggle="tab" href="#vuln-response1" role="tab" aria-controls="vuln-response1" aria-selected="false" >Response</a>
+                        </li>
+                    </ul>
+                    <!-- Tab panes for Request and Response -->
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="vuln-request1" role="tabpanel" aria-labelledby="vuln-request-tab1">
+                            <pre class="card-text bg-light p-3 border">GET /index.bak HTTP/1.1
+Host: testphp.vulnweb.com
+Pragma: no-cache
+Cache-Control: no-cache
+Sec-Ch-Ua: "Not_A Brand";v="99", "Google Chrome";v="109", "Chromium";v="109"
+Sec-Ch-Ua-Mobile: ?0
+Sec-Ch-Ua-Platform: "macOS"
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Accept-Encoding: gzip
+Accept-Language: zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7,it;q=0.6
+
+</pre>
+                        </div>
+                        <div class="tab-pane fade" id="vuln-response1" role="tabpanel" aria-labelledby="vuln-response-tab1">
+                            <pre class="card-text bg-light p-3 border">HTTP/1.1 200 OK
+Server: nginx/1.19.0
+Date: Sun, 19 May 2024 07:47:43 GMT
+Content-Type: application/octet-stream
+Content-Length: 3265
+Last-Modified: Wed, 11 May 2011 10:27:48 GMT
+Connection: keep-alive
+ETag: &#34;4dca64a4-cc1&#34;
+Accept-Ranges: bytes
+
+&lt;?PHP require_once(&#34;database_connect.php&#34;); ?&gt;
+&lt;!DOCTYPE HTML PUBLIC &#34;-//W3C//DTD HTML 4.01 Transitional//EN&#34;
+&#34;http://www.w3.org/TR/html4/loose.dtd&#34;&gt;
+&lt;html&gt;&lt;!-- InstanceBegin template=&#34;/Templates/main_dynamic_template.dwt.php&#34; codeOutsideHTMLIsLocked=&#34;false&#34; --&gt;
+&lt;head&gt;
+&lt;meta http-equiv=&#34;Content-Type&#34; content=&#34;text/html; charset=iso-8859-2&#34;&gt;
+
+&lt;!-- InstanceBeginEditable name=&#34;document_title_rgn&#34; --&gt;
+&lt;title&gt;Home of WASP Art&lt;/title&gt;
+&lt;!-- InstanceEndEditable --&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;style.css&#34; type=&#34;text/css&#34;&gt;
+&lt;!-- InstanceBeginEditable name=&#34;headers_rgn&#34; --&gt;
+&lt;!-- here goes headers headers --&gt;
+&lt;!-- InstanceEndEditable --&gt;
+&lt;script language=&#34;JavaScript&#34; type=&#34;text/JavaScript&#34;&gt;
+&lt;!--
+function MM_reloadPage(init) {  //reloads the window if Nav4 resized
+  if (init==true) with (navigator) {if ((appName==&#34;Netscape&#34;)&amp;&amp;(parseInt(appVersion)==4)) {
+    document.MM_pgW=innerWidth; document.MM_pgH=innerHeight; onresize=MM_reloadPage; }}
+  else if (innerWidth!=document.MM_pgW || innerHeight!=document.MM_pgH) location.reload();
+}
+MM_reloadPage(true);
+//--&gt;
+&lt;/script&gt;
+
+&lt;/head&gt;
+&lt;body&gt; 
+&lt;div id=&#34;mainLayer&#34; style=&#34;position:absolute; width:700px; z-index:1&#34;&gt;
+&lt;div id=&#34;masthead&#34;&gt; 
+  &lt;h1 id=&#34;siteName&#34;&gt;ACUNETIX ART&lt;/h1&gt;   
+  &lt;h6 id=&#34;siteInfo&#34;&gt;TEST and Demonstration site for Acunetix Web Vulnerability Scanner&lt;/h6&gt;
+  &lt;div id=&#34;globalNav&#34;&gt; 
+    &lt;a href=&#34;index.php&#34;&gt;home&lt;/a&gt; | &lt;a href=&#34;categories.php&#34;&gt;categories&lt;/a&gt; | &lt;a href=&#34;artists.php&#34;&gt;artists
+	&lt;/a&gt; | &lt;a href=&#34;disclaimer.php&#34;&gt;disclaimer&lt;/a&gt; | &lt;a href=&#34;cart.php&#34;&gt;your cart&lt;/a&gt; | 
+	&lt;a href=&#34;guestbook.php&#34;&gt;guestbook&lt;/a&gt;
+  &lt;/div&gt; 
+&lt;/div&gt; 
+&lt;!-- end masthead --&gt; 
+
+&lt;!-- begin content --&gt;
+&lt;!-- InstanceBeginEditable name=&#34;content_rgn&#34; --&gt;
+&lt;div id=&#34;content&#34;&gt;
+	&lt;h2 id=&#34;pageName&#34;&gt;welcome to our page&lt;/h2&gt;
+	  &lt;div class=&#34;story&#34;&gt;
+		&lt;h3&gt;Test site for WASP.&lt;/h3&gt;
+	  &lt;/div&gt;
+&lt;/div&gt;
+&lt;!-- InstanceEndEditable --&gt;
+&lt;!--end content --&gt;
+
+&lt;div id=&#34;navBar&#34;&gt; 
+  &lt;div id=&#34;search&#34;&gt; 
+    &lt;form action=&#34;search.php&#34; method=&#34;post&#34;&gt; 
+      &lt;label&gt;search art&lt;/label&gt; 
+      &lt;input name=&#34;searchFor&#34; type=&#34;text&#34; size=&#34;10&#34;&gt; 
+      &lt;input name=&#34;goButton&#34; type=&#34;submit&#34; value=&#34;go&#34;&gt; 
+    &lt;/form&gt; 
+  &lt;/div&gt; 
+  &lt;div id=&#34;sectionLinks&#34;&gt; 
+    &lt;ul&gt; 
+      &lt;li&gt;&lt;a href=&#34;categories.php&#34;&gt;Browse categories&lt;/a&gt;&lt;/li&gt; 
+      &lt;li&gt;&lt;a href=&#34;artists.php&#34;&gt;Browse artists&lt;/a&gt;&lt;/li&gt; 
+      &lt;li&gt;&lt;a href=&#34;cart.php&#34;&gt;Your cart&lt;/a&gt;&lt;/li&gt; 
+      &lt;li&gt;&lt;a href=&#34;login.php&#34;&gt;Signup&lt;/a&gt;&lt;/li&gt;
+	  &lt;li&gt;&lt;a href=&#34;userinfo.php&#34;&gt;Your profile&lt;/a&gt;&lt;/li&gt;
+	  &lt;li&gt;&lt;a href=&#34;guestbook.php&#34;&gt;Our guestbook&lt;/a&gt;&lt;/li&gt;
+	  &lt;?PHP if (isset($_COOKIE[&#34;login&#34;]))echo &#39;&lt;li&gt;&lt;a href=&#34;../logout.php&#34;&gt;Logout&lt;/a&gt;&#39;; ?&gt;&lt;/li&gt; 
+    &lt;/ul&gt; 
+  &lt;/div&gt; 
+  &lt;div class=&#34;relatedLinks&#34;&gt; 
+    &lt;h3&gt;Links&lt;/h3&gt; 
+    &lt;ul&gt; 
+      &lt;li&gt;&lt;a href=&#34;http://www.acunetix.com&#34;&gt;Security art&lt;/a&gt;&lt;/li&gt; 
+	  &lt;li&gt;&lt;a href=&#34;http://www.eclectasy.com/Fractal-Explorer/index.html&#34;&gt;Fractal Explorer&lt;/a&gt;&lt;/li&gt; 
+    &lt;/ul&gt; 
+  &lt;/div&gt; 
+  &lt;div id=&#34;advert&#34;&gt; 
+    &lt;p&gt;&lt;img src=&#34;images/add.jpg&#34; alt=&#34;&#34; width=&#34;107&#34; height=&#34;66&#34;&gt;&lt;/p&gt;
+  &lt;/div&gt; 
+&lt;/div&gt; 
+
+&lt;!--end navbar --&gt; 
+&lt;div id=&#34;siteInfo&#34;&gt;  &lt;a href=&#34;http://www.acunetix.com&#34;&gt;About Us&lt;/a&gt; | &lt;a href=&#34;redir.php?r=index.php&#34;&gt;Site
+  Map&lt;/a&gt; | &lt;a href=&#34;privacy.php&#34;&gt;Privacy Policy&lt;/a&gt; | &lt;a href=&#34;mailto:wasp@acunetix.com&#34;&gt;Contact Us&lt;/a&gt; | &amp;copy;2004
+  Acunetix Ltd 
+&lt;/div&gt; 
+&lt;br&gt; 
+&lt;/div&gt;
+&lt;/body&gt;
+&lt;!-- InstanceEnd --&gt;&lt;/html&gt;
+</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </li>
+        
+        <li class="list-group-item">
+            <div class="vuln-card mb-3 Low">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="level mb-0">
+                        http://testphp.vulnweb.com
+                    </h4>
+                    <span class="toggle-switch btn btn-primary">Toggle Details</span>
+                </div>
+                <p class="level">Low <span class="badge rounded-pill bg-danger"> BBscan</span></p>
+                
+                <p>Create Time: 2024-05-19 15:47:46</p>
+                <p class="level">Payload: http://testphp.vulnweb.com/.idea/modules.xml</p>
+                <div class="vuln-details collapse">
+                    <p>Method: GET</p>
+                    
+                    
+                    
+                    <!-- Nav tabs for Request and Response -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#vuln-request2" role="tab" aria-controls="vuln-request2" aria-selected="true" >Request</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" data-bs-toggle="tab" href="#vuln-response2" role="tab" aria-controls="vuln-response2" aria-selected="false" >Response</a>
+                        </li>
+                    </ul>
+                    <!-- Tab panes for Request and Response -->
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="vuln-request2" role="tabpanel" aria-labelledby="vuln-request-tab2">
+                            <pre class="card-text bg-light p-3 border">GET /.idea/modules.xml HTTP/1.1
+Host: testphp.vulnweb.com
+Pragma: no-cache
+Cache-Control: no-cache
+Sec-Ch-Ua: "Not_A Brand";v="99", "Google Chrome";v="109", "Chromium";v="109"
+Sec-Ch-Ua-Mobile: ?0
+Sec-Ch-Ua-Platform: "macOS"
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Accept-Encoding: gzip
+Accept-Language: zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7,it;q=0.6
+
+</pre>
+                        </div>
+                        <div class="tab-pane fade" id="vuln-response2" role="tabpanel" aria-labelledby="vuln-response-tab2">
+                            <pre class="card-text bg-light p-3 border">HTTP/1.1 200 OK
+Server: nginx/1.19.0
+Date: Sun, 19 May 2024 07:47:46 GMT
+Content-Type: text/xml
+Content-Length: 275
+Last-Modified: Fri, 20 Apr 2012 08:22:46 GMT
+Connection: keep-alive
+ETag: &#34;4f911cd6-113&#34;
+Accept-Ranges: bytes
+
+&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;
+&lt;project version=&#34;4&#34;&gt;
+  &lt;component name=&#34;ProjectModuleManager&#34;&gt;
+    &lt;modules&gt;
+      &lt;module fileurl=&#34;file://$PROJECT_DIR$/.idea/acuart.iml&#34; filepath=&#34;$PROJECT_DIR$/.idea/acuart.iml&#34; /&gt;
+    &lt;/modules&gt;
+  &lt;/component&gt;
+&lt;/project&gt;
+
+</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </li>
+        
+        <li class="list-group-item">
+            <div class="vuln-card mb-3 Low">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="level mb-0">
+                        http://testphp.vulnweb.com
+                    </h4>
+                    <span class="toggle-switch btn btn-primary">Toggle Details</span>
+                </div>
+                <p class="level">Low <span class="badge rounded-pill bg-danger"> BBscan</span></p>
+                
+                <p>Create Time: 2024-05-19 15:47:50</p>
+                <p class="level">Payload: http://testphp.vulnweb.com/index.zip</p>
+                <div class="vuln-details collapse">
+                    <p>Method: GET</p>
+                    
+                    
+                    
+                    <!-- Nav tabs for Request and Response -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#vuln-request3" role="tab" aria-controls="vuln-request3" aria-selected="true" >Request</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" data-bs-toggle="tab" href="#vuln-response3" role="tab" aria-controls="vuln-response3" aria-selected="false" >Response</a>
+                        </li>
+                    </ul>
+                    <!-- Tab panes for Request and Response -->
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="vuln-request3" role="tabpanel" aria-labelledby="vuln-request-tab3">
+                            <pre class="card-text bg-light p-3 border">HEAD /index.zip HTTP/1.1
+Host: testphp.vulnweb.com
+Pragma: no-cache
+Cache-Control: no-cache
+Sec-Ch-Ua: "Not_A Brand";v="99", "Google Chrome";v="109", "Chromium";v="109"
+Sec-Ch-Ua-Mobile: ?0
+Sec-Ch-Ua-Platform: "macOS"
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Accept-Language: zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7,it;q=0.6
+
+</pre>
+                        </div>
+                        <div class="tab-pane fade" id="vuln-response3" role="tabpanel" aria-labelledby="vuln-response-tab3">
+                            <pre class="card-text bg-light p-3 border">HTTP/1.1 200 OK
+Server: nginx/1.19.0
+Date: Sun, 19 May 2024 07:47:50 GMT
+Content-Type: application/zip
+Content-Length: 2586
+Last-Modified: Wed, 14 Jan 1970 02:23:57 GMT
+Connection: keep-alive
+ETag: &#34;11453d-a1a&#34;
+Accept-Ranges: bytes
+
+</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </li>
+        
+    </ul>
+    <div class="footer mt-5 pt-3 text-center">
+        © 2023 Copyright: <a class="text-dark" href="https://github.com/yhy0/Jie" target="_blank">yhy</a>
+    </div>
+</div>
+<!-- Include Bootstrap 5 JS (Optional, if needed) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var toggleSwitches = document.querySelectorAll(".toggle-switch");
+        toggleSwitches.forEach(function (toggleSwitch) {
+            toggleSwitch.addEventListener("click", function () {
+                var vulnDetails = this.closest(".vuln-card").querySelector(".vuln-details");
+                vulnDetails.classList.toggle("show");
+            });
+        });
+    });
+</script>
+</body>
+</html>

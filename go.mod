@@ -56,7 +56,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/gorilla/websocket v1.5.1
 	github.com/iancoleman/orderedmap v0.3.0
-	github.com/imroc/req/v3 v3.43.4
+	github.com/imroc/req/v3 v3.43.5
 	github.com/ipinfo/go/v2 v2.10.0
 	github.com/jlaffaye/ftp v0.2.0
 	github.com/lib/pq v1.10.9
@@ -320,7 +320,7 @@ require (
 	github.com/projectdiscovery/wappalyzergo v0.0.122 // indirect
 	github.com/projectdiscovery/yamldoc-go v1.0.4 // indirect
 	github.com/quic-go/qpack v0.4.0 // indirect
-	github.com/quic-go/quic-go v0.43.1 // indirect
+	github.com/quic-go/quic-go v0.44.0 // indirect
 	github.com/redis/go-redis/v9 v9.5.1 // indirect
 	github.com/refraction-networking/utls v1.6.6 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
@@ -332,6 +332,7 @@ require (
 	github.com/seh-msft/burpxml v1.0.1 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
+	github.com/sijms/go-ora v1.3.2 // indirect
 	github.com/skeema/knownhosts v1.2.2 // indirect
 	github.com/smacker/go-tree-sitter v0.0.0-20240514083259-c5d1f3f5f99e // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect

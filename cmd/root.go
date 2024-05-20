@@ -61,7 +61,7 @@ func init() {
     // rootCmd.MarkPersistentFlagRequired("target")
     
     webScanCmdInit()
-    shiroCmdinit()
+    shiroCmdInit()
     struts2CmdInit()
     webLogicCmdInit()
     log4jCmdInit()

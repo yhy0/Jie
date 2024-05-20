@@ -40,7 +40,7 @@ var shiroCmd = &cobra.Command{
                             }
                         }
                     }
-
+                    
                     fmt.Println(aurora.Red(fmt.Sprintf("[Success] Mode: %v Key: %v, Gadget: %v, Echo: %v", mode, key, gadget, echo)))
                 }
             case "exp":
@@ -56,7 +56,7 @@ var shiroCmd = &cobra.Command{
     },
 }
 
-func shiroCmdinit() {
+func shiroCmdInit() {
     rootCmd.AddCommand(shiroCmd)
     shiroCmd.Flags().StringVarP(&conf.GlobalConfig.Options.Shiro.Mode, "mode", "m", "burp", "Specify work mode: burp exp")
     shiroCmd.Flags().StringVarP(&conf.GlobalConfig.Options.Shiro.Key, "key", "k", "", "key of target! ")

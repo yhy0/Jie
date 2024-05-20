@@ -39,7 +39,7 @@ type Task struct {
     Fingerprints []string             // 这个只有主动会使用，被动只会新建一个 task，所以不会用到
     Parallelism  int                  // 同时扫描的最大 url 个数
     Pool         *ants.Pool           // 协程池，目前来看只是用来优化被动扫描，减小被动扫描时的协程创建、销毁的开销
-    WG           *sync.WaitGroup      // 等待协程池所有任务结束
+    WG           sync.WaitGroup       // 等待协程池所有任务结束
     ScanTask     map[string]*ScanTask // 存储对目标扫描时的一些状态
     Lock         sync.Mutex           // 对 Distribution函数中的一些 map 并发操作进行保护
     WgLock       sync.Mutex           // ScanTask 是一个 map，运行插件时会并发操作，加锁保护

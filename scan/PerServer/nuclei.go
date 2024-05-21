@@ -18,13 +18,10 @@ type NucleiPlugin struct {
 }
 
 func (p *NucleiPlugin) Scan(target string, path string, in *input.CrawlResult, client *httpx.Client) {
-    if in.Cdn {
-        return
-    }
     if p.IsScanned(in.UniqueId) {
         return
     }
-
+    
     NucleiScan(target, in.Fingerprints)
 }
 

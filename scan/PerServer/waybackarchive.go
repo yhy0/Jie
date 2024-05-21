@@ -18,9 +18,6 @@ type ArchivePlugin struct {
 }
 
 func (p *ArchivePlugin) Scan(target string, path string, in *input.CrawlResult, client *httpx.Client) {
-    if in.Cdn {
-        return
-    }
     if p.IsScanned(in.UniqueId) {
         return
     }

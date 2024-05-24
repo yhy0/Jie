@@ -211,6 +211,7 @@ collection:
     - appid
     - appSecret
     - app_secret
+    - corpSecret
     - secret
     - auth
     - oauth

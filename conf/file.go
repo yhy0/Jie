@@ -185,6 +185,7 @@ collection:
     - addr
     - file
     - f
+    - filename
     - dir
     - directory
     - path

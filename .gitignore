@@ -3,6 +3,7 @@
 .idea
 logs
 data
+Jie_config.yaml
 scan/bbscan/rules/personal_rules.txt
 .DS_Store
 test.go

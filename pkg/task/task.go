@@ -55,6 +55,8 @@ type ScanTask struct {
     Wg        *sizedwaitgroup.SizedWaitGroup // 限制对每个url扫描时同时运行的插件数
 }
 
+// lock 对 output.IPInfoList 这个 map 的并发操作进行保护。 (因为 output.IPInfoList 这个是一个全局的变量，不保护多个 task 并发会出问题，)
+var lock sync.Mutex
 var rex = regexp.MustCompile(`//#\s+sourceMappingURL=(.*\.map)`)
 
 var seenRequests sync.Map // 这里主要是为了一些返回包检测类的判断是否识别过，减小开销，扫描类内部会判断是否扫描过
@@ -117,6 +119,7 @@ func (t *Task) Distribution(in *input.CrawlResult) DistributionTaskFunc {
         // cdn 只检测一次
         if !t.ScanTask[in.Host].PerServer["cdnCheck"] {
             t.ScanTask[in.Host].PerServer["cdnCheck"] = true
+            lock.Lock()
             if _, ok := output.IPInfoList[hostNoPort]; !ok {
                 // cdn 检测
                 matched, value, itemType, dnsData := util.CheckCdn(hostNoPort)
@@ -145,6 +148,7 @@ func (t *Task) Distribution(in *input.CrawlResult) DistributionTaskFunc {
                 }
                 
             }
+            lock.Unlock()
         }
         
         msg.HostNoPort = hostNoPort

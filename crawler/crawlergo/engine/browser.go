@@ -6,7 +6,7 @@ import (
     "log"
     "sync"
     "time"
-
+    
     "github.com/chromedp/cdproto/browser"
     "github.com/chromedp/chromedp"
 )
@@ -33,7 +33,7 @@ func InitBrowser(proxy string, noHeadless bool) *Browser {
         chromedp.Flag("no-sandbox", true),
         // 忽略证书错误
         chromedp.Flag("ignore-certificate-errors", true),
-
+        
         chromedp.Flag("disable-images", true),
         //
         chromedp.Flag("disable-web-security", true),
@@ -41,20 +41,20 @@ func InitBrowser(proxy string, noHeadless bool) *Browser {
         chromedp.Flag("disable-xss-auditor", true),
         //
         chromedp.Flag("disable-setuid-sandbox", true),
-
+        
         chromedp.Flag("allow-running-insecure-content", true),
-
+        
         chromedp.Flag("disable-webgl", true),
-
+        
         chromedp.Flag("disable-popup-blocking", true),
-
+        
         chromedp.WindowSize(1920, 1080),
     )
     // 设置浏览器代理
     if proxy != "" {
         opts = append(opts, chromedp.ProxyServer(proxy))
     }
-
+    
     allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
     bctx, _ := chromedp.NewContext(allocCtx,
         chromedp.WithLogf(log.Printf),
@@ -68,7 +68,7 @@ func InitBrowser(proxy string, noHeadless bool) *Browser {
     }
     bro.Cancel = &cancel
     bro.Ctx = &bctx
-
+    
     return &bro
 }
 
@@ -78,7 +78,7 @@ func ConnectBrowser(wsUrl string, extraHeaders map[string]interface{}) *Browser 
     bctx, _ := chromedp.NewContext(allocCtx,
         chromedp.WithLogf(log.Printf),
     )
-
+    
     err := chromedp.Run(bctx)
     if err != nil {
         // couldn't connect to the remote browser, need to exit
@@ -87,7 +87,7 @@ func ConnectBrowser(wsUrl string, extraHeaders map[string]interface{}) *Browser 
     bro.Cancel = &cancel
     bro.Ctx = &bctx
     bro.ExtraHeaders = extraHeaders
-
+    
     return &bro
 }
 

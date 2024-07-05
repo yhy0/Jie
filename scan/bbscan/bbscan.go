@@ -274,7 +274,6 @@ func BBscan(u string, root bool, fingprints []string, header map[string]string, 
         
         _ = pool.Submit(func() {
             defer wg.Done()
-            <-time.After(time.Duration(100) * time.Millisecond)
             page, res, err := ReqPage(target, header, client)
             
             if err == nil && res != nil {

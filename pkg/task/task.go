@@ -41,9 +41,9 @@ type Task struct {
     Pool         *ants.Pool           // 协程池，目前来看只是用来优化被动扫描，减小被动扫描时的协程创建、销毁的开销
     WG           sync.WaitGroup       // 等待协程池所有任务结束
     ScanTask     map[string]*ScanTask // 存储对目标扫描时的一些状态
-    Lock         sync.Mutex           // 对 Distribution函数中的一些 map 并发操作进行保护
-    WgLock       sync.Mutex           // ScanTask 是一个 map，运行插件时会并发操作，加锁保护
-    WgAddLock    sync.Mutex           // ScanTask 是一个 map，运行插件时会并发操作，加锁保护
+    // Lock         sync.Mutex           // 对 Distribution函数中的一些 map 并发操作进行保护
+    WgLock    sync.Mutex // ScanTask 是一个 map，运行插件时会并发操作，加锁保护
+    WgAddLock sync.Mutex // ScanTask 是一个 map，运行插件时会并发操作，加锁保护
 }
 
 type ScanTask struct {
@@ -86,14 +86,21 @@ func (t *Task) Distribution(in *input.CrawlResult) DistributionTaskFunc {
             Target: in.Host,
         }
         
-        // 并发修改 in t.ScanTask，加锁保证安全
-        t.Lock.Lock()
+        // 并发修改 in t.ScanTask，加锁保证安全, 使用全局唯一锁
+        lock.Lock()
         if in.Headers == nil {
             in.Headers = make(map[string]string)
         } else {
             if value, ok := in.Headers["Content-Type"]; ok {
                 in.ContentType = value
+            } else if value, ok = in.Headers["content-type"]; ok {
+                in.ContentType = value
             }
+        }
+        lock.Unlock()
+        
+        if strings.Contains(in.ContentType, "application/octet-stream") || strings.Contains(in.ContentType, "image/") || strings.Contains(in.ContentType, "video/") || strings.Contains(in.ContentType, "audio/") {
+            return
         }
         
         var hostNoPort string
@@ -104,6 +111,7 @@ func (t *Task) Distribution(in *input.CrawlResult) DistributionTaskFunc {
             hostNoPort = in.Host
         }
         
+        lock.Lock()
         if t.ScanTask[in.Host] == nil {
             t.ScanTask[in.Host] = &ScanTask{
                 PerServer: make(map[string]bool),
@@ -119,7 +127,6 @@ func (t *Task) Distribution(in *input.CrawlResult) DistributionTaskFunc {
         // cdn 只检测一次
         if !t.ScanTask[in.Host].PerServer["cdnCheck"] {
             t.ScanTask[in.Host].PerServer["cdnCheck"] = true
-            lock.Lock()
             if _, ok := output.IPInfoList[hostNoPort]; !ok {
                 // cdn 检测
                 matched, value, itemType, dnsData := util.CheckCdn(hostNoPort)
@@ -146,10 +153,9 @@ func (t *Task) Distribution(in *input.CrawlResult) DistributionTaskFunc {
                 if itemType == "cdn" || cdn {
                     in.Cdn = true
                 }
-                
             }
-            lock.Unlock()
         }
+        lock.Unlock()
         
         msg.HostNoPort = hostNoPort
         
@@ -157,7 +163,9 @@ func (t *Task) Distribution(in *input.CrawlResult) DistributionTaskFunc {
         fingerprints := fingprints.Identify([]byte(in.Resp.Body), in.Resp.Header)
         if len(fingerprints) > 0 {
             msg.Fingerprints = append(msg.Fingerprints, fingerprints...)
+            lock.Lock()
             in.Fingerprints = util.RemoveDuplicateElement(append(in.Fingerprints, msg.Fingerprints...))
+            lock.Unlock()
         }
         
         msg.SiteMap = append(msg.SiteMap, in.Url)
@@ -179,7 +187,9 @@ func (t *Task) Distribution(in *input.CrawlResult) DistributionTaskFunc {
                 _, err := jwt.ParseJWT(jwtString)
                 if err == nil { // 没有报错，说明解析 Jwt 成功
                     msg.Fingerprints = util.RemoveDuplicateElement(append(msg.Fingerprints, "jwt"))
+                    lock.Lock()
                     in.Fingerprints = util.RemoveDuplicateElement(append(in.Fingerprints, msg.Fingerprints...))
+                    lock.Unlock()
                     jwt.Jwts[jwtString] = true
                     secret := jwt.GenerateSignature()
                     if secret != "" {
@@ -203,13 +213,14 @@ func (t *Task) Distribution(in *input.CrawlResult) DistributionTaskFunc {
         // 没有检测到 shiro 时，扫描的请求中添加一个 请求头检测一下 Cookie: rememberMe=3
         // TODO 这里不对，添加到这里，返回的数据包并没有经过这里，放到 httpx.request(...) 中 进行指纹检测的话，怎么返回获取指纹？还是说对于这种指纹检测，主动进行一次发包 (不太想使用这种方式)
         if !util.InSliceCaseFold("shiro", in.Fingerprints) {
+            lock.Lock()
             if in.Headers["Cookie"] != "" {
                 in.Headers["Cookie"] = in.Headers["Cookie"] + ";rememberMe=3"
             } else {
                 in.Headers["Cookie"] = "rememberMe=3"
             }
+            lock.Unlock()
         }
-        t.Lock.Unlock()
         
         // 更新数据
         output.SCopilot(in.Host, msg)
@@ -237,12 +248,12 @@ func (t *Task) Distribution(in *input.CrawlResult) DistributionTaskFunc {
         if !strings.HasSuffix(in.ParseUrl.Path, ".css") && !strings.HasSuffix(in.ParseUrl.Path, ".js") {
             // 插件扫描
             t.Run(in)
-            t.Lock.Lock()
+            lock.Lock()
             // 收集参数
             paramNames, err := util.GetReqParameters(in.Method, in.ContentType, in.ParseUrl, []byte(in.RequestBody))
             
-            if err != nil {
-                logging.Logger.Errorln("GetReqParameters err:", err)
+            if err != nil && !strings.Contains(err.Error(), "invalid semicolon separator in query") {
+                logging.Logger.Errorln("GetReqParameters err:", err, in.Url, in.Method, in.ContentType, in.ParseUrl.Query(), in.RequestBody)
             } else {
                 in.ParamNames = paramNames
                 // 看请求、返回包中的参数是否包含敏感参数
@@ -271,7 +282,7 @@ func (t *Task) Distribution(in *input.CrawlResult) DistributionTaskFunc {
             if conf.Plugin["poc"] {
                 t.ScanTask[in.Host].PocPlugin = pocs_go.PocCheck(in.Fingerprints, in.Target, in.Url, in.Ip, t.ScanTask[in.Host].PocPlugin, t.ScanTask[in.Host].Client)
             }
-            t.Lock.Unlock()
+            lock.Unlock()
         } else {
             // 下面这些使用去重逻辑，因为扫描结果不会被别的插件用到
             if isScanned(in.UniqueId) {
@@ -281,19 +292,19 @@ func (t *Task) Distribution(in *input.CrawlResult) DistributionTaskFunc {
             if strings.HasSuffix(in.ParseUrl.Path, ".js") {
                 // 对于 js 这种单独判断是否扫描过，减少消耗
                 if strings.HasPrefix(in.Resp.Body, "webpackJsonp(") || strings.Contains(in.Resp.Body, "window[\"webpackJsonp\"]") {
-                    t.Lock.Lock()
                     msg.Fingerprints = util.RemoveDuplicateElement(append(msg.Fingerprints, "Webpack"))
+                    lock.Lock()
                     in.Fingerprints = util.RemoveDuplicateElement(append(in.Fingerprints, msg.Fingerprints...))
-                    t.Lock.Unlock()
+                    lock.Unlock()
                 }
                 
                 // 前端 js 中存在 sourcemap 文件，即 xxx.js.map 这种可以使用 sourcemap 等工具还原前端代码
                 match := rex.FindStringSubmatch(in.Resp.Body)
                 if match != nil {
-                    t.Lock.Lock()
                     msg.Fingerprints = util.RemoveDuplicateElement(append(msg.Fingerprints, "SourceMap"))
+                    lock.Lock()
                     in.Fingerprints = util.RemoveDuplicateElement(append(in.Fingerprints, msg.Fingerprints...))
-                    t.Lock.Unlock()
+                    lock.Unlock()
                     output.OutChannel <- output.VulMessage{
                         DataType: "web_vul",
                         Plugin:   "SourceMap",
@@ -324,7 +335,6 @@ func (t *Task) Distribution(in *input.CrawlResult) DistributionTaskFunc {
                     }
                     
                     if response.StatusCode == 200 && !scan_util.IsBlackHtml(response.Body, response.Header["Content-Type"], parseUrl.Path) {
-                        
                         i := &input.CrawlResult{
                             Target:   in.Target,
                             Url:      v,
@@ -345,9 +355,9 @@ func (t *Task) Distribution(in *input.CrawlResult) DistributionTaskFunc {
                     }
                 }
             }
-            t.Lock.Lock()
+            lock.Lock()
             t.ScanTask[in.Host].Archive = true
-            t.Lock.Unlock()
+            lock.Unlock()
         }()
     }
 }

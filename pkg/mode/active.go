@@ -1,6 +1,7 @@
 package mode
 
 import (
+    "context"
     "encoding/json"
     "fmt"
     "github.com/panjf2000/ants/v2"
@@ -45,80 +46,97 @@ func Active(target string, fingerprint []string) ([]string, []string) {
         return nil, nil
     }
     
-    // 判断是否以 http https 开头
-    httpMatch, _ := regexp.MatchString("^(http)s?://", target)
-    if !httpMatch {
-        portMatch, _ := regexp.MatchString(":443", target)
-        if portMatch {
-            target = fmt.Sprintf("https://%s", target)
+    // 超时控制，超过 10 分钟就丢掉吧
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+    defer cancel()
+    doneCh := make(chan bool, 1)
+    defer close(doneCh)
+    
+    for {
+        doneCh <- true
+        var subdomains []string
+        
+        // 判断是否以 http https 开头
+        httpMatch, _ := regexp.MatchString("^(http)s?://", target)
+        if !httpMatch {
+            portMatch, _ := regexp.MatchString(":443", target)
+            if portMatch {
+                target = fmt.Sprintf("https://%s", target)
+            } else {
+                target = fmt.Sprintf("http://%s", target)
+            }
+        }
+        
+        parseUrl, err := url.Parse(target)
+        if err != nil {
+            logging.Logger.Errorln(err)
+            return nil, nil
+        }
+        var host string
+        // 有的会带80、443端口号，导致    example.com 和 example.com:80、example.com:443被认为是不同的网站
+        if strings.Contains(parseUrl.Host, ":443") || strings.Contains(parseUrl.Host, ":80") {
+            host = strings.Split(parseUrl.Host, ":")[0]
         } else {
-            target = fmt.Sprintf("http://%s", target)
+            host = parseUrl.Host
+        }
+        
+        t := &task.Task{
+            Parallelism: conf.Parallelism,
+            ScanTask:    make(map[string]*task.ScanTask),
+        }
+        
+        client := httpx.NewClient(nil)
+        t.ScanTask[host] = &task.ScanTask{
+            PerServer: make(map[string]bool),
+            PerFolder: make(map[string]bool),
+            PocPlugin: make(map[string]bool),
+            Client:    client,
+            // 3: 同时运行 3 个插件，2 供 PreServer、 PreFolder这两个函数使用，防止马上退出 所以这里同时运行的插件个数为3-5 个
+            // TODO 更优雅的实现方式
+            Wg: sizedwaitgroup.New(3 + 3),
+        }
+        
+        pool, _ := ants.NewPool(t.Parallelism)
+        t.Pool = pool
+        defer t.Pool.Release() // 释放协程池
+        // 爬虫前，进行连接性、指纹识别、 waf 探测
+        resp, err := client.Request(target, "GET", "", nil)
+        if err != nil {
+            logging.Logger.Errorln("End: ", err)
+            return nil, nil
+        }
+        
+        technologies := fingprints.Identify([]byte(resp.Body), resp.Header)
+        
+        wafs := waf.Scan(target, resp.Body, client)
+        
+        // 爬虫的同时进行指纹识别
+        if conf.GlobalConfig.WebScan.Craw == "c" {
+            logging.Logger.Infoln("Crawling with Crawlergo.")
+            subdomains = Crawlergo(ctx, target, wafs, t, fingerprint)
+        } else {
+            logging.Logger.Infoln("Crawling with Katana.")
+            subdomains = Katana(ctx, target, wafs, t, fingerprint)
+        }
+        
+        t.WG.Wait()
+        
+        logging.Logger.Debugln("Fingerprints: ", t.Fingerprints)
+        
+        t.Fingerprints = funk.UniqString(append(t.Fingerprints, technologies...))
+        
+        select {
+        case <-ctx.Done():
+            // 如果超时，将会接收到这个信号
+            logging.Logger.Warningln("Jie 运行超时，退出扫描", target)
+            return subdomains, t.Fingerprints
+        case <-doneCh:
+            return subdomains, t.Fingerprints
         }
     }
-    
-    parseUrl, err := url.Parse(target)
-    if err != nil {
-        logging.Logger.Errorln(err)
-        return nil, nil
-    }
-    var host string
-    // 有的会带80、443端口号，导致    example.com 和 example.com:80、example.com:443被认为是不同的网站
-    if strings.Contains(parseUrl.Host, ":443") || strings.Contains(parseUrl.Host, ":80") {
-        host = strings.Split(parseUrl.Host, ":")[0]
-    } else {
-        host = parseUrl.Host
-    }
-    
-    t := &task.Task{
-        Parallelism: conf.Parallelism,
-        ScanTask:    make(map[string]*task.ScanTask),
-    }
-    
-    client := httpx.NewClient(nil)
-    t.ScanTask[host] = &task.ScanTask{
-        PerServer: make(map[string]bool),
-        PerFolder: make(map[string]bool),
-        PocPlugin: make(map[string]bool),
-        Client:    client,
-        // 3: 同时运行 3 个插件，2 供 PreServer、 PreFolder这两个函数使用，防止马上退出 所以这里同时运行的插件个数为3-5 个
-        // TODO 更优雅的实现方式
-        Wg: sizedwaitgroup.New(3 + 3),
-    }
-    
-    pool, _ := ants.NewPool(t.Parallelism)
-    t.Pool = pool
-    defer t.Pool.Release() // 释放协程池
-    // 爬虫前，进行连接性、指纹识别、 waf 探测
-    resp, err := client.Request(target, "GET", "", nil)
-    if err != nil {
-        logging.Logger.Errorln("End: ", err)
-        return nil, nil
-    }
-    
-    technologies := fingprints.Identify([]byte(resp.Body), resp.Header)
-    
-    wafs := waf.Scan(target, resp.Body, client)
-    
-    var subdomains []string
-    // 爬虫的同时进行指纹识别
-    if conf.GlobalConfig.WebScan.Craw == "c" {
-        logging.Logger.Infoln("Crawling with Crawlergo.")
-        subdomains = Crawlergo(target, wafs, t, fingerprint)
-    } else {
-        logging.Logger.Infoln("Crawling with Katana.")
-        subdomains = Katana(target, wafs, t, fingerprint)
-    }
-    
-    t.WG.Wait()
-    
-    logging.Logger.Debugln("Fingerprints: ", t.Fingerprints)
-    
-    t.Fingerprints = funk.UniqString(append(t.Fingerprints, technologies...))
-    
-    return subdomains, t.Fingerprints
 }
 
-func Katana(target string, waf []string, t *task.Task, fingerprint []string) []string {
+func Katana(ctx context.Context, target string, waf []string, t *task.Task, fingerprint []string) []string {
     parseUrl, err := url.Parse(target)
     if err != nil {
         logging.Logger.Errorln(err)
@@ -129,6 +147,9 @@ func Katana(target string, waf []string, t *task.Task, fingerprint []string) []s
     i := 0
     now := time.Now()
     out := func(result output.Result) { // Callback function to execute for result
+        if checkCancellation(ctx) {
+            return
+        }
         curl := strings.ReplaceAll(result.Request.URL, "\\n", "")
         curl = strings.ReplaceAll(curl, "\\t", "")
         curl = strings.ReplaceAll(curl, "\\n", "")
@@ -183,7 +204,7 @@ func Katana(target string, waf []string, t *task.Task, fingerprint []string) []s
             Target:       target,
             Method:       result.Request.Method,
             Source:       result.Request.Source,
-            Headers:      make(map[string]string),
+            Headers:      result.Request.Headers,
             RequestBody:  result.Request.Body,
             Fingerprints: fingerprint,
             Waf:          waf,
@@ -202,7 +223,11 @@ func Katana(target string, waf []string, t *task.Task, fingerprint []string) []s
         
         // 分发扫描任务
         t.WG.Add(1)
-        _ = t.Pool.Submit(t.Distribution(crawlResult))
+        err = t.Pool.Submit(t.Distribution(crawlResult))
+        if err != nil {
+            t.WG.Done()
+            logging.Logger.Errorf("Katana add distribution err:%v, crawlResult:%v", err, crawlResult)
+        }
     }
     
     if conf.GlobalConfig.WebScan.Craw == "k" {
@@ -217,7 +242,7 @@ func Katana(target string, waf []string, t *task.Task, fingerprint []string) []s
 }
 
 // Crawlergo 运行爬虫, 对爬虫结果进行处理
-func Crawlergo(target string, waf []string, t *task.Task, fingerprint []string) []string {
+func Crawlergo(ctx context.Context, target string, waf []string, t *task.Task, fingerprint []string) []string {
     var targets []*model.Request
     
     var req model.Request
@@ -244,6 +269,9 @@ func Crawlergo(target string, waf []string, t *task.Task, fingerprint []string) 
     
     // 实时获取结果
     onResult := func(result *crawlergo.OutResult) {
+        if checkCancellation(ctx) {
+            return
+        }
         // 不对这些进行漏扫
         for _, suffix := range extensionFilter {
             if strings.HasSuffix(result.ReqList.URL.Path, suffix) {
@@ -297,7 +325,11 @@ func Crawlergo(target string, waf []string, t *task.Task, fingerprint []string) 
         
         // 分发扫描任务
         t.WG.Add(1)
-        _ = t.Pool.Submit(t.Distribution(crawlResult))
+        err = t.Pool.Submit(t.Distribution(crawlResult))
+        if err != nil {
+            t.WG.Done()
+            logging.Logger.Errorf("Crawlergo add distribution err:%v, crawlResult:%v", err, crawlResult)
+        }
     }
     
     // 开始爬虫任务
@@ -327,4 +359,14 @@ func getOption() model.Options {
         option.Headers = crawler.TaskConfig.ExtraHeaders
     }
     return option
+}
+
+// 检查上下文是否被取消
+func checkCancellation(ctx context.Context) bool {
+    select {
+    case <-ctx.Done():
+        return true
+    default:
+        return false
+    }
 }

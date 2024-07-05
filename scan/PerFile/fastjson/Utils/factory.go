@@ -151,7 +151,7 @@ func DEPENDENCY_ERR_DETECT_FACTORY() map[string]string {
         payloads[DependencyList[i]] = buffer.String()
     }
     return payloads
-
+    
 }
 
 func SCAN_RESULTS_OUTPUT_FACTORY(result Result) string {

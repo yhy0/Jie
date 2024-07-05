@@ -4,7 +4,7 @@ import (
     "github.com/yhy0/Jie/crawler/crawlergo/config"
     model2 "github.com/yhy0/Jie/crawler/crawlergo/model"
     "testing"
-
+    
     "github.com/stretchr/testify/assert"
 )
 
@@ -13,20 +13,20 @@ var (
     //     "http://test.nil.local.com/cctv/abcd?keyword=crawlergocrawlergo&end=1",
     //     "http://test.nil.local.com/cctv/abcd?keyword=crawlergocrawlergo&end=1",
     // }
-
+    
     fragmentUrls = []string{
         // 基准组
         "http://testhtml5.vuwm.com/latest#/page/1",
         "http://testhtml5.vuwm.com/latest#/page/search?keyword=Crawlergo&source=2&demo=1423&c=afa",
         // 被标记成 {{long}}
         "http://testhtml5.vuwm.com/latest#/page/search/fasdfsdafsdfsdfsdfasfsfasfafdsafssfasdfsd",
-
+        
         // 对照组
         "http://testhtml5.vuwm.com/latest#/page/2",
         // 不应该被标记成 {{long}}
         "http://testhtml5.vuwm.com/latest#/page/search?keyword=CrawlergoCrawlergoCrawlergo&source=1&demo=1255&c=afa",
     }
-
+    
     // completeUrls = []string{
     //     "https://test.local.com:1234/adfatd/123456/sx14xi?user=crawlergo&pwd=fa1424&end=1#/user/info",
     // }

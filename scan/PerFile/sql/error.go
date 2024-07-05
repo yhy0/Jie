@@ -33,9 +33,9 @@ func checkDBMSError(url, param, payload string, res *httpx.Response) string {
                 },
                 Level: JieOutput.Critical,
             }
-
+            
             logging.Logger.Infof("%s %s 检测到数据库报错信息[%s:%s]", url, param, DBMS, err)
-
+            
             return DBMS
         }
     }

@@ -179,7 +179,6 @@ func (sql *Sqlmap) HeuristicCheckSqlInjection() {
         return
     }
     
-    // 不进行以下检测了，目前没什么收益，减少发包，等优化吧，
     // for _, pos := range injectableParamsPos {
     //     sql.checkSqlInjection(pos)
     // }

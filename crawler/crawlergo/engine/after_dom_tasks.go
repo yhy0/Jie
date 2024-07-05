@@ -8,7 +8,7 @@ import (
     "os"
     "strings"
     "time"
-
+    
     "github.com/chromedp/cdproto/cdp"
     "github.com/chromedp/chromedp"
 )
@@ -16,15 +16,15 @@ import (
 // AfterDOMRun 在DOMContentLoaded完成后执行
 func (tab *Tab) AfterDOMRun() {
     defer tab.WG.Done()
-
+    
     // logging.Logger.Debug("afterDOMRun start")
-
+    
     // 获取当前body节点的nodeId 用于之后查找子节点
     if !tab.getBodyNodeId() {
         // logging.Logger.Debug("no body document NodeID, exit.")
         return
     }
-
+    
     tab.domWG.Add(2)
     go tab.fillForm()
     go tab.setObserverJS()
@@ -62,11 +62,11 @@ func (tab *Tab) fillForm() {
     f := FillForm{
         tab: tab,
     }
-
+    
     go f.fillInput()
     go f.fillMultiSelect()
     go f.fillTextarea()
-
+    
     tab.fillFormWG.Wait()
     // logging.Logger.Debug("fillForm end")
 }
@@ -89,7 +89,7 @@ func (f *FillForm) fillInput() {
     defer f.tab.fillFormWG.Done()
     var nodes []*cdp.Node
     ctx := f.tab.GetExecutor()
-
+    
     tCtx, cancel := context.WithTimeout(ctx, time.Second*2)
     defer cancel()
     // 首先判断input标签是否存在，减少等待时间 提前退出
@@ -103,13 +103,13 @@ func (f *FillForm) fillInput() {
     }
     // 获取所有的input标签
     err := chromedp.Nodes(`input`, &nodes, chromedp.ByQueryAll).Do(tCtx)
-
+    
     if err != nil {
         logging.Logger.Debug("get all input element err")
         logging.Logger.Debug(err)
         return
     }
-
+    
     // 找出 type 为空 或者 type=text
     for _, node := range nodes {
         // 兜底超时
@@ -151,7 +151,7 @@ func (f *FillForm) fillTextarea() {
     tCtx, cancel := context.WithTimeout(ctx, time.Second*2)
     defer cancel()
     value := f.GetMatchInputText("other")
-
+    
     textareaNodes, textareaErr := f.tab.GetNodeIDs(`textarea`)
     if textareaErr != nil || len(textareaNodes) == 0 {
         // logging.Logger.Debug("fillTextarea: get textarea element err")
@@ -160,7 +160,7 @@ func (f *FillForm) fillTextarea() {
         }
         return
     }
-
+    
     _ = chromedp.SendKeys(textareaNodes, value, chromedp.ByNodeID).Do(tCtx)
 }
 
@@ -188,7 +188,7 @@ func (f *FillForm) GetMatchInputText(name string) string {
             return value
         }
     }
-
+    
     name = strings.ToLower(name)
     for key, item := range config.InputTextMap {
         for _, keyword := range item["keyword"].([]string) {

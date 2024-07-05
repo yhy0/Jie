@@ -17,7 +17,7 @@ var client = cdncheck.New()
 
 func CheckCdn(target string) (cdn bool, value string, itemType string, dnsData *retryabledns.DNSData) {
     var err error
-
+    
     ip := net.ParseIP(target)
     // 这种是域名
     if ip == nil {
@@ -39,7 +39,7 @@ func CheckCdn(target string) (cdn bool, value string, itemType string, dnsData *
             }
         }
     }
-
+    
     if itemType == "cdn" || Contains(value, "cdn") {
         cdn = true
     }

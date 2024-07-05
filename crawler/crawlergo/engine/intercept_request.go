@@ -4,6 +4,7 @@ import (
     "bufio"
     "context"
     "encoding/base64"
+    "fmt"
     regexp "github.com/wasilibs/go-re2"
     "github.com/yhy0/Jie/crawler/crawlergo/config"
     "github.com/yhy0/Jie/crawler/crawlergo/model"
@@ -33,9 +34,22 @@ func (tab *Tab) InterceptRequest(v *fetch.EventRequestPaused) {
         _ = fetch.ContinueRequest(v.RequestID).Do(ctx)
         return
     }
+    var postData string
+    if _req.HasPostData && len(_req.PostDataEntries) > 0 {
+        for p := range _req.PostDataEntries {
+            postData += _req.PostDataEntries[p].Bytes
+        }
+    }
+    fmt.Println("Post data ", postData)
+    data, err := base64.StdEncoding.DecodeString(postData)
+    if err != nil {
+        logging.Logger.Errorln(err)
+    }
+    fmt.Println("Post data base64 ", data)
+    
     _option := model.Options{
         Headers:  _req.Headers,
-        PostData: _req.PostData,
+        PostData: postData,
     }
     req := model.GetRequest(_req.Method, url, _option)
     

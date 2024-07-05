@@ -25,7 +25,7 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
     if p.IsScanned(in.UniqueId) {
         return
     }
-
+    
     log4j.Scan(target, in.Method, in.RequestBody, client)
 }
 

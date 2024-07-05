@@ -38,10 +38,10 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
             debugStack := make([]byte, 1024)
             runtime.Stack(debugStack, false)
             logging.Logger.Errorf("Stack Trace:%v", string(debugStack))
-
+            
         }
     }()
-
+    
     variations, err := httpx.ParseUri(in.Url, []byte(in.RequestBody), in.Method, in.ContentType, in.Headers)
     if err != nil {
         if strings.Contains(err.Error(), "data is empty") {
@@ -51,7 +51,7 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
         }
         return
     }
-
+    
     var ssrfHost string
     var dnslog *reverse.Dig
     if conf.GlobalConfig.Reverse.Host != "" {
@@ -64,25 +64,25 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
     } else {
         ssrfHost = "https://www.baidu.com/"
     }
-
+    
     // 1. 这里先对一些可以参数进行测试，如果找到了，就不再进行下面的测试
     if ssrf(in, variations, ssrfHost, dnslog, client) {
         return
     }
-
+    
     payloads := []string{"/etc/passwd", "c:/windows/win.ini"}
-
+    
     if readFile(in, variations, payloads, client) {
         return
     }
-
+    
     // 2. 如果没有找到，就对一些特殊的请求头进行测试，这里依赖于 dnslog 这里分两步: 这主要是防止请求头过多被拦截
     //     step1: 如果有特殊的请求头，就对特殊的请求头进行测试
     //    step2: 如果没有特殊的请求头，或者第一步没有测试出来，就对所有的危险请求头进行测试
     if dangerHeader(in, client) {
         return
     }
-
+    
     logging.Logger.Debugln(in.Url, "ssrf vulnerability not found")
 }
 
@@ -107,7 +107,7 @@ func ssrf(in *input.CrawlResult, variations *httpx.Variations, payload string, d
         if !util.SliceInCaseFold(p.Name, sensitiveWords) {
             continue
         }
-
+        
         payload = variations.SetPayloadByIndex(p.Index, in.Url, payload, in.Method)
         if payload == "" {
             continue
@@ -120,12 +120,12 @@ func ssrf(in *input.CrawlResult, variations *httpx.Variations, payload string, d
         } else {
             res, err = client.Request(in.Url, in.Method, payload, in.Headers)
         }
-
+        
         if err != nil {
             logging.Logger.Errorln(err)
             continue
         }
-
+        
         isVul := false
         var desc = ""
         if dnslog != nil {
@@ -135,7 +135,7 @@ func ssrf(in *input.CrawlResult, variations *httpx.Variations, payload string, d
             isVul = funk.Contains(res.Body, "<title>百度一下，你就知道</title>")
             desc = "<title>百度一下，你就知道</title>"
         }
-
+        
         if isVul {
             output.OutChannel <- output.VulMessage{
                 DataType: "web_vul",
@@ -173,18 +173,18 @@ func readFile(in *input.CrawlResult, variations *httpx.Variations, payloads []st
             logging.Logger.Debugln("ssrf ", payload)
             var res *httpx.Response
             var err error
-
+            
             if in.Method == "GET" {
                 res, err = client.Request(payload, in.Method, "", in.Headers)
             } else {
                 res, err = client.Request(in.Url, in.Method, payload, in.Headers)
             }
-
+            
             if err != nil {
                 logging.Logger.Errorln(err)
                 continue
             }
-
+            
             if funk.Contains(res.Body, "root:x:0:0:root:/root:") || funk.Contains(res.Body, "root:[x*]:0:0:") || funk.Contains(res.Body, "; for 16-bit app support") {
                 output.OutChannel <- output.VulMessage{
                     DataType: "web_vul",
@@ -204,7 +204,7 @@ func readFile(in *input.CrawlResult, variations *httpx.Variations, payloads []st
                 return true
             }
         }
-
+        
     }
     return false
 }
@@ -215,7 +215,7 @@ func dangerHeader(in *input.CrawlResult, client *httpx.Client) bool {
         if dnslog == nil {
             return false
         }
-
+        
         // step1: 如果有特殊的请求头，就对特殊的请求头进行测试
         for _, h := range conf.DangerHeaders {
             if in.Headers[h] != "" {
@@ -225,17 +225,17 @@ func dangerHeader(in *input.CrawlResult, client *httpx.Client) bool {
         if header(in, dnslog, client) {
             return true
         }
-
+        
         //    step2: 如果没有特殊的请求头，或者第一步没有测试出来，就对所有的危险请求头进行测试
         for _, h := range conf.DangerHeaders {
             in.Headers[h] = h + "." + dnslog.Domain
         }
-
+        
         if header(in, dnslog, client) {
             return true
         }
     }
-
+    
     return false
 }
 
@@ -245,9 +245,9 @@ func header(in *input.CrawlResult, dnslog *reverse.Dig, client *httpx.Client) bo
         logging.Logger.Errorln(err)
         return false
     }
-
+    
     isVul := reverse.PullLogs(dnslog)
-
+    
     if isVul {
         output.OutChannel <- output.VulMessage{
             DataType: "web_vul",

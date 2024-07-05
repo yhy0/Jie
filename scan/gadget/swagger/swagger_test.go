@@ -23,8 +23,8 @@ func TestSwagger(t *testing.T) {
             fmt.Println(v.PrintScreen())
         }
     }()
-
+    
     Scan("", "")
-
+    
     wg.Wait()
 }

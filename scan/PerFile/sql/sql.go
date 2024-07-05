@@ -177,11 +177,11 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
     
     doneCh := make(chan bool, 1)
     
-    go func() {
+    go func(ctx context.Context) {
         // 开始启发式、sql注入检测
         sql.HeuristicCheckSqlInjection()
         doneCh <- true
-    }()
+    }(ctx)
     
     select {
     case <-ctx.Done():

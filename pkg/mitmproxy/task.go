@@ -76,7 +76,7 @@ func distribution(f *proxy.Flow) {
     
     t.WG.Add(1)
     go func() {
-        err := t.Pool.Submit(t.Distribution(in))
+        err = t.Pool.Submit(t.Distribution(in))
         if err != nil {
             t.WG.Done()
             logging.Logger.Errorf("add distribution err:%v, crawlResult:%v", err, in)

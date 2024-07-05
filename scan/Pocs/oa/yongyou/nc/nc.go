@@ -40,13 +40,13 @@ func Scan(u string, client *httpx.Client) bool {
                 continue
             }
         }
-
+        
         // if resp.StatusCode == 200 || resp.StatusCode == 302 {
         if resp.StatusCode == 200 {
             logging.Logger.Infoln("接口存在", path)
             return true
         }
     }
-
+    
     return false
 }

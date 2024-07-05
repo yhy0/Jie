@@ -9,7 +9,7 @@ import (
     "net/url"
     "strings"
     "time"
-
+    
     "github.com/pkg/errors"
 )
 
@@ -160,7 +160,7 @@ func (sess *session) doRequest(verb string, url string, headers map[string]strin
     if err != nil {
         return nil, errors.Wrap(err, "build request error")
     }
-
+    
     // 设置headers头
     for key, value := range headers {
         req.Header.Set(key, value)
@@ -187,7 +187,7 @@ func (sess *session) doRequest(verb string, url string, headers map[string]strin
     }
     // 覆盖Connection头
     req.Header.Set("Connection", "close")
-
+    
     // 设置重试次数
     retry := sess.Retry
     if retry == 0 {
@@ -195,7 +195,7 @@ func (sess *session) doRequest(verb string, url string, headers map[string]strin
     } else if retry == -1 {
         retry = 0
     }
-
+    
     // 请求
     var resp *http.Response
     for i := 0; i <= retry; i++ {
@@ -208,7 +208,7 @@ func (sess *session) doRequest(verb string, url string, headers map[string]strin
             break
         }
     }
-
+    
     if err != nil {
         return nil, errors.Wrap(err, "error occurred during request")
     }
@@ -217,6 +217,6 @@ func (sess *session) doRequest(verb string, url string, headers map[string]strin
         resp.StatusCode = 200
         resp.Status = "200 OK"
     }
-
+    
     return NewResponse(resp), nil
 }

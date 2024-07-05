@@ -54,14 +54,14 @@ func GetRequest(method string, URL *URL, options ...Options) Request {
         if option.Headers != nil {
             req.Headers = option.Headers
         }
-
+        
         if option.PostData != "" {
             req.PostData = option.PostData
         }
     } else {
         req.Headers = map[string]interface{}{}
     }
-
+    
     return req
 }
 
@@ -135,7 +135,7 @@ func (req *Request) PostDataMap() map[string]interface{} {
             "key": req.PostData,
         }
     }
-
+    
     if strings.HasPrefix(contentType, config.JSON) {
         var result map[string]interface{}
         err = json.Unmarshal([]byte(req.PostData), &result)
@@ -194,7 +194,7 @@ func (req *Request) getContentType() (string, error) {
     } else {
         return "", errors.New("no content-type")
     }
-
+    
     for _, ct := range supportContentType {
         if strings.HasPrefix(contentType, ct) {
             return contentType, nil

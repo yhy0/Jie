@@ -11,7 +11,7 @@ import (
 
 // Exists 判断所给路径文件/文件夹是否存在
 func Exists(path string) bool {
-    _, err := os.Stat(path) //os.Stat获取文件信息
+    _, err := os.Stat(path) // os.Stat获取文件信息
     if err != nil {
         if os.IsExist(err) {
             return true
@@ -38,7 +38,7 @@ func IsFile(path string) bool {
 // ReadFileAsLine 读取文件并返回一个字符串切片
 func ReadFileAsLine(path string) ([]string, error) {
     lineSlice := make([]string, 0)
-
+    
     if !IsFile(path) {
         return nil, os.ErrNotExist
     }
@@ -47,7 +47,7 @@ func ReadFileAsLine(path string) ([]string, error) {
         logging.Logger.Errorf("Open file %s error", path)
         return nil, err
     }
-
+    
     buf := bufio.NewReader(file)
     for {
         line, err := buf.ReadString('\n')
@@ -62,7 +62,7 @@ func ReadFileAsLine(path string) ([]string, error) {
             }
         }
     }
-
+    
     return lineSlice, nil
 }
 

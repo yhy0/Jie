@@ -26,22 +26,22 @@ func SearchInputInScript(input, script string) (Occurrences []Occurence) {
     p.jsParser(script)
     tokens := p.GetRoot()
     defer p.Clear()
-
+    
     if tokens.Length() == 0 {
         return
     }
-
+    
     for _, token := range tokens.Children {
         tagName := token.Value.TagName
         content := token.Value.Content
-
+        
         if !funk.Contains(content, input) {
             continue
         }
-
+        
         Occurrences = append(Occurrences, Occurence{Type: tagName, Position: Index, Details: CopyNode(token)})
     }
-
+    
     return
 }
 
@@ -53,17 +53,17 @@ func (parser *Parser) jsParser(script string) {
             debugStack := make([]byte, 1024)
             runtime.Stack(debugStack, false)
             logging.Logger.Errorf("Stack Trace:%v", string(debugStack))
-
+            
         }
     }()
-
+    
     if parser.tokenizer == nil {
         parser.tokenizer = new(Node)
     }
-
+    
     // Parse the JavaScript code into an AST.xw
     l := js.NewLexer(parse.NewInputString(script))
-
+    
     var i = 0
     for {
         i++
@@ -89,6 +89,6 @@ func (parser *Parser) jsParser(script string) {
         case js.StringToken: // 变量值
             parser.tokenizer.Insert(i, "ScriptLiteral", &commentText, &Attributes)
         }
-
+        
     }
 }

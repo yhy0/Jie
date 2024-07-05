@@ -198,6 +198,7 @@ func Bypass403(uri, m string, client *httpx.Client) {
 // method 通过更改请求方法，尝试绕过 403
 func method(uri, m string, client *httpx.Client) *Result {
     ch := make(chan struct{}, 5)
+    var wg sync.WaitGroup
     result := &Result{}
     var flag = false
     for _, line := range Dict["httpmethods.txt"] {
@@ -207,14 +208,17 @@ func method(uri, m string, client *httpx.Client) *Result {
         if flag {
             break
         }
+        wg.Add(1)
         ch <- struct{}{}
         go func(line string) {
+            defer func() {
+                wg.Done()
+                <-ch
+            }()
             resp, err := client.Request(uri, line, "", nil)
             if err != nil {
-                <-ch
                 return
             }
-            <-ch
             if resp != nil && resp.StatusCode == 200 {
                 // 遇到很多这个，测试也没发现有什么东西 应该就是这类的直接放过了
                 if len(resp.Body) == 0 || resp.Header.Get("Content-Length") == "0" || strings.Contains(resp.Body, "<title>403 Forbidden</title>") || strings.Contains(resp.Body, "a padding to disable MSIE and Chrome friendly error page") {
@@ -227,10 +231,10 @@ func method(uri, m string, client *httpx.Client) *Result {
                     Request:  resp.RequestDump,
                     Response: resp.ResponseDump,
                 }
-                return
             }
         }(line)
     }
+    wg.Wait()
     close(ch)
     if flag {
         return result
@@ -241,6 +245,7 @@ func method(uri, m string, client *httpx.Client) *Result {
 // headers 通过添加header，尝试绕过 403
 func headers(uri, m string, client *httpx.Client) *Result {
     ch := make(chan struct{}, 10)
+    var wg sync.WaitGroup
     result := &Result{}
     var flag = false
     
@@ -249,16 +254,19 @@ func headers(uri, m string, client *httpx.Client) *Result {
             if flag {
                 break
             }
+            wg.Add(1)
             ch <- struct{}{}
             go func(ip, line string) {
+                defer func() {
+                    wg.Done()
+                    <-ch
+                }()
                 header := make(map[string]string)
                 header[line] = ip
                 resp, err := client.Request(uri, m, "", header)
                 if err != nil {
-                    <-ch
                     return
                 }
-                <-ch
                 if resp != nil && resp.StatusCode == 200 {
                     flag = true
                     result = &Result{
@@ -267,14 +275,14 @@ func headers(uri, m string, client *httpx.Client) *Result {
                         Request:  resp.RequestDump,
                         Response: resp.ResponseDump,
                     }
-                    return
                 }
             }(ip, line)
         }
-        
     }
+    wg.Wait()
     
     if flag {
+        close(ch)
         return result
     }
     
@@ -282,17 +290,20 @@ func headers(uri, m string, client *httpx.Client) *Result {
         if flag {
             break
         }
+        wg.Add(1)
         ch <- struct{}{}
         go func(line string) {
+            defer func() {
+                wg.Done()
+                <-ch
+            }()
             x := strings.Split(line, " ")
             header := make(map[string]string)
             header[x[0]] = x[1]
             resp, err := client.Request(uri, m, "", header)
             if err != nil {
-                <-ch
                 return
             }
-            <-ch
             if resp != nil && resp.StatusCode == 200 {
                 flag = true
                 result = &Result{
@@ -301,35 +312,41 @@ func headers(uri, m string, client *httpx.Client) *Result {
                     Request:  resp.RequestDump,
                     Response: resp.ResponseDump,
                 }
-                return
             }
         }(line)
     }
     
+    wg.Wait()
+    close(ch)
+    
     if flag {
         return result
     }
-    close(ch)
+    
     return nil
 }
 
 // endPaths 通过添加 path 后缀，尝试绕过 403
 func endPaths(uri, m string, client *httpx.Client) *Result {
     ch := make(chan struct{}, 5)
+    var wg sync.WaitGroup
     result := &Result{}
     var flag = false
     for _, line := range Dict["endpaths.txt"] {
         if flag {
             break
         }
+        wg.Add(1)
         ch <- struct{}{}
         go func(line string) {
+            defer func() {
+                wg.Done()
+                <-ch
+            }()
             resp, err := client.Request(uri+line, m, "", nil)
             if err != nil {
-                <-ch
                 return
             }
-            <-ch
             if resp != nil && resp.StatusCode == 200 {
                 flag = true
                 result = &Result{
@@ -338,10 +355,10 @@ func endPaths(uri, m string, client *httpx.Client) *Result {
                     Request:  resp.RequestDump,
                     Response: resp.ResponseDump,
                 }
-                return
             }
         }(line)
     }
+    wg.Wait()
     close(ch)
     if flag {
         return result
@@ -352,6 +369,7 @@ func endPaths(uri, m string, client *httpx.Client) *Result {
 // midPaths 在 path 路径中间添加字符，尝试绕过 403
 func midPaths(uri, m string, client *httpx.Client) *Result {
     ch := make(chan struct{}, 5)
+    var wg sync.WaitGroup
     result := &Result{}
     var flag = false
     
@@ -371,8 +389,13 @@ func midPaths(uri, m string, client *httpx.Client) *Result {
         if flag {
             break
         }
+        wg.Add(1)
         ch <- struct{}{}
         go func(line string) {
+            defer func() {
+                wg.Done()
+                <-ch
+            }()
             var fullpath string
             if uri[len(uri)-1:] == "/" {
                 fullpath = baseuri + line + uripath + "/"
@@ -382,10 +405,8 @@ func midPaths(uri, m string, client *httpx.Client) *Result {
             
             resp, err := client.Request(fullpath, m, "", nil)
             if err != nil {
-                <-ch
                 return
             }
-            <-ch
             if resp != nil && resp.StatusCode == 200 {
                 flag = true
                 result = &Result{
@@ -394,10 +415,10 @@ func midPaths(uri, m string, client *httpx.Client) *Result {
                     Request:  resp.RequestDump,
                     Response: resp.ResponseDump,
                 }
-                return
             }
         }(line)
     }
+    wg.Wait()
     close(ch)
     if flag {
         return result
@@ -408,6 +429,7 @@ func midPaths(uri, m string, client *httpx.Client) *Result {
 // capital 通过将URI最后部分中的每个字母大写, 尝试绕过 403
 func capital(uri, m string, client *httpx.Client) *Result {
     ch := make(chan struct{}, 5)
+    var wg sync.WaitGroup
     result := &Result{}
     var flag = false
     x := strings.Split(uri, "/")
@@ -425,8 +447,13 @@ func capital(uri, m string, client *httpx.Client) *Result {
         if flag {
             break
         }
+        wg.Add(1)
         ch <- struct{}{}
         go func(z rune) {
+            defer func() {
+                wg.Done()
+                <-ch
+            }()
             newpath := strings.Map(func(r rune) rune {
                 if r == z {
                     return unicode.ToUpper(r)
@@ -444,10 +471,8 @@ func capital(uri, m string, client *httpx.Client) *Result {
             
             resp, err := client.Request(fullpath, m, "", nil)
             if err != nil {
-                <-ch
                 return
             }
-            <-ch
             if resp != nil && resp.StatusCode == 200 {
                 flag = true
                 result = &Result{
@@ -456,10 +481,10 @@ func capital(uri, m string, client *httpx.Client) *Result {
                     Request:  resp.RequestDump,
                     Response: resp.ResponseDump,
                 }
-                return
             }
         }(z)
     }
+    wg.Wait()
     close(ch)
     if flag {
         return result

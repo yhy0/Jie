@@ -144,8 +144,11 @@ func nuclei(target string, ft []string, tags []string, outputWriter *testutils.M
     
     home, _ := os.UserHomeDir()
     catalog := disk.NewCatalog(path.Join(home, "nuclei-templates"))
-    rateLimiter := ratelimit.New(context.Background(), 150, time.Second)
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+    rateLimiter := ratelimit.New(ctx, 150, time.Second)
     defer rateLimiter.Stop()
+    
     executeOpts := protocols.ExecutorOptions{
         Output:          outputWriter,
         Options:         defaultOpts,

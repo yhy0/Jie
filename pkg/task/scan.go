@@ -6,6 +6,7 @@ import (
     "github.com/yhy0/Jie/scan"
     "path"
     "strings"
+    "sync"
 )
 
 /**
@@ -16,6 +17,8 @@ import (
     - PerFolder 针对url的目录，会分隔目录分别访问
     - PerServer 对每个domain的
 **/
+
+var scanLock sync.Mutex
 
 func (t *Task) Run(in *input.CrawlResult) {
     t.AddWg(in.Host)
@@ -40,9 +43,9 @@ func (t *Task) PerServer(in *input.CrawlResult) {
             if t.ScanTask[in.Host].PerServer[plugin.Name()] {
                 continue
             }
-            t.Lock.Lock()
+            scanLock.Lock()
             t.ScanTask[in.Host].PerServer[plugin.Name()] = true
-            t.Lock.Unlock()
+            scanLock.Unlock()
             t.AddWg(in.Host)
             go func(p scan.Addon) {
                 defer t.DoneWg(in.Host)
@@ -84,16 +87,16 @@ func (t *Task) PerFolder(in *input.CrawlResult) {
                 if t.ScanTask[in.Host].PerFolder[plugin.Name()+"_"+parentDir] {
                     continue
                 }
-                t.Lock.Lock()
+                scanLock.Lock()
                 t.ScanTask[in.Host].PerFolder[plugin.Name()+"_"+parentDir] = true
-                t.Lock.Unlock()
+                scanLock.Unlock()
                 // 说明拆分的目录扫描了，跳过
                 if t.ScanTask[in.Host].PerFolder[plugin.Name()+"_"+p] {
                     continue
                 }
-                t.Lock.Lock()
+                scanLock.Lock()
                 t.ScanTask[in.Host].PerFolder[plugin.Name()+"_"+p] = true
-                t.Lock.Unlock()
+                scanLock.Unlock()
                 
                 t.AddWg(in.Host)
                 go func(a scan.Addon, targetUrl, path string) {
@@ -123,19 +126,21 @@ func (t *Task) PerFile(in *input.CrawlResult) {
 
 func (t *Task) AddWg(host string) {
     t.WgAddLock.Lock() // 保护对ScanTask映射的访问
-    defer t.WgAddLock.Unlock()
+    wg := t.ScanTask[host].Wg
+    t.WgAddLock.Unlock() // 解锁，以便其他goroutine可以操作WaitGroup
     /*
        Add() 时不能使用 t.WgLock 因为 sizedwaitgroup.SizedWaitGroup 中的逻辑是 当 add 满时，
        再次 add 会阻塞住，所以这里就会发生阻塞，不会释放锁，又因为AddWg 和 DoneWg 同时使用一个锁，导致程序发生死锁
     */
     
-    t.ScanTask[host].Wg.Add()
+    wg.Add()
 }
 
 func (t *Task) DoneWg(host string) {
     t.WgLock.Lock() // 保护对ScanTask映射的访问
-    defer t.WgLock.Unlock()
-    t.ScanTask[host].Wg.Done()
+    wg := t.ScanTask[host].Wg
+    t.WgLock.Unlock() // 解锁，以便其他goroutine可以操作WaitGroup
+    wg.Done()
 }
 
 func (t *Task) WaitWg(host string) {

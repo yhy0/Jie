@@ -28,8 +28,10 @@ func UniqueId(req *proxy.Request) string {
     // 为请求生成唯一标识符
     key, err := getRequestKey(req)
     if err != nil {
-        logging.Logger.Errorln(err)
-        return ""
+        // 这种可能是加密的，导致提取不到参数
+        if !strings.Contains(err.Error(), "invalid semicolon separator in query") {
+            logging.Logger.Errorln(err)
+        }
     }
     
     return key
@@ -55,7 +57,8 @@ func getRequestKey(req *proxy.Request) (string, error) {
     paramNames, err := GetReqParameters(req.Method, req.Header.Get("Content-Type"), req.URL, req.Body)
     
     if err != nil {
-        return "", err
+        hash := md5.Sum([]byte(data))
+        return hex.EncodeToString(hash[:]), err
     }
     
     // 对查询参数名称进行排序，以确保相同的参数集合具有相同的哈希值

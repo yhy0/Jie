@@ -8,7 +8,7 @@ import (
     "github.com/yhy0/Jie/crawler/crawlergo/tools"
     "github.com/yhy0/logging"
     "time"
-
+    
     "github.com/chromedp/cdproto/cdp"
     "github.com/chromedp/chromedp"
 )
@@ -27,11 +27,11 @@ func (tab *Tab) AfterLoadedRun() {
     tab.formSubmitWG.Add(2)
     tab.loadedWG.Add(3)
     tab.removeLis.Add(1)
-
+    
     go tab.formSubmit()
     tab.formSubmitWG.Wait()
     // logging.Logger.Debug("formSubmit end")
-
+    
     if tab.config.EventTriggerMode == config.EventTriggerAsync {
         go tab.triggerJavascriptProtocol()
         go tab.triggerInlineEvents()
@@ -44,10 +44,10 @@ func (tab *Tab) AfterLoadedRun() {
         time.Sleep(tab.config.EventTriggerInterval)
         tab.triggerJavascriptProtocol()
     }
-
+    
     // 事件触发之后 需要等待一点时间让浏览器成功发出ajax请求 更新DOM
     time.Sleep(tab.config.BeforeExitDelay)
-
+    
     go tab.RemoveDOMListener()
     tab.removeLis.Wait()
     // logging.Logger.Debug("afterLoadedRun end")
@@ -58,12 +58,12 @@ func (tab *Tab) AfterLoadedRun() {
 自动化点击提交表单
 */
 func (tab *Tab) formSubmit() {
-
+    
     // logging.Logger.Debug("formSubmit start")
-
+    
     // 首先对form表单设置target
     tab.setFormToFrame()
-
+    
     // 接下来尝试三种方式提交表单
     go tab.clickSubmit()
     go tab.clickAllButton()
@@ -77,7 +77,7 @@ func (tab *Tab) setFormToFrame() {
     // 首先新建 frame
     nameStr := tools.RandSeq(8)
     tab.Evaluate(fmt.Sprintf(js.NewFrameTemplate, nameStr, nameStr))
-
+    
     // 接下来将所有的 form 节点target都指向它
     ctx := tab.GetExecutor()
     formNodes, formErr := tab.GetNodeIDs(`form`)
@@ -99,10 +99,10 @@ func (tab *Tab) setFormToFrame() {
 */
 func (tab *Tab) clickSubmit() {
     defer tab.formSubmitWG.Done()
-
+    
     // 首先点击按钮 type=submit
     ctx := tab.GetExecutor()
-
+    
     // 获取所有的form节点 直接执行submit
     formNodes, formErr := tab.GetNodeIDs(`form`)
     if formErr != nil || len(formNodes) == 0 {
@@ -115,7 +115,7 @@ func (tab *Tab) clickSubmit() {
     tCtx1, cancel1 := context.WithTimeout(ctx, time.Second*2)
     defer cancel1()
     _ = chromedp.Submit(formNodes, chromedp.ByNodeID).Do(tCtx1)
-
+    
     // 获取所有的input标签
     inputNodes, inputErr := tab.GetNodeIDs(`form input[type=submit]`)
     if inputErr != nil || len(inputNodes) == 0 {
@@ -136,7 +136,7 @@ click all button
 */
 func (tab *Tab) clickAllButton() {
     defer tab.formSubmitWG.Done()
-
+    
     // 获取所有的form中的button节点
     ctx := tab.GetExecutor()
     // 获取所有的button标签
@@ -151,7 +151,7 @@ func (tab *Tab) clickAllButton() {
     tCtx, cancel1 := context.WithTimeout(ctx, time.Second*2)
     defer cancel1()
     _ = chromedp.Click(btnNodeIDs, chromedp.ByNodeID).Do(tCtx)
-
+    
     // 使用JS的click方法进行点击
     var btnNodes []*cdp.Node
     tCtx2, cancel2 := context.WithTimeout(ctx, time.Second*2)

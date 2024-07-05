@@ -19,17 +19,17 @@ type DnslogCn struct {
 
 func GetDnslogUrl() *DnslogCn {
     session := util.RandomLetterNumbers(8)
-
+    
     headers := map[string]string{
         "Cookie": "PHPSESSID=" + session,
     }
     resp, err := httpx.Request("http://www.dnslog.cn/getdomain.php", "GET", "", headers)
-
+    
     if err != nil {
         logging.Logger.Errorln(err)
         return nil
     }
-
+    
     return &DnslogCn{
         resp.Body,
         session,
@@ -41,15 +41,15 @@ func GetDnslogRecord(session string) string {
         "Cookie": "PHPSESSID=" + session,
     }
     resp, err := httpx.Request("http://www.dnslog.cn/getdomain.php", "GET", "", headers)
-
+    
     if err != nil {
         logging.Logger.Errorln(err)
         return ""
     }
-
+    
     if resp.Body == "[]" {
         return ""
     }
-
+    
     return resp.Body
 }

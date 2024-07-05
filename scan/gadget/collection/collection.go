@@ -105,17 +105,11 @@ func Info(target, domain string, body string, contentType string) (c output.Coll
                 if _u == "" || !strings.HasPrefix(_u, "/") {
                     continue
                 }
-                if filterImg(_u) {
-                    continue
-                }
                 c.Api = append(c.Api, _u)
             } else {
                 // "(?i)\\.(get|post|put|delete|options|connect|trace|patch)\\([\"'](/?.*?)[\"']" 这个正则
                 // 不是以 / 开头的去除
                 if u[2] == "" || !strings.HasPrefix(u[2], "/") {
-                    continue
-                }
-                if filterImg(u[2]) {
                     continue
                 }
                 c.Api = append(c.Api, u[1]+" "+u[2])
@@ -188,12 +182,4 @@ func urlFilter(str [][]string) [][]string {
         
     }
     return str
-}
-
-func filterImg(u string) bool {
-    if strings.HasSuffix(u, ".png") || strings.HasSuffix(u, ".jpg") || strings.HasSuffix(u, ".jpeg") || strings.HasSuffix(u, ".gif") || strings.HasSuffix(u, ".css") {
-        return true
-    }
-    
-    return false
 }

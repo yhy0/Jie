@@ -4,7 +4,7 @@ import (
     "fmt"
     "github.com/yhy0/logging"
     "runtime"
-
+    
     "github.com/tdewolff/parse/v2"
     "github.com/tdewolff/parse/v2/js"
 )
@@ -27,13 +27,13 @@ func HookParse(code string) (string, error) {
             logging.Logger.Errorf("Stack Trace:%v", string(debugStack))
         }
     }()
-
+    
     ast, err := js.Parse(parse.NewInputString(code), js.Options{})
     if err != nil {
         return "", err
     }
     convWalk(ast)
-
+    
     return ast.String(), nil
 }
 
@@ -124,12 +124,12 @@ func convExpr(node js.IExpr) js.IExpr {
         for i := range n.Args.List {
             n.Args.List[i].Value = convExpr(n.Args.List[i].Value)
         }
-
+        
         if dot, ok := n.X.(*js.DotExpr); ok {
             args := js.Args{
                 List: make([]js.Arg, 2+len(n.Args.List)),
             }
-
+            
             args.List[0] = js.Arg{Value: convExpr(dot.X)}
             args.List[1] = js.Arg{Value: &js.LiteralExpr{
                 TokenType: js.StringToken,
@@ -211,7 +211,7 @@ func convWalk(n js.INode) {
     if n == nil {
         return
     }
-
+    
     switch n := n.(type) {
     case *js.AST:
         convWalk(&n.BlockStmt)
@@ -249,7 +249,7 @@ func convWalk(n js.INode) {
         if n.Body != nil {
             convWalk(n.Body)
         }
-
+        
         n.Init = convExpr(n.Init)
         n.Cond = convExpr(n.Cond)
         n.Post = convExpr(n.Post)
@@ -257,14 +257,14 @@ func convWalk(n js.INode) {
         if n.Body != nil {
             convWalk(n.Body)
         }
-
+        
         n.Init = convExpr(n.Init)
         n.Value = convExpr(n.Value)
     case *js.ForOfStmt:
         if n.Body != nil {
             convWalk(n.Body)
         }
-
+        
         n.Init = convExpr(n.Init)
         n.Value = convExpr(n.Value)
     case *js.CaseClause:
@@ -273,7 +273,7 @@ func convWalk(n js.INode) {
                 convWalk(n.List[i])
             }
         }
-
+        
         n.Cond = convExpr(n.Cond)
     case *js.SwitchStmt:
         if n.List != nil {
@@ -281,7 +281,7 @@ func convWalk(n js.INode) {
                 convWalk(&n.List[i])
             }
         }
-
+        
         n.Init = convExpr(n.Init)
     case *js.BranchStmt:
         return
@@ -298,15 +298,15 @@ func convWalk(n js.INode) {
         if n.Body != nil {
             convWalk(n.Body)
         }
-
+        
         if n.Catch != nil {
             convWalk(n.Catch)
         }
-
+        
         if n.Finally != nil {
             convWalk(n.Finally)
         }
-
+        
         convWalk(n.Binding)
     case *js.DebuggerStmt:
         return
@@ -327,7 +327,7 @@ func convWalk(n js.INode) {
         //         convWalk(&n.List[i])
         //     }
         // }
-
+        
         // n.Decl = convExpr(n.Decl)
         return
     case *js.DirectivePrologueStmt:
@@ -344,7 +344,7 @@ func convWalk(n js.INode) {
         //         convWalk(&n.List[i])
         //     }
         // }
-
+        
         // convWalk(n.Rest)
         return
     case *js.BindingObjectItem:
@@ -352,7 +352,7 @@ func convWalk(n js.INode) {
         // if n.Key != nil {
         //     convWalk(n.Key)
         // }
-
+        
         // convWalk(&n.Value)
         return
     case *js.BindingObject:
@@ -362,7 +362,7 @@ func convWalk(n js.INode) {
         //         convWalk(&n.List[i])
         //     }
         // }
-
+        
         // if n.Rest != nil {
         //     convWalk(n.Rest)
         // }
@@ -376,12 +376,12 @@ func convWalk(n js.INode) {
                 n.List[i].Default = convExpr(n.List[i].Default)
             }
         }
-
+        
         // convWalk(n.Rest)
     case *js.FuncDecl:
         convWalk(&n.Body)
         convWalk(&n.Params)
-
+        
         // if n.Name != nil {
         //     convWalk(n.Name)
         // }
@@ -396,9 +396,9 @@ func convWalk(n js.INode) {
         // if n.Name != nil {
         //     convWalk(n.Name)
         // }
-
+        
         n.Extends = convExpr(n.Extends)
-
+        
         if n.List != nil {
             for i := 0; i < len(n.List); i++ {
                 convWalk(n.List[i].Field)
@@ -419,7 +419,7 @@ func convWalk(n js.INode) {
         if n.Name != nil {
             convWalk(n.Name)
         }
-
+        
         n.Value = convExpr(n.Value)
         n.Init = convExpr(n.Init)
     case *js.ObjectExpr:
@@ -436,7 +436,7 @@ func convWalk(n js.INode) {
                 convWalk(&n.List[i])
             }
         }
-
+        
         n.Tag = convExpr(n.Tag)
     case *js.GroupExpr:
         return
@@ -453,13 +453,13 @@ func convWalk(n js.INode) {
     case *js.Args:
     case *js.NewExpr:
     case *js.CallExpr:
-
+    
     case *js.UnaryExpr:
-
+    
     case *js.BinaryExpr:
-
+    
     case *js.CondExpr:
-
+    
     case *js.YieldExpr:
         n.X = convExpr(n.X)
     case *js.ArrowFunc:

@@ -193,7 +193,7 @@ func (c *Client) Request(target string, method string, body string, header map[s
             SetBody(body).
             Put(target)
     } else {
-        logging.Logger.Warningf("Unsupported method: %s", method)
+        // logging.Logger.Warningf("Unsupported method: %s", method)
         return nil, errors.New(fmt.Sprintf("Unsupported method: %s", method))
     }
     
@@ -210,10 +210,23 @@ func (c *Client) Request(target string, method string, body string, header map[s
         location = respLocation.String()
     }
     
-    if respBodyByte, err := ioutil.ReadAll(resp.Body); err == nil {
-        respBody = string(respBodyByte)
+    var filterHeader bool
+    contentType := resp.GetHeader("Content-Type")
+    // 过滤掉这种
+    if strings.Contains(contentType, "application/octet-stream") || strings.Contains(contentType, "image/") || strings.Contains(contentType, "video/") || strings.Contains(contentType, "audio/") {
+        filterHeader = true
     }
-    defer resp.Body.Close()
+    
+    if !filterHeader {
+        if respBodyByte, err := ioutil.ReadAll(resp.Body); err == nil {
+            respBody = string(respBodyByte)
+        }
+        defer resp.Body.Close()
+        // 检测所有的返回包，可能有某个插件导致报错，存在报错信息
+        if !strings.Contains(contentType, "application/zip") {
+            sensitive.PageErrorMessageCheck(target, requestDumpBuf.String(), respBody)
+        }
+    }
     
     if resp.StatusCode == 200 {
         // 检查一下是否为 js 控制的跳转
@@ -221,9 +234,6 @@ func (c *Client) Request(target string, method string, body string, header map[s
             resp.StatusCode = 302
         }
     }
-    
-    // 检测所有的返回包，可能有某个插件导致报错，存在报错信息
-    sensitive.PageErrorMessageCheck(target, requestDumpBuf.String(), respBody)
     
     return &Response{
         Status:           resp.Status,

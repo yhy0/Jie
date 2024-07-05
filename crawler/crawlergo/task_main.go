@@ -55,19 +55,19 @@ func NewCrawlerTask(targets []*model.Request, taskConf TaskConfig, onResult OnRe
         Config:   &taskConf,
         OnResult: onResult,
     }
-
+    
     baseFilter := filter.NewSimpleFilter(targets[0].URL.Host)
-
+    
     if taskConf.FilterMode == config.SmartFilterMode {
         crawlerTask.filter = filter.NewSmartFilter(baseFilter, false)
-
+        
     } else if taskConf.FilterMode == config.StrictFilterMode {
         crawlerTask.filter = filter.NewSmartFilter(baseFilter, true)
-
+        
     } else {
         crawlerTask.filter = baseFilter
     }
-
+    
     if len(targets) == 1 {
         _newReq := *targets[0]
         newReq := &_newReq
@@ -81,11 +81,11 @@ func NewCrawlerTask(targets []*model.Request, taskConf TaskConfig, onResult OnRe
         targets = append(targets, newReq)
     }
     crawlerTask.Targets = targets[:]
-
+    
     for _, req := range targets {
         req.Source = config.FromTarget
     }
-
+    
     // 业务代码与数据代码分离, 初始化一些默认配置
     // 使用 function option 和一个代理来初始化 taskConf 的配置
     for _, fn := range []TaskConfigOptFunc{
@@ -100,7 +100,7 @@ func NewCrawlerTask(targets []*model.Request, taskConf TaskConfig, onResult OnRe
     } {
         fn(&taskConf)
     }
-
+    
     if taskConf.ExtraHeadersString != "" {
         err := json.Unmarshal([]byte(taskConf.ExtraHeadersString), &taskConf.ExtraHeaders)
         if err != nil {
@@ -108,13 +108,13 @@ func NewCrawlerTask(targets []*model.Request, taskConf TaskConfig, onResult OnRe
             return nil, err
         }
     }
-
+    
     crawlerTask.RootDomain = targets[0].URL.RootDomain()
-
+    
     // 创建协程池
     p, _ := ants.NewPool(taskConf.MaxTabsCount)
     crawlerTask.Pool = p
-
+    
     return &crawlerTask, nil
 }
 
@@ -135,14 +135,14 @@ func (t *CrawlerTask) generateTabTask(req *model.Request) *tabTask {
 func (t *CrawlerTask) Run() {
     defer t.Pool.Release()  // 释放协程池
     defer t.Browser.Close() // 关闭浏览器
-
+    
     t.Start = time.Now()
     if t.Config.PathFromRobots {
         reqsFromRobots := GetPathsFromRobots(*t.Targets[0])
         logging.Logger.Info("get paths from robots.txt: ", len(reqsFromRobots))
         t.Targets = append(t.Targets, reqsFromRobots...)
     }
-
+    
     if t.Config.FuzzDictPath != "" {
         if t.Config.PathByFuzz {
             logging.Logger.Warn("`--fuzz-path` is ignored, using `--fuzz-path-dict` instead")
@@ -154,9 +154,9 @@ func (t *CrawlerTask) Run() {
         logging.Logger.Info("get paths by fuzzing: ", len(reqsByFuzz))
         t.Targets = append(t.Targets, reqsByFuzz...)
     }
-
+    
     t.Result.AllReqList = t.Targets[:]
-
+    
     var initTasks []*model.Request
     for _, req := range t.Targets {
         if t.filter.DoFilter(req) {
@@ -164,29 +164,29 @@ func (t *CrawlerTask) Run() {
             continue
         }
         initTasks = append(initTasks, req)
-
+        
         // Write the found result to output
         result := &OutResult{
             ReqList: req,
         }
         t.OnResult(result)
-
+        
         t.Result.ReqList = append(t.Result.ReqList, req)
     }
     // logging.Logger.Info("filter repeat, target count: ", len(initTasks))
-
+    
     for _, req := range initTasks {
         if !engine.IsIgnoredByKeywordMatch(*req, t.Config.IgnoreKeywords) {
             t.addTask2Pool(req)
         }
     }
-
+    
     t.taskWG.Wait()
-
+    
     // 对全部请求进行唯一去重
     todoFilterAll := make([]*model.Request, len(t.Result.AllReqList))
     copy(todoFilterAll, t.Result.AllReqList)
-
+    
     t.Result.AllReqList = []*model.Request{}
     var simpleFilter filter.SimpleFilter
     for _, req := range todoFilterAll {
@@ -194,7 +194,7 @@ func (t *CrawlerTask) Run() {
             t.Result.AllReqList = append(t.Result.AllReqList, req)
         }
     }
-
+    
     // 子域名
     t.Result.SubDomainList = SubDomainCollect(t.Result.AllReqList, t.RootDomain)
 }
@@ -212,13 +212,13 @@ func (t *CrawlerTask) addTask2Pool(req *model.Request) {
     } else {
         t.crawledCount += 1
     }
-
+    
     if t.Start.Add(time.Second * time.Duration(t.Config.MaxRunTime)).Before(time.Now()) {
         t.taskCountLock.Unlock()
         return
     }
     t.taskCountLock.Unlock()
-
+    
     t.taskWG.Add(1)
     task := t.generateTabTask(req)
     go func() {
@@ -233,18 +233,18 @@ func (t *CrawlerTask) addTask2Pool(req *model.Request) {
 // Task 单个运行的tab标签任务，实现了workpool的接口
 func (t *tabTask) Task() {
     defer t.crawlerTask.taskWG.Done()
-
+    
     // 设置tab超时时间，若设置了程序最大运行时间， tab超时时间和程序剩余时间取小
     timeremaining := t.crawlerTask.Start.Add(time.Duration(t.crawlerTask.Config.MaxRunTime) * time.Second).Sub(time.Now())
     tabTime := t.crawlerTask.Config.TabRunTimeout
     if t.crawlerTask.Config.TabRunTimeout > timeremaining {
         tabTime = timeremaining
     }
-
+    
     if tabTime <= 0 {
         return
     }
-
+    
     tab := engine.NewTab(t.browser, *t.req, engine.TabConfig{
         TabRunTimeout:           tabTime,
         DomContentLoadedTimeout: t.crawlerTask.Config.DomContentLoadedTimeout,
@@ -257,25 +257,25 @@ func (t *tabTask) Task() {
         CustomFormKeywordValues: t.crawlerTask.Config.CustomFormKeywordValues,
     })
     tab.Start()
-
+    
     // 收集结果
     t.crawlerTask.Result.resultLock.Lock()
     t.crawlerTask.Result.AllReqList = append(t.crawlerTask.Result.AllReqList, tab.ResultList...)
     t.crawlerTask.Result.resultLock.Unlock()
-
+    
     for _, req := range tab.ResultList {
         if !t.crawlerTask.filter.DoFilter(req) {
             t.crawlerTask.Result.resultLock.Lock()
-
+            
             t.crawlerTask.Result.ReqList = append(t.crawlerTask.Result.ReqList, req)
             // Write the found result to output
             result := &OutResult{
                 ReqList: req,
             }
             t.crawlerTask.OnResult(result)
-
+            
             t.crawlerTask.Result.resultLock.Unlock()
-
+            
             if !engine.IsIgnoredByKeywordMatch(*req, t.crawlerTask.Config.IgnoreKeywords) {
                 t.crawlerTask.addTask2Pool(req)
             }

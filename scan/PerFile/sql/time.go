@@ -22,10 +22,10 @@ func (sql *Sqlmap) checkTimeBasedBlind(pos int) bool {
         return false
     }
     logging.Logger.Debugf("%s 网站的正常响应时间应小于: %v ms", sql.Url, standardRespTime)
-
+    
     for _, closeType := range CloseType {
         payload := fmt.Sprintf(`%v/**/And/**/SleeP(%v)#`, closeType, standardRespTime*2/1000+3)
-
+        
         for index, param := range sql.Variations.Params {
             if index == pos {
                 payload = sql.Variations.SetPayloadByIndex(param.Index, sql.Url, param.Value+payload, sql.Method)
@@ -38,11 +38,11 @@ func (sql *Sqlmap) checkTimeBasedBlind(pos int) bool {
                 } else {
                     res, err = sql.Client.Request(sql.Url, sql.Method, payload, sql.Headers)
                 }
-
+                
                 if err != nil {
                     continue
                 }
-
+                
                 if res.ServerDurationMs > standardRespTime+2000 {
                     JieOutput.OutChannel <- JieOutput.VulMessage{
                         DataType: "web_vul",
@@ -60,7 +60,7 @@ func (sql *Sqlmap) checkTimeBasedBlind(pos int) bool {
                         Level: JieOutput.Critical,
                     }
                     logging.Logger.Debugf("存在基于时间的 SQL 注入: [参数名:%v 原值:%v]", param.Name, param.Value)
-
+                    
                     return true
                 } else {
                     continue
@@ -68,6 +68,6 @@ func (sql *Sqlmap) checkTimeBasedBlind(pos int) bool {
             }
         }
     }
-
+    
     return false
 }

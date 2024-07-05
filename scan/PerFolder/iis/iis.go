@@ -93,7 +93,7 @@ func (s *Scanner) Report() {
         }
         logging.Logger.Printf("%d Directories, %d Files found in total\nDirs: %v \nFile: %v\n", len(s.dirs), len(s.files), s.dirs, s.files)
     }
-
+    
 }
 
 func (s *Scanner) scanWorker() {
@@ -134,24 +134,24 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
     if p.IsScanned(in.UniqueId) {
         return
     }
-
+    
     // 这里应该根据指纹来搞，识别到了指纹才进行 Fuzz
     if !util.InSliceCaseFold("ASP", in.Fingerprints) {
         return
     }
-
+    
     s, err := NewScanner(target)
-
+    
     if err != nil {
         logging.Logger.Println("Error:", err)
         return
     }
-
+    
     if !s.IsVul() {
         logging.Logger.Println("Sorry, server is not vulnerable")
         return
     }
-
+    
     logging.Logger.Println("Server is vulnerable, please wait, scanning...")
     s.Run()
     s.Report()

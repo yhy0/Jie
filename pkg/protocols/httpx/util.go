@@ -43,7 +43,7 @@ type Param struct {
     Filename string `json:"fileName,omitempty"`
     // ContentType is the content type of posted file.
     ContentType string `json:"contentType,omitempty"`
-
+    
     FileHeader   textproto.MIMEHeader
     FileSize     int64
     FileContent  []byte
@@ -86,7 +86,7 @@ func ParseUri(uri string, body []byte, method string, contentType string, header
         index      int
         variations Variations
     )
-
+    
     jsonMap := make(map[string]interface{})
     if strings.ToUpper(method) == "POST" {
         if len(body) > 0 {
@@ -114,22 +114,22 @@ func ParseUri(uri string, body []byte, method string, contentType string, header
                 // array := string()
                 iobody := bytes.NewReader(body)
                 req, err := http.NewRequest(method, uri, iobody)
-
+                
                 for k, v := range headers {
                     req.Header[k] = []string{v}
                 }
-
+                
                 if err != nil {
                     logging.Logger.Error(err.Error())
                     return nil, err
                 }
-
+                
                 reader, err := req.MultipartReader()
                 if err != nil {
                     logging.Logger.Error(err.Error())
                     return nil, err
                 }
-
+                
                 _, params, err := mime.ParseMediaType(contentType)
                 if err != nil {
                     logging.Logger.Error("mime.ParseMediaType :", err)
@@ -137,7 +137,7 @@ func ParseUri(uri string, body []byte, method string, contentType string, header
                 if value, ok := params["boundary"]; ok {
                     boundary = value
                 }
-
+                
                 for {
                     var isfile = false
                     if reader == nil {
@@ -151,7 +151,7 @@ func ParseUri(uri string, body []byte, method string, contentType string, header
                         logging.Logger.Error("mime.ParseMediaType :", err)
                         return nil, err
                     }
-
+                    
                     body, err := ioutil.ReadAll(p)
                     if err != nil {
                         p.Close()
@@ -161,7 +161,7 @@ func ParseUri(uri string, body []byte, method string, contentType string, header
                     if p.FileName() != "" {
                         isfile = true
                     }
-
+                    
                     variations.MimeType = multipartData
                     variations.Params = append(variations.Params, Param{
                         Name:        p.FormName(),
@@ -173,7 +173,7 @@ func ParseUri(uri string, body []byte, method string, contentType string, header
                         IsFile: isfile,
                         Index:  iindex,
                     })
-
+                    
                     variations.OriginalParams = append(variations.OriginalParams, Param{
                         Name:        p.FormName(),
                         Boundary:    boundary,
@@ -184,7 +184,7 @@ func ParseUri(uri string, body []byte, method string, contentType string, header
                         IsFile: isfile,
                         Index:  iindex,
                     })
-
+                    
                     p.Close()
                 }
             default:
@@ -211,7 +211,7 @@ func ParseUri(uri string, body []byte, method string, contentType string, header
         } else {
             return nil, fmt.Errorf("%s POST data is empty", uri)
         }
-
+        
     } else if strings.ToUpper(method) == "GET" {
         if !funk.Contains(uri, "?") {
             return nil, fmt.Errorf("%s GET data is empty", uri)
@@ -236,7 +236,7 @@ func ParseUri(uri string, body []byte, method string, contentType string, header
             return nil, fmt.Errorf("%s variations is nil", method)
         }
         return &variations, nil
-
+        
     } else {
         err = fmt.Errorf("%s method not supported", method)
     }
@@ -272,11 +272,11 @@ func (p *Variations) Release() string {
         // bodyBuf := &bytes.Buffer{}
         bodyWriter := multipart.NewWriter(&buf)
         // bodyWriter.CreateFormFile(p.Params[0], p.Params[0].Filename)
-
+        
         if p.Params[0].Boundary != "" {
             bodyWriter.SetBoundary(p.Params[0].Boundary)
         }
-
+        
         for _, param := range p.Params {
             if param.IsFile {
                 h := make(textproto.MIMEHeader)
@@ -304,7 +304,7 @@ func (p *Variations) Release() string {
             }
         }
     }
-
+    
     return buf.String()
 }
 
@@ -328,7 +328,7 @@ POST 返回 artist=')”,)'(())')(
 func (p *Variations) SetPayloadByIndex(index int, uri string, payload string, method string) string {
     // 对 payload 进行 url 编码
     payload = url.QueryEscape(payload)
-
+    
     if strings.ToUpper(method) == "POST" {
         for idx, kv := range p.Params {
             // 判断是否为不可更改的参数名
@@ -343,7 +343,7 @@ func (p *Variations) SetPayloadByIndex(index int, uri string, payload string, me
                 p.Release()
                 return str
             }
-
+            
         }
     } else if strings.ToUpper(method) == "GET" {
         u, err := url.Parse(uri)
@@ -362,14 +362,14 @@ func (p *Variations) SetPayloadByIndex(index int, uri string, payload string, me
                 stv := p.Release()
                 str := strings.Split(uri, "?")[0] + "?" + stv
                 v.Set(kv.Name, kv.Value)
-
+                
                 p.Set(kv.Name, p.OriginalParams[idx].Value)
                 p.Release()
                 return str
             }
         }
     }
-
+    
     return ""
 }
 

@@ -26,18 +26,18 @@ func requestDump(r *proxy.Request) string {
     if r.Raw().Close {
         fmt.Fprintf(buf, "Connection: close\r\n")
     }
-
+    
     err := r.Header.WriteSubset(buf, nil)
     if err != nil {
         logging.Logger.Error(err)
     }
     buf.WriteString("\r\n")
-
+    
     if r.Body != nil && len(r.Body) > 0 && canPrint(r.Body) {
         buf.Write(r.Body)
         buf.WriteString("\r\n\r\n")
     }
-
+    
     return buf.String()
 }
 

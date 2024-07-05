@@ -4,7 +4,7 @@ import (
     "github.com/yhy0/Jie/crawler/crawlergo/config"
     "github.com/yhy0/Jie/crawler/crawlergo/model"
     "strings"
-
+    
     mapset "github.com/deckarep/golang-set/v2"
 )
 
@@ -16,7 +16,7 @@ type SimpleFilter struct {
 
 func NewSimpleFilter(host string) *SimpleFilter {
     staticSuffixSet := config.StaticSuffixSet.Clone()
-
+    
     for _, suffix := range []string{"js", "css", "json"} {
         staticSuffixSet.Add(suffix)
     }
@@ -66,7 +66,7 @@ func (s *SimpleFilter) StaticFilter(req *model.Request) bool {
         s.UniqueSet = mapset.NewSet[string]()
     }
     // 首先将slice转换成map
-
+    
     if req.URL.FileExt() == "" {
         return false
     }

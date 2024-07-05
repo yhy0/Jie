@@ -19,11 +19,11 @@ import (
 func Run(adminService string, configService string) {
     // 1. 获取所有应用的基本信息 appId
     apps := getApps(adminService)
-
+    
     if apps == nil {
         return
     }
-
+    
     for _, app := range apps {
         // 2. 获取 appId 相关的 clusters
         clusters := getClusters(adminService, app.AppId)
@@ -51,7 +51,7 @@ func Run(adminService string, configService string) {
                 }
             }
         }
-
+        
     }
 }
 
@@ -65,21 +65,21 @@ type Apps struct {
 
 func getApps(target string) []Apps {
     target = fmt.Sprintf("%s/apps", target)
-
+    
     response, err := httpx.Get(target)
     if err != nil {
         logging.Logger.Errorln(err)
         return nil
     }
-
+    
     var apps []Apps
-
+    
     err = json.Unmarshal([]byte(response.Body), &apps)
     if err != nil {
         logging.Logger.Errorln(err)
         return nil
     }
-
+    
     return apps
 }
 
@@ -91,21 +91,21 @@ type Clusters struct {
 
 func getClusters(target string, appId string) []Clusters {
     target = fmt.Sprintf("%s/apps/%s/clusters", target, appId)
-
+    
     response, err := httpx.Get(target)
     if err != nil {
         logging.Logger.Errorln(err)
         return nil
     }
-
+    
     var clusters []Clusters
-
+    
     err = json.Unmarshal([]byte(response.Body), &clusters)
     if err != nil {
         logging.Logger.Errorln(err)
         return nil
     }
-
+    
     return clusters
 }
 
@@ -117,21 +117,21 @@ type NameSpaces struct {
 
 func getNameSpace(target string, appId string, cluster string) []NameSpaces {
     target = fmt.Sprintf("%s/apps/%s/clusters/%s/namespaces", target, appId, cluster)
-
+    
     response, err := httpx.Get(target)
     if err != nil {
         logging.Logger.Errorln(err)
         return nil
     }
-
+    
     var nameSpaces []NameSpaces
-
+    
     err = json.Unmarshal([]byte(response.Body), &nameSpaces)
     if err != nil {
         logging.Logger.Errorln(err)
         return nil
     }
-
+    
     return nameSpaces
 }
 
@@ -145,12 +145,12 @@ type Configs struct {
 
 func getConf(target string, appId string, cluster string, nameSpaces string) (string, string) {
     target = fmt.Sprintf("%s/configs/%s/%s/%s", target, appId, cluster, nameSpaces)
-
+    
     response, err := httpx.Get(target)
     if err != nil {
         logging.Logger.Errorln(err)
         return "", ""
     }
-
+    
     return target, response.Body
 }

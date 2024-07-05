@@ -36,20 +36,20 @@ func GetSubDomain() *Dig {
         logging.Logger.Errorln(err)
         return nil
     }
-
+    
     dig := &Dig{}
     err = json.Unmarshal([]byte(resp.Body), &dig)
     if err != nil {
         logging.Logger.Errorln(err)
         return nil
     }
-
+    
     // 强制转一下
     if dig.SubDomain != "" {
         dig.Domain = dig.FullDomain
         dig.Key = dig.SubDomain
     }
-
+    
     return dig
 }
 
@@ -63,11 +63,11 @@ func PullLogs(dig *Dig) bool {
         logging.Logger.Errorln(err)
         return false
     }
-
+    
     if !funk.Contains(resp.Body, "null") && funk.Contains(resp.Body, dig.Key) {
         dig.Msg = resp.Body
         return true
     }
-
+    
     return false
 }

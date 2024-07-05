@@ -66,6 +66,6 @@ var FrameworkPlugins = [...]Plugin{
     &framework.Web2PyPlugin{},
     &framework.YiiPlugin{},
     &framework.ZendPlugin{},
-
+    
     &framework.BeegoPlugin{},
 }

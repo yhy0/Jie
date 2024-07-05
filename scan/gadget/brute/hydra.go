@@ -19,7 +19,7 @@ func Hydra(target, host, service string, port int) {
         err error
     )
     service = strings.ToLower(service)
-
+    
     switch service {
     case "redis":
         msg, err = hydra2.Redis(host, port)
@@ -44,11 +44,11 @@ func Hydra(target, host, service string, port int) {
     case "microsoft-ds", "smb":
         msg, err = hydra2.SMB(host, port)
     }
-
+    
     if err != nil {
         return
     }
-
+    
     output.OutChannel <- output.VulMessage{
         DataType: "web_vul",
         Plugin:   "Hydra",

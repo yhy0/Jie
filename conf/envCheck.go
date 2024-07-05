@@ -3,6 +3,7 @@ package conf
 import (
     "fmt"
     "github.com/go-rod/rod/lib/launcher"
+    wappalyzer "github.com/projectdiscovery/wappalyzergo"
     "os"
     "os/exec"
 )
@@ -16,6 +17,11 @@ import (
 var ChromePath string
 
 func Preparations() {
+    if Wappalyzer == nil {
+        // wappalyzergo  中已经处理了 syscall.Dup2(int(devNull.Fd()), int(os.Stderr.Fd())) ,单元测试也是 ok 的，这里为啥还会有
+        Wappalyzer, _ = wappalyzer.New()
+    }
+    
     if !GlobalConfig.NoPortScan { // 不进行端口扫描时，不检查这些
         Plugin["portScan"] = false
         // 检查 nmap 是否已安装

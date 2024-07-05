@@ -63,7 +63,7 @@ func (p *Plugin) Scan(target string, path string, in *input.CrawlResult, client 
         }
         return
     }
-
+    
     logging.Logger.Debugln(in.Url, "xxe vulnerability not found")
 }
 
@@ -92,7 +92,7 @@ func startTesting(in *input.CrawlResult, client *httpx.Client) (*httpx.Response,
         }
         return nil, "", false
     }
-
+    
     if variations != nil {
         header := in.Headers
         for _, p := range variations.Params {
@@ -108,12 +108,12 @@ func startTesting(in *input.CrawlResult, client *httpx.Client) (*httpx.Response,
                 } else {
                     res, err = client.Request(in.Url, in.Method, originpayload, header)
                 }
-
+                
                 logging.Logger.Debugln("payload:", originpayload)
                 if err != nil {
                     continue
                 }
-
+                
                 if funk.Contains(res.ResponseDump, "root:x:0:0:root:/root:") || funk.Contains(res.ResponseDump, "root:[x*]:0:0:") || funk.Contains(res.ResponseDump, "; for 16-bit app support") {
                     return res, originpayload, true
                 }

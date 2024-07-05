@@ -57,6 +57,7 @@ func Version(url string, client *httpx.Client) Utils.Result {
                 result.Version = jsonType
                 result.Payload = payload
                 result.Request = resp.RequestDump
+                result.Response = resp.Body
                 return result
             }
             logging.Logger.Debugln("[" + result.Url + "] :" + "[+] 正在进行版本探测")
@@ -66,6 +67,7 @@ func Version(url string, client *httpx.Client) Utils.Result {
                 result.Version = Utils.FJ_UNDER_48
                 result.Payload = payloads.Dns_80
                 result.Request = resp.RequestDump
+                result.Response = resp.Body
                 return result
             }
             version, resp = DnslogDetect(url, payloads.Dns_68, session, client)
@@ -74,11 +76,13 @@ func Version(url string, client *httpx.Client) Utils.Result {
                     result.Version = Utils.FJ_BEYOND_48
                     result.Payload = payloads.Dns_68
                     result.Request = resp.RequestDump
+                    result.Response = resp.Body
                     return result
                 }
                 result.Version = Utils.FJ_BETWEEN_48_68
                 result.Payload = payloads.Dns_68
                 result.Request = resp.RequestDump
+                result.Response = resp.Body
                 return result
             }
             version, resp = DnslogDetect(url, payloads.Dns_80, session, client)
@@ -86,6 +90,7 @@ func Version(url string, client *httpx.Client) Utils.Result {
                 result.Version = Utils.FJ_BETWEEN_69_80
                 result.Payload = payloads.Dns_80
                 result.Request = resp.RequestDump
+                result.Response = resp.Body
                 return result
             }
             version, resp = DnslogDetect(url, payloads.Dns_80, session, client)
@@ -93,11 +98,13 @@ func Version(url string, client *httpx.Client) Utils.Result {
                 result.Version = Utils.FS_BEYOND_80
                 result.Payload = payloads.Dns_80
                 result.Request = resp.RequestDump
+                result.Response = resp.Body
                 return result
             }
             result.Payload = payloads.Dns_48 + " | " + payloads.Dns_68 + " | " + payloads.Dns_80
             result.Version = version
             result.Request = resp.RequestDump
+            result.Response = resp.Body
             return result
         } else {
             logging.Logger.Debugln("客户端与dnslog平台网络不可达")
@@ -208,6 +215,8 @@ func DnslogDetect(target string, payload string, session string, client *httpx.C
     if dns_80.FindString(body) != "" {
         return "80", httpRsp
     }
+    
+    httpRsp.Body = body
     return "Recorded", httpRsp
 }
 

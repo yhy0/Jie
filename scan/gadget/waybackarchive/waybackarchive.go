@@ -18,18 +18,18 @@ func Run(u string, client *httpx.Client) map[string]string {
     if !strings.HasSuffix(u, "/") {
         u += "/"
     }
-
+    
     resp, err := client.Request(fmt.Sprintf("http://web.archive.org/cdx/search/cdx?url=%s*&output=txt&fl=original&collapse=urlkey&fastLatest=true", u), "GET", "", nil)
     if err != nil {
-        logging.Logger.Errorln("WayBackArchive err:", err)
+        logging.Logger.Debugln("WayBackArchive err:", err)
         return nil
     }
-
+    
     lines := strings.Split(resp.Body, "\n")
-
+    
     // 收集到的 url 有很多只是参数不一样，所以这里进行判断，只要唯一的 url
     uniqueUrl := make(map[string]string)
-
+    
     for _, line := range lines {
         if line == "" {
             continue
@@ -38,12 +38,12 @@ func Run(u string, client *httpx.Client) map[string]string {
         if id == "" {
             continue
         }
-
+        
         if _, ok := uniqueUrl[id]; ok {
             continue
         }
         uniqueUrl[id] = line
     }
-
+    
     return uniqueUrl
 }

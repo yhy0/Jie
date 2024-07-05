@@ -40,7 +40,7 @@ func addFingerprintsnormal(target string, technologies []string, req *httpx.Resp
     if err != nil {
         return nil
     }
-
+    
     switch parse.Path {
     case "/manager/html":
         if req.StatusCode == 401 && req.Header.Get("Www-Authenticate") != "" {

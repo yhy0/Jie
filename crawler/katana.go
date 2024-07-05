@@ -9,6 +9,7 @@ import (
     "github.com/yhy0/Jie/conf"
     "github.com/yhy0/logging"
     "math"
+    "time"
 )
 
 /**
@@ -43,7 +44,9 @@ func Katana(target string, headless bool, show bool, out func(result output.Resu
         OnResult:        out,
         Headless:        headless,
         Proxy:           conf.GlobalConfig.Http.Proxy,
+        CrawlDuration:   10 * 60 * time.Second, // 一个网站最多爬 10 分钟
         ExtensionFilter: ExtensionFilter,
+        Wappalyzer:      conf.Wappalyzer,
     }
     if options.Headless {
         options.ShowBrowser = show
@@ -54,7 +57,10 @@ func Katana(target string, headless bool, show bool, out func(result output.Resu
     if err != nil {
         logging.Logger.Fatal(err.Error())
     }
-    defer crawlerOptions.Close()
+    defer func() {
+        crawlerOptions.Close()
+        crawlerOptions.RateLimit.Stop()
+    }()
     
     var crawler engine.Engine
     

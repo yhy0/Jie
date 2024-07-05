@@ -16,7 +16,7 @@ func WeblogicBrute(url string, client *httpx.Client) (username string, password 
                     if strings.Contains(req2.RequestUrl, "console.portal") {
                         logging.Logger.Infof(fmt.Sprintf("Found vuln Weblogic password|%s:%s|%s\n", weblogicuserpass[uspa].Username, weblogicuserpass[uspa].Password, url+"/console/"))
                         return weblogicuserpass[uspa].Username, weblogicuserpass[uspa].Password
-
+                        
                     }
                 }
             }

@@ -36,12 +36,12 @@ func ExtractParameters(u, method string, requestBody string, header map[string]s
     } else if strings.EqualFold(method, "POST") && requestBody != "" { // 测试 post 请求
         // 解析 POST 请求的请求体
         postParams, err := url.ParseQuery(requestBody)
-
+        
         if err != nil {
             logging.Logger.Errorln(u, err)
             return nil
         }
-
+        
         if strings.Contains(header["Content-Type"], "application/x-www-form-urlencoded") {
             // 解析 POST 请求的请求体
             postParams, err = url.ParseQuery(requestBody)
@@ -50,9 +50,9 @@ func ExtractParameters(u, method string, requestBody string, header map[string]s
                 return nil
             }
         } else if strings.Contains(header["Content-Type"], "json") { // TODO
-
+        
         }
-
+        
         for paramName := range postParams {
             if SliceInCaseFold(paramName, ParamFilter) {
                 continue
@@ -60,6 +60,6 @@ func ExtractParameters(u, method string, requestBody string, header map[string]s
             params = append(params, paramName)
         }
     }
-
+    
     return params
 }

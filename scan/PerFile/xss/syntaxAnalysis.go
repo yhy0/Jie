@@ -30,17 +30,17 @@ func Audit(in *input.CrawlResult, client *httpx.Client) {
     if funk.Contains("html", strings.ToLower(in.Resp.Header.Get("Content-Type"))) {
         return
     }
-
+    
     // TODO 主动模式下 crawlergo 爬虫中爬到的参数也需要给过了
     params := ast.GetParamsFromHtml(&in.Resp.Body, in.Url)
-
+    
     // html 解析 中发现的参数、爬虫发现的参数、自定义高危参数
     params = append(params, util.ExtractParameters(in.Url, in.Method, in.RequestBody, in.Headers)...)
     params = funk.UniqString(append(params, blindParams...))
-
+    
     var uri string
     payloads := make(map[string]string)
-
+    
     for _, param := range params {
         if util.SliceInCaseFold(param, util.ParamFilter) {
             continue
@@ -49,7 +49,7 @@ func Audit(in *input.CrawlResult, client *httpx.Client) {
         payloads[param] = value
         uri += fmt.Sprintf("%s=%s&", param, value)
     }
-
+    
     xssUrl := in.Url
     requestBody := in.RequestBody // 不能改变传入 in 的值，防止影响到其他插件
     if in.Method == "GET" {
@@ -57,17 +57,17 @@ func Audit(in *input.CrawlResult, client *httpx.Client) {
     } else {
         requestBody = strings.TrimRight(uri, "&")
     }
-
+    
     res, err := client.Request(xssUrl, in.Method, requestBody, in.Headers)
-
+    
     if err != nil {
         logging.Logger.Errorln(err)
         return
     }
-
+    
     // 确定回显参数
     var echoParams = make(map[string]int)
-
+    
     // 格式化请求
     variations, err := httpx.ParseUri(xssUrl, []byte(requestBody), in.Method, in.ContentType, in.Headers)
     if err != nil {
@@ -78,7 +78,7 @@ func Audit(in *input.CrawlResult, client *httpx.Client) {
         }
         return
     }
-
+    
     for index, param := range variations.Params {
         // 判断是否为不可更改的参数名，TODO 有没有更好的实现方式，不然每次都要手动写个判断 ，目前不能再 ParseUri 函数中写，不然发包时，参数会少
         if util.SliceInCaseFold(param.Name, util.ParamFilter) {
@@ -88,20 +88,20 @@ func Audit(in *input.CrawlResult, client *httpx.Client) {
             echoParams[param.Name] = index
         }
     }
-
+    
     // 有的会把输入的全部返回，这里判断一下，如果超过 20 回显参数，不测试了
     if len(echoParams) > 20 {
         return
     }
-
+    
     for param, index := range echoParams {
         // 确定回显位置
         locations := ast.SearchInputInResponse(payloads[param], res.Body)
-
+        
         if len(locations) == 0 {
             return
         }
-
+        
         // 检测 xss
         for _, item := range locations {
             // logging.Logger.Debugln(util.StructToJsonString(item))
@@ -109,7 +109,7 @@ func Audit(in *input.CrawlResult, client *httpx.Client) {
                 if item.Details.Value.TagName == "style" {
                     payload := fmt.Sprintf("expression(a(%s))", util.RandomLetters(6))
                     resp, tpayload := request(payload, index, xssUrl, in, variations, client)
-
+                    
                     if resp != nil {
                         _locations := ast.SearchInputInResponse(payload, resp.Body)
                         for _, _item := range _locations {
@@ -133,17 +133,17 @@ func Audit(in *input.CrawlResult, client *httpx.Client) {
                         }
                     }
                 }
-
+                
                 flag := util.RandomLetters(7)
-
+                
                 // 闭合标签测试
                 payload := fmt.Sprintf("</%s><%s>", util.RandomUpper(item.Details.Value.TagName), flag)
-
+                
                 // 真实可能触发 xss 的 payload (没发送)
                 truepayload := fmt.Sprintf("</%s><%s>", util.RandomUpper(item.Details.Value.TagName), "<svg onload=alert`1`>")
-
+                
                 resp, tpayload := request(payload, index, xssUrl, in, variations, client)
-
+                
                 if resp != nil {
                     _locations := ast.SearchInputInResponse(flag, resp.Body)
                     for _, _item := range _locations {
@@ -166,16 +166,16 @@ func Audit(in *input.CrawlResult, client *httpx.Client) {
                         }
                     }
                 }
-
+                
             } else if item.Type == "attibute" {
                 if item.Details.Value.Content == "key" {
                     // test html
                     flag := util.RandomLetters(7)
                     payload := fmt.Sprintf("><%s ", flag)
                     truepayload := "><svg onload=alert`1`>"
-
+                    
                     resp, tpayload := request(payload, index, xssUrl, in, variations, client)
-
+                    
                     if resp != nil {
                         _locations := ast.SearchInputInResponse(flag, resp.Body)
                         for _, _item := range _locations {
@@ -198,12 +198,12 @@ func Audit(in *input.CrawlResult, client *httpx.Client) {
                             }
                         }
                     }
-
+                    
                     // test attibutes
                     flag = util.RandomLetters(5)
                     payload = flag + "="
                     resp, tpayload = request(payload, index, xssUrl, in, variations, client)
-
+                    
                     if resp != nil {
                         _locations := ast.SearchInputInResponse(flag, resp.Body)
                         for _, _item := range _locations {
@@ -226,19 +226,19 @@ func Audit(in *input.CrawlResult, client *httpx.Client) {
                                     break
                                 }
                             }
-
+                            
                         }
                     }
-
+                    
                 } else {
                     // test attibutes
                     flag := util.RandomLetters(5)
                     for _, _payload := range []string{"'", "\"", " "} {
                         payload := _payload + flag + "=" + _payload
                         truepayload := fmt.Sprintf("%s onmouseover=prompt(1)%s", _payload, _payload)
-
+                        
                         resp, tpayload := request(payload, index, xssUrl, in, variations, client)
-
+                        
                         if resp != nil {
                             _locations := ast.SearchInputInResponse(flag, resp.Body)
                             for _, _item := range _locations {
@@ -264,13 +264,13 @@ func Audit(in *input.CrawlResult, client *httpx.Client) {
                             }
                         }
                     }
-
+                    
                     // test html
                     flag = util.RandomLetters(7)
                     for _, _payload := range []string{"'><%s>", "\"><%s>", "><%s>"} {
                         payload := fmt.Sprintf(_payload, flag)
                         resp, tpayload := request(payload, index, xssUrl, in, variations, client)
-
+                        
                         if resp != nil {
                             _locations := ast.SearchInputInResponse(flag, resp.Body)
                             for _, _item := range _locations {
@@ -291,31 +291,31 @@ func Audit(in *input.CrawlResult, client *httpx.Client) {
                                     }
                                     break
                                 }
-
+                                
                             }
                         }
-
+                        
                     }
-
+                    
                     // 针对特殊属性进行处理
                     specialAttributes := []string{"srcdoc", "src", "action", "data", "href"} // 特殊处理属性
-
+                    
                     keyname := item.Details.Value.Attributes[0].Key
-
+                    
                     if funk.Contains(specialAttributes, keyname) {
                         flag = util.RandomLetters(7)
                         resp, tpayload := request(flag, index, xssUrl, in, variations, client)
-
+                        
                         if resp != nil {
                             _locations := ast.SearchInputInResponse(flag, resp.Body)
                             for _, _item := range _locations {
                                 if len(_item.Details.Value.Attributes) > 0 && _item.Details.Value.Attributes[0].Key == keyname && _item.Details.Value.Attributes[0].Val == flag {
                                     truepayload := flag
-
+                                    
                                     if funk.Contains(specialAttributes, _item.Details.Value.Attributes[0].Key) {
                                         truepayload = "javascript:alert(1)"
                                     }
-
+                                    
                                     output.OutChannel <- output.VulMessage{
                                         DataType: "web_vul",
                                         Plugin:   "XSS",
@@ -332,14 +332,14 @@ func Audit(in *input.CrawlResult, client *httpx.Client) {
                                     }
                                     break
                                 }
-
+                                
                             }
                         }
-
+                        
                     } else if keyname == "style" {
                         payload := fmt.Sprintf("expression(a(%s))", util.RandomLetters(6))
                         resp, tpayload := request(payload, index, xssUrl, in, variations, client)
-
+                        
                         if resp != nil {
                             _locations := ast.SearchInputInResponse(payload, resp.Body)
                             for _, _item := range _locations {
@@ -390,14 +390,14 @@ func Audit(in *input.CrawlResult, client *httpx.Client) {
                         }
                     }
                 }
-
+                
             } else if item.Type == "comment" {
                 flag := util.RandomLetters(7)
-
+                
                 for _, _payload := range []string{"-->", "--!>"} {
                     payload := fmt.Sprintf("%s<%s>", _payload, flag)
                     truepayload := fmt.Sprintf("%s<%s>", _payload, "svg onload=alert`1`")
-
+                    
                     resp, tpayload := request(payload, index, xssUrl, in, variations, client)
                     if resp != nil {
                         _locations := ast.SearchInputInResponse(flag, resp.Body)
@@ -422,15 +422,15 @@ func Audit(in *input.CrawlResult, client *httpx.Client) {
                         }
                     }
                 }
-
+                
             } else if item.Type == "script" {
                 // test html
                 flag := util.RandomLetters(7)
                 script_tag := util.RandomUpper(item.Details.Value.TagName)
-
+                
                 payload := fmt.Sprintf("</%s><%s>%s</%s>", script_tag, script_tag, flag, script_tag)
                 truepayload := fmt.Sprintf("</%s><%s>%s</%s>", script_tag, script_tag, "prompt(1)", script_tag)
-
+                
                 resp, tpayload := request(payload, index, xssUrl, in, variations, client)
                 if resp != nil {
                     _locations := ast.SearchInputInResponse(flag, resp.Body)
@@ -454,11 +454,11 @@ func Audit(in *input.CrawlResult, client *httpx.Client) {
                         }
                     }
                 }
-
+                
                 // js 语法树分析反射
                 source := item.Details.Value.Content
                 _locations := ast.SearchInputInScript(payloads[param], source)
-
+                
                 for _, _item := range _locations {
                     if _item.Type == "InlineComment" {
                         flag = util.RandomLetters(5)
@@ -491,7 +491,7 @@ func Audit(in *input.CrawlResult, client *httpx.Client) {
                                         break
                                     }
                                 }
-
+                                
                             }
                         }
                     } else if _item.Type == "BlockComment" {
@@ -561,14 +561,14 @@ func Audit(in *input.CrawlResult, client *httpx.Client) {
                                 if funk.Contains(__item.Details.Value.Content, payload) && __item.Type == "script" {
                                     resp2 = __item.Details.Value.Content
                                 }
-
+                                
                             }
                         }
-
+                        
                         if resp2 == "" {
                             continue
                         }
-
+                        
                         occurence := ast.SearchInputInResponse(flag, resp2)
                         for _, _output := range occurence {
                             if funk.Contains(_output.Details.Value.Content, flag) && _output.Type == "ScriptIdentifier" {
@@ -606,7 +606,7 @@ func request(payload string, index int, target string, in *input.CrawlResult, va
     } else {
         resp, err = client.Request(target, in.Method, payload, in.Headers)
     }
-
+    
     if err != nil {
         logging.Logger.Debugln(err)
         return nil, ""

@@ -66,7 +66,7 @@ func NginxAlias(url string, body string, path string) {
     path = strings.TrimPrefix(path, "/")
     // 检查默认字典加上 传来的路径
     CheckFoldersForTraversal(url, util.RemoveDuplicateElement(append(dictionary, path)))
-
+    
     // Check for alias traversal vulnerability (endpoint finding)
     if body == "" {
         resp, err := httpx.Get(url)
@@ -76,7 +76,7 @@ func NginxAlias(url string, body string, path string) {
         }
         body = resp.Body
     }
-
+    
     // 使用 findEndpoints 获取当前页面的所有路径，然后再跑一遍。 TODO 这种不太好，会导致重复扫描
     CheckFoldersForTraversal(url, findEndpoints(body))
     // Check for directory listing
@@ -86,15 +86,15 @@ func NginxAlias(url string, body string, path string) {
 
 func CheckFolderForTraversal(url string, folder string) bool {
     resp, err := httpx.Get(url + folder + ".")
-
+    
     if err != nil {
         return false
     }
-
+    
     if resp.StatusCode == 404 {
         return false
     }
-
+    
     if resp.StatusCode == 301 || resp.StatusCode == 302 {
         if strings.HasSuffix(resp.Location, folder+"./") {
             resp, err := httpx.Get(url + folder + "..")
@@ -150,12 +150,12 @@ func CheckFolderForTraversal(url string, folder string) bool {
 func CheckFoldersForTraversal(url string, folders []string) {
     var wg sync.WaitGroup
     semaphore := make(chan struct{}, 10)
-
+    
     // Use a bounded semaphore with a capacity of 'threads'
     for i := 0; i < 10; i++ {
         semaphore <- struct{}{}
     }
-
+    
     for _, word := range folders {
         if word == "" {
             continue
@@ -170,7 +170,7 @@ func CheckFoldersForTraversal(url string, folders []string) {
             wg.Done()
         }(word)
     }
-
+    
     wg.Wait()
 }
 
@@ -179,7 +179,7 @@ func MakeFolderEndpointsFromPath(path string) []string {
     // "/img/media/a.jpg" -> ["img", "img/media"]
     var endpoints []string
     var endpoint string
-
+    
     // check if begins with https:// or http:// or //
     if strings.HasPrefix(path, "https://") || strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "//") {
         // get path
@@ -193,7 +193,7 @@ func MakeFolderEndpointsFromPath(path string) []string {
             path = path[1:]
         }
     }
-
+    
     for _, word := range strings.Split(path, "/") {
         if word != "" {
             // check if last
@@ -204,7 +204,7 @@ func MakeFolderEndpointsFromPath(path string) []string {
             if strings.Contains(word, "?") {
                 word = strings.Split(word, "?")[0]
             }
-
+            
             endpoint = endpoint + word + "/"
             endpointNoSlash := strings.TrimSuffix(endpoint, "/")
             if !util.InSlice(endpoints, endpointNoSlash) {
@@ -231,7 +231,7 @@ func findEndpoints(html string) []string {
                 }
             }
             foundEndpoints = append(foundEndpoints, src)
-
+            
         }
     })
     finalDirectoryEndpoints := []string{}
